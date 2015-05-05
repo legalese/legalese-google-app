@@ -1,11 +1,13 @@
 Create an echosign-api-keys.json in this folder, of the form
 
+#+BEGIN_SRC js
 {
   "default" : { 
         clientId:"XXXXXXXXXXXXXX",
         clientSecret:"YYYYYYYYYYYYYYYYYYYYYYYYY",
         projectKey:"ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" },
 }
+#+END_SRC
 
 When you run make in the parent folder, you should see a code.gs in here.
 
