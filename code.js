@@ -2031,6 +2031,26 @@ function resetDocumentProperties_(which) {
   else props.deleteProperty(which);
 }
 
+function getDigitalSignatureService_(config) {
+  var signatureService = config.signature_service;
+  if (signatureService == undefined ||
+	  signatureService.values == undefined ||
+	  signatureService.values[0] == undefined
+	 ) { return getEchoSignService_() }
+  // one day, maybe taking the default position here will be like taking the default search engine in Mozilla.
+
+  signatureService = signatureService.values[0].toLowerCase();
+  
+  if (signatureService == "echosign" ) { return getEchoSignService_() }
+  if (signatureService == "docusign" ) { return getDocuSignService_() }
+  if (signatureService == "hellosign") { return getHelloSignService_() }
+  // new signature backends welcome here
+}
+
+function getDocuSignService_() { }
+function getHelloSignService_() { }
+
+
 // ---------------------------------------------------------------------------------------------------------------- getEchoSignService_
 // oAuth integration with EchoSign
 // EchoSign uses OAuth 2
@@ -2038,6 +2058,11 @@ function resetDocumentProperties_(which) {
 // and we turned on the library.
 //
 // the redirect url is https://script.google.com/macros/d/{PROJECT KEY}/usercallback
+
+
+// TODO:
+// generalize this to getDigitalSignatureService_
+// let there be a config in the spreadsheet for the end-user to specify the desired digital signature service backend.
 
 function getEchoSignService_() {
   // Create a new service with the given name. The name will be used when 
