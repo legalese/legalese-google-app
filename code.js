@@ -2063,7 +2063,8 @@ function getEchoSignService_() {
 
   // TODO: see line 1254 of showSidebar. refactor this chunk so that it's available for showSidebar's purposes.
   var esApps = BUILD_INCLUDE(echosign-api-keys.json);
-
+  // the BUILD_INCLUDE gets filled by the Makefile from an echosign-api-keys.json file resident under the build/ dir.
+  
   if (esApps[ssid] != undefined) { ssname = ssid }
   if (esApps[ssname] == undefined) {
 	Logger.log("unable to identify EchoSign OAuth credentials for this spreadsheet / project.");
