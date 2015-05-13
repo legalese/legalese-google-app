@@ -877,7 +877,22 @@ function formatify_(format, string, sheet, fieldname) {
 									  "EEEE d MMMM YYYY");
 //	  Logger.log("output date: " + toreturn);
 
-    } else { toreturn = string }
+    }
+	else if (format.match(/^0/) && ! format.match(/%/) && string.constructor.name == "Number") {
+	  Logger.log("INFO: formatting ... format=%s string=%s", format, string);
+	  var myzeroes = format.match(/#+/);
+	  Logger.log("INFO: formatting ... myzeroes = %s", myzeroes);
+	  if (myzeroes == undefined) { myzeroes = 0 }
+	  else { myzeroes = myzeroes[0].length }
+	  toreturn = digitCommas_(string, myzeroes);
+	  Logger.log("INFO: formatting ... format=%s so running %s.toFixed(%s) = %s", format, string, myzeroes, toreturn);
+	}
+	else if (format.match(/^#.*0/) && string.constructor.name == "Number") {
+	  Logger.log("INFO: formatting ... format=%s string=%s", format, string);
+	  toreturn = digitCommas_(string, 0);
+	  Logger.log("INFO: formatting ... format=%s so running digitCommas_(%s, 0) = %s", format, string, toreturn);
+	}
+	else { toreturn = string }
   }
   else { toreturn = string }
 //  Logger.log("INFO: formatify_("+format+","+string+") = "+toreturn);
@@ -2562,9 +2577,13 @@ function plural(num, singular, plural, locale) {
   }
 }
 
-function asNum_(str) {
-  return str.replace(/[^.\d]/g,"");
+function asNum_(instr) {
+  var num = instr;
+  if (instr == undefined) { Logger.log("WARNING: asNum_() received an undefined argument"); return }
+  if (instr.constructor.name == "Number") { num = instr.toString() }
+  return num.replace(/[^.\d]/g,"");
 }
+
 
 function asCurrency_(currency, amount, chop) {
   // it would be nice to fill in the format string exactly the way Spreadsheets do it, but that doesn't seem to be an option.
@@ -2577,6 +2596,12 @@ function asCurrency_(currency, amount, chop) {
   // Logger.log("asCurrency_(%s, %s, %s)", currency, amount, chop);
   
   var mycurrency = currency;
+  Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
+  var mymatch;
+  if (mymatch = currency.match(/#0.(0+)/)) { chop = mymatch[1].length }
+  if (currency.match(/#0$/))     { chop = 0 }
+  Logger.log("asCurrency_() chop = %s", chop);
+  
   var matches;
   if (matches = currency.match(/\[\$(.*)\]/)) { // currency
     mycurrency = matches[0].substring(2,matches[0].length-1).replace(/ /g," "); // nbsp
@@ -2591,7 +2616,9 @@ function digitCommas_(numstr, chop) {
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   if (parts[1] == 0 && parts.length == 2) { parts = parts.slice(0,1); }
   if (parts[1] && parts[1].length == 1) { parts[1] = parts[1] + "0" }
-  if (chop != false && parts[1] && parts[1].length >  2) { parts[1] = parts[1].substr(0,2); }
+  if (chop != undefined && chop === true) { chop = 2 }
+  if (chop != false && parts[1] && parts[1].length > chop) { parts[1] = parts[1].substr(0,chop); }
+  if (chop == 0) { parts.pop() }
   return parts.join(".");
 }
 
