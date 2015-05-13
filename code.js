@@ -1103,6 +1103,12 @@ function availableTemplates_() {
 //	parties:{to:["director"], cc:["corporate_secretary"]},
 //	nocache:true,
 //  },
+	{ name:"nda", title:"Nondisclosure Agreement",
+	   url:baseUrl + "templates/jfdi.asia/nondisclosure.xml",
+	  parties:{to:["company"], cc:[]},
+	  explode:"counterparty",
+	  nocache:true,
+	},
 	{ name:"kindle", title:"Kindle Introduction",
 	   url:baseUrl + "templates/legalese/kindle.xml",
 	  parties:{to:[], cc:[]},
@@ -1174,6 +1180,12 @@ function availableTemplates_() {
 	},
 	{ name:"inc_cover_jfdi", title:"JFDI Cover Page Bottom",
 	   url:baseUrl + "templates/jfdi.asia/inc_cover_jfdi.xml",
+	},
+	{ name:"ordinary_share_subscription", title:"Ordinary Share Subscription Agreement",
+	   url:baseUrl + "templates/jfdi.asia/ordinary_share_subscription_agreement.xml",
+	  parties:{to:["company"], cc:["corporate_secretary"]},
+	  explode:"new_investor",
+	  nocache:true,
 	},
 	{ name:"tgas_subscription", title:"TradeGecko-A Share Subscription Agreement",
 	   url:baseUrl + "templates/jfdi.asia/subscription_agreement_tga.xml",
@@ -1304,7 +1316,7 @@ function availableTemplates_() {
   },
   { name:"preemptive_waiver", title:"Issuance Offer Notice",
 	url:baseUrl + "templates/jfdi.asia/preemptive_waiver.xml",
-	parties:{to:[],cc:["corporate_secretary","company"]},
+	parties:{to:["company"],cc:["corporate_secretary"]},
 	explode: "shareholder",
   },
   { name:"loan_waiver", title:"Waiver of Convertible Loan",
@@ -1354,7 +1366,8 @@ function availableTemplates_() {
   { name:"inc_resolved_mr", title:"members resolution preface",
 	url:baseUrl + "templates/jfdi.asia/inc_resolved_mr.xml"
   },
-  { name:"inc_mediation_arbitration", title:"ruben's mediation and arbitration clause",
+	{ name:"inc_mediation_arbitration", title:"ruben's mediation and arbitration clause",
+	  nocache:true,
 	url:baseUrl + "templates/jfdi.asia/inc_mediation_arbitration.xml" // define numberering_level = 3 or whatever. default is 2.
   },
 
@@ -2574,6 +2587,7 @@ function plural(num, singular, plural, locale) {
 	if (num  > 1) { return plural }
 	if (num == 1) { return singular }
 	if (num == 0) { return plural }
+	Logger.log("WARNING: unable to determine if %s is singular or plural.", num);
   }
 }
 
