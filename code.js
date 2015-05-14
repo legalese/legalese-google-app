@@ -2632,8 +2632,9 @@ function digitCommas_(numstr, chop) {
   if (parts[1] && parts[1].length == 1) { parts[1] = parts[1] + "0" }
   if (chop != undefined && chop === true) { chop = 2 }
   if (chop != false && parts[1] && parts[1].length > chop) { parts[1] = parts[1].substr(0,chop); }
-  if (chop == 0) { parts.pop() }
-  return parts.join(".");
+  var asString = parts.join(".");
+  if (chop == 0) { asString.replace(/\.0*$/,"") }
+  return asString;
 }
 
 function currencyFor_(string) {
