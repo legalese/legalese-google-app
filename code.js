@@ -884,13 +884,12 @@ function formatify_(format, string, sheet, fieldname) {
 	  Logger.log("INFO: formatting ... myzeroes = %s", myzeroes);
 	  if (myzeroes == undefined) { myzeroes = 0 }
 	  else { myzeroes = myzeroes[0].length }
-	  toreturn = digitCommas_(string, myzeroes);
 	  Logger.log("INFO: formatting ... format=%s so running %s.toFixed(%s) = %s", format, string, myzeroes, toreturn);
+	  toreturn = Number(string).toFixed(myzeroes);
 	}
-	else if (format.match(/^#.*0/) && string.constructor.name == "Number") {
+	else if (format.match(/^#.*0/) && string.constructor.name == "String") {
 	  Logger.log("INFO: formatting ... format=%s string=%s", format, string);
-	  toreturn = digitCommas_(string, 0);
-	  Logger.log("INFO: formatting ... format=%s so running digitCommas_(%s, 0) = %s", format, string, toreturn);
+	  toreturn = string;
 	}
 	else { toreturn = string }
   }
@@ -2624,16 +2623,35 @@ function asCurrency_(currency, amount, chop) {
   return mycurrency + digitCommas_(amount, chop);
 }
 
-function digitCommas_(numstr, chop) {
+function digitCommas_(numstr, chop, formatstr) {
+  //  formatstr can be one of
+  //             -- plain text
+  //  #,##0      -- whole numbers
+  //  #,##0.0    -- 1 decimal digits
+  //  #,##0.00   -- 2 decimal digits
+
   if (numstr == undefined) { return }
   var parts = numstr.constructor.name == "String" ? numstr.split(".") : numstr.toString().split(".");
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  if (parts[1] == 0 && parts.length == 2) { parts = parts.slice(0,1); }
-  if (parts[1] && parts[1].length == 1) { parts[1] = parts[1] + "0" }
-  if (chop != undefined && chop === true) { chop = 2 }
-  if (chop != false && parts[1] && parts[1].length > chop) { parts[1] = parts[1].substr(0,chop); }
+
+  // maybe the input was a whole number. parts[0] is something, and there is no parts[1].
+  if (parts.length == 1) { parts[1] = 0 }
+
+  if (formatstr != undefined) {
+	var match = formatstr.match(/\.(0+)/);
+	var digits = 0;
+	if (! match) { digits = chop || 0 }
+	else { digits = match[1].length }
+	Logger.log("INFO: digitCommas(%s, %s, %s) needs %s decimal digits", numstr, chop, formatstr, digits);
+	chop = digits;
+  }
+
+  while (parts[1].length < chop) { parts[1] = parts[1] + "0" }
+  while (parts[1].length > chop) { parts[1] = parts[1].substr(0,chop) }
+  if (chop == 0) { parts.pop() }
+  
   var asString = parts.join(".");
-  if (chop == 0) { asString.replace(/\.0*$/,"") }
+  Logger.log("digitCommas_(%s,%s,%s): returning %s", numstr, chop, formatstr, asString);
   return asString;
 }
 
