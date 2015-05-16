@@ -629,7 +629,8 @@ function readRows_(sheet, entitiesByName) {
 	  var asvar = asvar_(row[0]);
       terms[           asvar] = formatify_(term_formats[i][0], row[1], sheet, asvar);
 	  // formatify_() returns a string. if you want the original value, get it from
-	  terms["_orig_" + asvar] = row[1];
+	  terms["_orig_"       + asvar] = row[1];
+	  terms["_format" + asvar] = term_formats[i][0];
 	  Logger.log("readRows(%s): TERMS: %s = %s --> %s (%s)", sheet.getSheetName(), asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
     }
 	else if (section == "ROLES") { // principal relation entity. these are all strings. we attach other details
@@ -675,6 +676,7 @@ function readRows_(sheet, entitiesByName) {
 			Logger.log("ROLES: learning attribute %s.%s = %s", entityname, asvar_(row[role_x]), formatify_(formats[i][role_x+1], row[role_x+1], sheet));
 			entity[asvar_(row[role_x])] = formatify_(formats[i][role_x+1], row[role_x+1], sheet, asvar_(row[role_x]));
 			entity["_format_" + asvar_(row[role_x])] = formats[i][role_x+1];
+			entity["_orig_"   + asvar_(row[role_x])] = row[role_x+1];
 		  }
 		}
 	  }
@@ -699,6 +701,7 @@ function readRows_(sheet, entitiesByName) {
         var v = formatify_(entity_formats[0][ki], row[ki], sheet, k);
         entity[k] = v;
 		entity["_format_" + k] = entity_formats[0][ki];
+		entity["_orig_"   + k] = row[ki];
 		if (v && v.length) { entity["_"+k+"_firstline"] = v.replace(/\n.*/g, ""); }
 //		Logger.log("INFO: field %s, ran formatify_(%s, %s) (%s), got %s (%s)",
 //				   k, entity_formats[0][ki], row[ki], (row[ki] != undefined ? row[ki].constructor.name : "undef"), v, v.constructor.name);
@@ -844,15 +847,7 @@ function asvar_(str) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------- formatify_
-// Wed Dec 17 05:17:57 PST 2014 INFO: term 150000 has format [$S$]#,##0
-// Wed Dec 17 05:17:57 PST 2014 INFO: term 2500000 has format [$$]#,##0.00
-// Wed Dec 17 05:17:57 PST 2014 INFO: term All has format 0.###############
-// Wed Dec 17 05:17:57 PST 2014 INFO: term 0.02 has format 0.00%
-// Wed Dec 17 05:17:57 PST 2014 INFO: term 36 months has format 0.###############
-// Wed Dec 17 05:17:57 PST 2014 INFO: term 2000000 has format [$SGD $]#,##0.00
-// Wed Dec 17 05:17:57 PST 2014 INFO: term 0.2 has format 0%
-
-// google's raw format expresses 1% as 0.01.
+// the test cases reside at https://docs.google.com/spreadsheets/d/1ePst75jTH4MUimRs0PE-OdSmVHl-_dnXSKGe2ybcrzc/edit#gid=1160659087
 
 // we want to match whatever the spreadsheet displays.
 //     INPUT VALUE       INPUT FORMAT           SHOWN BY GOOGLE
@@ -2887,7 +2882,7 @@ function digitCommas_(numstr, chop, formatstr) {
   if (numstr == undefined) { return }
   var asNum;
   if      (numstr.constructor.name == "Number") { asNum = numstr; }
-  else { Logger.log("WARNING: digitCommas given a %s to work with (%s); hope Number() works1",
+  else { Logger.log("WARNING: digitCommas given a %s to work with (%s); hope Number() works!",
 					numstr.constructor.name, numstr);
 		 asNum = Number(numstr);
 	   }
