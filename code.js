@@ -628,8 +628,9 @@ function readRows_(sheet, entitiesByName) {
 	  // TODO: do we need to ignore situations where row[0] !~ /:$/ ? subsection headings might be noisy.
 	  var asvar = asvar_(row[0]);
       terms[           asvar] = formatify_(term_formats[i][0], row[1], sheet, asvar);
+	  // formatify_() returns a string. if you want the original value, get it from
 	  terms["_orig_" + asvar] = row[1];
-	  Logger.log("readRows(%s): TERMS: %s = %s --> %s", sheet.getSheetName(), asvar, row[1], terms[asvar]);
+	  Logger.log("readRows(%s): TERMS: %s = %s --> %s (%s)", sheet.getSheetName(), asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
     }
 	else if (section == "ROLES") { // principal relation entity. these are all strings. we attach other details
 	  var relation  = asvar_(row[0]);
@@ -699,6 +700,8 @@ function readRows_(sheet, entitiesByName) {
         entity[k] = v;
 		entity["_format_" + k] = entity_formats[0][ki];
 		if (v && v.length) { entity["_"+k+"_firstline"] = v.replace(/\n.*/g, ""); }
+//		Logger.log("INFO: field %s, ran formatify_(%s, %s) (%s), got %s (%s)",
+//				   k, entity_formats[0][ki], row[ki], (row[ki] != undefined ? row[ki].constructor.name : "undef"), v, v.constructor.name);
       }
 
 	  // all coreRelation relations in the ENTITIES section are defined relative to the principal, which is hardcoded as the first Company to appear
@@ -850,11 +853,255 @@ function asvar_(str) {
 // Wed Dec 17 05:17:57 PST 2014 INFO: term 0.2 has format 0%
 
 // google's raw format expresses 1% as 0.01.
+
+// we want to match whatever the spreadsheet displays.
+//     INPUT VALUE       INPUT FORMAT           SHOWN BY GOOGLE
+// a1  999.9999          ""                     999.9999
+// a2  999.9999          [$S$]#,##0.000         S$1,000.000
+// a3  999.9999          #,##0.000              1,000.000
+// a4  999.9999          #,##0                  1,000
+// a5  999.9999          [$S$]#,##0             S$1,000
+// a6  999.9999          #,##0.00000            999.99990
+// a7  999.9999          0.###############      999.9999
+// a8  999.9999          0.00%                  99999.99%
+// a9  999.9999          0.0%                   100000.0%
+//a10  999.9999          0%                     100000%
+//a11  999.9999          0.00                   1000.00
+//a12  999.9999          0                      1000
+//
+// b1  1000              ""                     1000
+// b2  1000              [$S$]#,##0.000         S$1,000.000
+// b3  1000              #,##0.000              1,000.000
+// b4  1000              #,##0                  1,000
+// b5  1000              [$S$]#,##0             S$1,000
+// b6  1000              #,##0.00000            1,000.00000
+// b7  1000              0.###############      1000
+//
+// c1  not a number lol  #,##0.00               not a number lol
+// c2  ""                #,##0.00               ""
+// c3  ""                0.###############      ""
+// c4  ""                ""                     ""
+//
+// d1  -999.9999         ""                     -999.9999
+// d2  -999.9999         [$S$]#,##0.000         -S$1,000.000
+// d3  -999.9999         #,##0.000              -1,000.000
+// d4  -999.9999         #,##0                  -1,000
+// d5  -999.9999         [$S$]#,##0             -S$1,000
+// d6  -999.9999         #,##0.00000            -999.99990
+// d7  -999.9999         0.###############      -999.9999
+// d8  -999.9999         0.00%                  -99999.99%
+// d9  -999.9999         0.0%                   -100000.0%
+// d10 -999.9999         0%                     -100000%
+
+// readRows: row 8: processing row  test a var 1:
+// formatify_(, 999.9999) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(,999.9999) = 999.9999 (String)
+// readRows(Incorporation): TERMS: test_a_var_1 = 999.9999 --> 999.9999 (String)
+
+// readRows: row 9: processing row test a var 2:
+// formatify_([$S$]#,##0.000, 999.9999) called. the input string is a Number
+// asCurrency_([$S$]#,##0.000,999.9999,undefined)
+// asCurrency_() chop = 3.0
+// digitCommas_(999.9999,3.0,undefined): returning 1,000.000
+// INFO: formatify_([$S$]#,##0.000,999.9999) = S$1,000.000 (String)
+// readRows(Incorporation): TERMS: test_a_var_2 = 999.9999 --> S$1,000.000 (String)
+
+// readRows: row 10: processing row test a var 3:
+// formatify_(#,##0.000, 999.9999) called. the input string is a Number
+// digitCommas_(999.9999,3.0,undefined): returning 1,000.000
+// INFO: formatify_(#,##0.000,999.9999) = 1,000.000 (String)
+// readRows(Incorporation): TERMS: test_a_var_3 = 999.9999 --> 1,000.000 (String)
+
+// readRows: row 11: processing row test a var 4:
+// formatify_(#,##0, 999.9999) called. the input string is a Number
+// digitCommas_(999.9999,0.0,undefined): returning 1,000
+// INFO: formatify_(#,##0,999.9999) = 1,000 (String)
+// readRows(Incorporation): TERMS: test_a_var_4 = 999.9999 --> 1,000 (String)
+
+// readRows: row 12: processing row test a var 5:
+// formatify_([$S$]#,##0, 999.9999) called. the input string is a Number
+// asCurrency_([$S$]#,##0,999.9999,undefined)
+// asCurrency_() chop = 0.0
+// digitCommas_(999.9999,0.0,undefined): returning 1,000
+// INFO: formatify_([$S$]#,##0,999.9999) = S$1,000 (String)
+// readRows(Incorporation): TERMS: test_a_var_5 = 999.9999 --> S$1,000 (String)
+
+// readRows: row 13: processing row test a var 6:
+// formatify_(#,##0.00000, 999.9999) called. the input string is a Number
+// digitCommas_(999.9999,5.0,undefined): returning 999.99990
+// INFO: formatify_(#,##0.00000,999.9999) = 999.99990 (String)
+// readRows(Incorporation): TERMS: test_a_var_6 = 999.9999 --> 999.99990 (String)
+
+// readRows: row 14: processing row test a var 7:
+// formatify_(0.###############, 999.9999) called. the input string is a Number
+// INFO: formatify_(0.###############,999.9999) = 999.9999 (String)
+// readRows(Incorporation): TERMS: test_a_var_7 = 999.9999 --> 999.9999 (String)
+
+// readRows: row 15: processing row test a var 8:
+// formatify_(0.00%, 999.9999) called. the input string is a Number
+// INFO: formatify_(0.00%,999.9999) = 99999.99 (String)
+// readRows(Incorporation): TERMS: test_a_var_8 = 999.9999 --> 99999.99 (String)
+
+// readRows: row 16: processing row test a var 9:
+// formatify_(0.0%, 999.9999) called. the input string is a Number
+// INFO: formatify_(0.0%,999.9999) = 100000.0 (String)
+// readRows(Incorporation): TERMS: test_a_var_9 = 999.9999 --> 100000.0 (String)
+
+// readRows: row 17: processing row test a var 10:
+// formatify_(0%, 999.9999) called. the input string is a Number
+// INFO: formatify_(0%,999.9999) = 100000 (String)
+// readRows(Incorporation): TERMS: test_a_var_10 = 999.9999 --> 100000 (String)
+
+// readRows: row 18: processing row test a var 11:
+// formatify_(0.00, 999.9999) called. the input string is a Number
+// INFO: formatify_(0.00,999.9999) = 1000.00 (String)
+// readRows(Incorporation): TERMS: test_a_var_11 = 999.9999 --> 1000.00 (String)
+
+// readRows: row 19: processing row test a var 12:
+// formatify_(0, 999.9999) called. the input string is a Number
+// INFO: formatify_(0,999.9999) = 1000 (String)
+// readRows(Incorporation): TERMS: test_a_var_12 = 999.9999 --> 1000 (String)
+
+// readRows: row 20: processing row test b var 1:
+// formatify_(, 1000) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(,1000) = 1000 (String)
+// readRows(Incorporation): TERMS: test_b_var_1 = 1000 --> 1000 (String)
+
+// readRows: row 21: processing row test b var 2:
+// formatify_([$S$]#,##0.000, 1000.0) called. the input string is a Number
+// asCurrency_([$S$]#,##0.000,1000.0,undefined)
+// asCurrency_() chop = 3.0
+// digitCommas_(1000.0,3.0,undefined): returning 1,000.000
+// INFO: formatify_([$S$]#,##0.000,1000) = S$1,000.000 (String)
+// readRows(Incorporation): TERMS: test_b_var_2 = 1000.0 --> S$1,000.000 (String)
+
+// readRows: row 22: processing row test b var 3:
+// formatify_(#,##0.000, 1000.0) called. the input string is a Number
+// digitCommas_(1000.0,3.0,undefined): returning 1,000.000
+// INFO: formatify_(#,##0.000,1000) = 1,000.000 (String)
+// readRows(Incorporation): TERMS: test_b_var_3 = 1000.0 --> 1,000.000 (String)
+
+// readRows: row 23: processing row test b var 4:
+// formatify_(#,##0, 1000.0) called. the input string is a Number
+// digitCommas_(1000.0,0.0,undefined): returning 1,000
+// INFO: formatify_(#,##0,1000) = 1,000 (String)
+// readRows(Incorporation): TERMS: test_b_var_4 = 1000.0 --> 1,000 (String)
+
+// readRows: row 24: processing row test b var 5:
+// formatify_([$S$]#,##0, 1000.0) called. the input string is a Number
+// asCurrency_([$S$]#,##0,1000.0,undefined)
+// asCurrency_() chop = 0.0
+// digitCommas_(1000.0,0.0,undefined): returning 1,000
+// INFO: formatify_([$S$]#,##0,1000) = S$1,000 (String)
+// readRows(Incorporation): TERMS: test_b_var_5 = 1000.0 --> S$1,000 (String)
+
+// readRows: row 25: processing row test b var 6:
+// formatify_(#,##0.00000, 1000.0) called. the input string is a Number
+// digitCommas_(1000.0,5.0,undefined): returning 1,000.00000
+// INFO: formatify_(#,##0.00000,1000) = 1,000.00000 (String)
+// readRows(Incorporation): TERMS: test_b_var_6 = 1000.0 --> 1,000.00000 (String)
+
+// readRows: row 26: processing row test b var 7:
+// formatify_(0.###############, 1000.0) called. the input string is a Number
+// INFO: formatify_(0.###############,1000) = 1000 (String)
+// readRows(Incorporation): TERMS: test_b_var_7 = 1000.0 --> 1000 (String)
+
+// readRows: row 27: processing row test c var 1:
+// formatify_(#,##0.00, not a number lol) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(#,##0.00,not a number lol) = not a number lol (String)
+// readRows(Incorporation): TERMS: test_c_var_1 = not a number lol --> not a number lol (String)
+
+// readRows: row 28: processing row test c var 2:
+// formatify_(#,##0.00, ) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(#,##0.00,) =  (String)
+// readRows(Incorporation): TERMS: test_c_var_2 =  -->  (String)
+
+// readRows: row 29: processing row test c var 3:
+// formatify_(0.###############, ) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(0.###############,) =  (String)
+// readRows(Incorporation): TERMS: test_c_var_3 =  -->  (String)
+
+// readRows: row 30: processing row test c var 4:
+// formatify_(, ) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(,) =  (String)
+// readRows(Incorporation): TERMS: test_c_var_4 =  -->  (String)
+
+// readRows: row 31: processing row  test d var 1:
+// formatify_(, -999.9999) called. the input string is a String
+// INFO: formatify(String) fell to default; will toString()
+// INFO: formatify_(,-999.9999) = -999.9999 (String)
+// readRows(Incorporation): TERMS: test_d_var_1 = -999.9999 --> -999.9999 (String)
+
+// readRows: row 32: processing row test d var 2:
+// formatify_([$S$]#,##0.000, -999.9999) called. the input string is a Number
+// asCurrency_([$S$]#,##0.000,-999.9999,undefined)
+// asCurrency_() chop = 3.0
+// digitCommas_(-999.9999,3.0,undefined): returning -1,000.000
+// INFO: formatify_([$S$]#,##0.000,-999.9999) = S$-1,000.000 (String)
+// readRows(Incorporation): TERMS: test_d_var_2 = -999.9999 --> S$-1,000.000 (String)
+
+// readRows: row 33: processing row test d var 3:
+// formatify_(#,##0.000, -999.9999) called. the input string is a Number
+// digitCommas_(-999.9999,3.0,undefined): returning -1,000.000
+// INFO: formatify_(#,##0.000,-999.9999) = -1,000.000 (String)
+// readRows(Incorporation): TERMS: test_d_var_3 = -999.9999 --> -1,000.000 (String)
+
+// readRows: row 34: processing row test d var 4:
+// formatify_(#,##0, -999.9999) called. the input string is a Number
+// digitCommas_(-999.9999,0.0,undefined): returning -1,000
+// INFO: formatify_(#,##0,-999.9999) = -1,000 (String)
+// readRows(Incorporation): TERMS: test_d_var_4 = -999.9999 --> -1,000 (String)
+
+// readRows: row 35: processing row test d var 5:
+// formatify_([$S$]#,##0, -999.9999) called. the input string is a Number
+// asCurrency_([$S$]#,##0,-999.9999,undefined)
+// asCurrency_() chop = 0.0
+// digitCommas_(-999.9999,0.0,undefined): returning -1,000
+// INFO: formatify_([$S$]#,##0,-999.9999) = S$-1,000 (String)
+// readRows(Incorporation): TERMS: test_d_var_5 = -999.9999 --> S$-1,000 (String)
+
+// readRows: row 36: processing row test d var 6:
+// formatify_(#,##0.00000, -999.9999) called. the input string is a Number
+// digitCommas_(-999.9999,5.0,undefined): returning -999.99990
+// INFO: formatify_(#,##0.00000,-999.9999) = -999.99990 (String)
+// readRows(Incorporation): TERMS: test_d_var_6 = -999.9999 --> -999.99990 (String)
+
+// readRows: row 37: processing row test d var 7:
+// formatify_(0.###############, -999.9999) called. the input string is a Number
+// INFO: formatify_(0.###############,-999.9999) = -999.9999 (String)
+// readRows(Incorporation): TERMS: test_d_var_7 = -999.9999 --> -999.9999 (String)
+
+// readRows: row 38: processing row test d var 8:
+// formatify_(0.00%, -999.9999) called. the input string is a Number
+// INFO: formatify_(0.00%,-999.9999) = -99999.99 (String)
+// readRows(Incorporation): TERMS: test_d_var_8 = -999.9999 --> -99999.99 (String)
+
+// readRows: row 39: processing row test d var 9:
+// formatify_(0.0%, -999.9999) called. the input string is a Number
+// INFO: formatify_(0.0%,-999.9999) = -100000.0 (String)
+// readRows(Incorporation): TERMS: test_d_var_9 = -999.9999 --> -100000.0 (String)
+
+// readRows: row 40: processing row test d var 10:
+// formatify_(0%, -999.9999) called. the input string is a Number
+// INFO: formatify_(0%,-999.9999) = -100000 (String)
+// readRows(Incorporation): TERMS: test_d_var_10 = -999.9999 --> -100000 (String)
+
 function formatify_(format, string, sheet, fieldname) {
   var toreturn;
+  var chop = 0;
+  var mymatch;
+
   if (format != undefined) {
+	// Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
     var matches;
-    if (matches = format.match(/\[\$(.*)\]/)) { // currency
+	// currency: [$S$]#,##0.000
+    if (matches = format.match(/\[\$(.*)\]/)) {
 	  // TODO: move this to a configuration, not a hardcoding
 	  if (fieldname && fieldname.match(/price_per.*_share/)) { // price per f share
 		toreturn = asCurrency_(format, string, false);
@@ -862,9 +1109,12 @@ function formatify_(format, string, sheet, fieldname) {
 		toreturn = asCurrency_(format, string);
 	  }		
     }
+	// percentage: 0%  0.0%  0.00%
     else if (format.match(/%$/)) {
-      toreturn = (string * 100).toFixed(2);
+	  if (mymatch = format.match(/0\.(0+)/)) { chop = mymatch[1].length }
+      toreturn = (string * 100).toFixed(chop);
     }
+	// date
     else if (format.match(/yyyy/)) {
     // INFO: expanding term Fri Dec 19 2014 00:00:00 GMT+0800 (HKT) with format yyyy"-"mm"-"dd
     // INFO: expanding term Thu Jan 15 2015 00:00:00 GMT+0800 (HKT) with format yyyy"-"mm"-"dd
@@ -878,23 +1128,27 @@ function formatify_(format, string, sheet, fieldname) {
 //	  Logger.log("output date: " + toreturn);
 
     }
-	else if (format.match(/^0/) && ! format.match(/%/) && string.constructor.name == "Number") {
-	  Logger.log("INFO: formatting ... format=%s string=%s", format, string);
-	  var myzeroes = format.match(/#+/);
-	  Logger.log("INFO: formatting ... myzeroes = %s", myzeroes);
-	  if (myzeroes == undefined) { myzeroes = 0 }
-	  else { myzeroes = myzeroes[0].length }
-	  Logger.log("INFO: formatting ... format=%s so running %s.toFixed(%s) = %s", format, string, myzeroes, toreturn);
-	  toreturn = Number(string).toFixed(myzeroes);
+	// automatic: 0   0.0   0.00
+	else if (format.match(/^0/) && ! format.match(/%|#/) && string.constructor.name == "Number") {
+	  if (mymatch = format.match(/0\.(0+)/)) { chop = mymatch[1].length }
+	  toreturn = string.toFixed(chop);
 	}
-	else if (format.match(/^#.*0/) && string.constructor.name == "String") {
-	  Logger.log("INFO: formatting ... format=%s string=%s", format, string);
-	  toreturn = string;
+	// automatic: 0.###############
+	else if (format.match(/^0/) && string.constructor.name == "Number") {
+	  toreturn = string.toString();
 	}
-	else { toreturn = string }
+	// number:  #,##0.000   #,##0
+	else if (format.match(/^#.*#0/) && string.constructor.name == "Number") {
+	  if (mymatch = format.match(/0\.(0+)/)) { chop = mymatch[1].length }
+	  toreturn = digitCommas_(string, chop);
+	}
+	else {
+	  // Logger.log("INFO: formatify(%s) fell to default; will toString()", string.constructor.name);
+	  toreturn = string.toString();
+	}
   }
   else { toreturn = string }
-//  Logger.log("INFO: formatify_("+format+","+string+") = "+toreturn);
+  // Logger.log("INFO: formatify_("+format+","+string+") = "+toreturn+ " ("+toreturn.constructor.name+")");
   return toreturn;
 }
 
@@ -1139,7 +1393,7 @@ function availableTemplates_() {
 	},
 	{ name:"jfdi_volunteer_agreement", title:"Volunteer Agreement",
 	   url:baseUrl + "templates/jfdi.asia/jfdi_06_volunteer_agreement.xml",
-	  parties:{to:["company"], cc:["corporate_secretary", "investor"]},
+	  parties:{to:["company"], cc:["corporate_secretary"]},
 	  explode:"volunteer",
 //	  nocache:true,
 	},
@@ -1296,7 +1550,7 @@ function availableTemplates_() {
   },
   { name:"test_templatespec", title:"Test templateSpec",
 	url:baseUrl + "templates/jfdi.asia/test-templatespec.xml",
-	parties:{to:["company[0]"],cc:["founder"]},
+	parties:{to:["company"],cc:["founder"]},
 	// nocache:true,
   },
   { name:"employment_agreement", title:"Employment Agreement",
@@ -2611,7 +2865,7 @@ function asCurrency_(currency, amount, chop) {
   var mycurrency = currency;
   Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
   var mymatch;
-  if (mymatch = currency.match(/#0.(0+)/)) { chop = mymatch[1].length }
+  if (mymatch = currency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
   if (currency.match(/#0$/))     { chop = 0 }
   Logger.log("asCurrency_() chop = %s", chop);
   
@@ -2631,27 +2885,23 @@ function digitCommas_(numstr, chop, formatstr) {
   //  #,##0.00   -- 2 decimal digits
 
   if (numstr == undefined) { return }
-  var parts = numstr.constructor.name == "String" ? numstr.split(".") : numstr.toString().split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
-  // maybe the input was a whole number. parts[0] is something, and there is no parts[1].
-  if (parts.length == 1) { parts[1] = 0 }
-
-  if (formatstr != undefined) {
-	var match = formatstr.match(/\.(0+)/);
-	var digits = 0;
-	if (! match) { digits = chop || 0 }
-	else { digits = match[1].length }
-	Logger.log("INFO: digitCommas(%s, %s, %s) needs %s decimal digits", numstr, chop, formatstr, digits);
-	chop = digits;
+  var asNum;
+  if      (numstr.constructor.name == "Number") { asNum = numstr; }
+  else { Logger.log("WARNING: digitCommas given a %s to work with (%s); hope Number() works1",
+					numstr.constructor.name, numstr);
+		 asNum = Number(numstr);
+	   }
+  if (chop == undefined && formatstr != undefined) {
+	chop = 0;
+	if (formatstr.match(/0\.(0+)/)) { chop = formatstr.match(/0\.(0+)/)[1].length }
   }
+  asNum = asNum.toFixed(chop);
 
-  while (parts[1].length < chop) { parts[1] = parts[1] + "0" }
-  while (parts[1].length > chop) { parts[1] = parts[1].substr(0,chop) }
-  if (chop == 0) { parts.pop() }
+  var parts = asNum.split(/\./);
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   
   var asString = parts.join(".");
-  Logger.log("digitCommas_(%s,%s,%s): returning %s", numstr, chop, formatstr, asString);
+  // Logger.log("digitCommas_(%s,%s,%s): returning %s", numstr, chop, formatstr, asString);
   return asString;
 }
 
