@@ -672,7 +672,7 @@ function readRows_(sheet, entitiesByName) {
 		Logger.log("readRows(%s):         ROLES: learning party role %s = %s", sheet.getSheetName(), relation, entityname);
 		
 		for (var role_x = 2; role_x < row.length; role_x+=2) {
-		  if (row[role_x] && row[role_x+1]) {
+		  if (row[role_x] && row[role_x+1] != undefined) {
 			Logger.log("ROLES: learning attribute %s.%s = %s", entityname, asvar_(row[role_x]), formatify_(formats[i][role_x+1], row[role_x+1], sheet));
 			entity[asvar_(row[role_x])] = formatify_(formats[i][role_x+1], row[role_x+1], sheet, asvar_(row[role_x]));
 			entity["_format_" + asvar_(row[role_x])] = formats[i][role_x+1];
