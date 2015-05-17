@@ -1097,12 +1097,7 @@ function formatify_(format, string, sheet, fieldname) {
     var matches;
 	// currency: [$S$]#,##0.000
     if (matches = format.match(/\[\$(.*)\]/)) {
-	  // TODO: move this to a configuration, not a hardcoding
-	  if (fieldname && fieldname.match(/price_per.*_share/)) { // price per f share
-		toreturn = asCurrency_(format, string, false);
-	  } else {
-		toreturn = asCurrency_(format, string);
-	  }		
+	  toreturn = asCurrency_(format, string);
     }
 	// percentage: 0%  0.0%  0.00%
     else if (format.match(/%$/)) {
@@ -1351,6 +1346,14 @@ function availableTemplates_() {
 //	parties:{to:["director"], cc:["corporate_secretary"]},
 //	nocache:true,
 //  },
+	{ name:"mod_party_sum", title:"add party attributes",
+	   url:baseUrl + "templates/jfdi.asia/mod_party_sum.xml",
+	  nocache:true,
+	},
+	{ name:"mod_test1_modules", title:"test module 1",
+	   url:baseUrl + "templates/jfdi.asia/mod_test1_modules.xml",
+	  nocache:true,
+	},
 	{ name:"nda", title:"Nondisclosure Agreement",
 	   url:baseUrl + "templates/jfdi.asia/nondisclosure.xml",
 	  parties:{to:["company"], cc:[]},
@@ -2013,7 +2016,8 @@ function fillTemplates(sheet) {
   var buildTemplate = function(sourceTemplates, entity, rcpts) { // this is a callback run within the docsetEmails object.
 	var sourceTemplate = sourceTemplates[0];
 	var newTemplate = obtainTemplate_(sourceTemplate.url, sourceTemplate.nocache, readmeDoc);
-	newTemplate.data = templatedata;
+	newTemplate.data = templatedata; // NOTE: this is the  first global inside the XML context
+	newTemplate.data.sheet = sheet;  // NOTE: this is the second global inside the XML context
 
 	if (templatedata._origparties == undefined) {
 	  templatedata._origparties = {};
@@ -2161,7 +2165,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------- include
-// used inside <? ?>
+// used inside <?= ?> and <? ?>
 function include(name, data, _include, _include2) {
   Logger.log("include(%s) running", name);
 //  Logger.log("include(%s) _include=%s, _include2=%s", name, _include, _include2);
@@ -2171,7 +2175,7 @@ function include(name, data, _include, _include2) {
   if (filtered.length == 1) {
 	var template = filtered[0];
 	var childTemplate = obtainTemplate_(template.url, template.nocache);
-	childTemplate.data = data;
+	childTemplate.data  = data;
 	childTemplate.data._include = _include || {};
 	childTemplate.data._include2 = _include2 || {};
 	var filledHTML = childTemplate.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME).getContent();
