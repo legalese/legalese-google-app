@@ -2830,15 +2830,17 @@ function getOrdinalFor_ (intNum, includeNumber) {
 function plural(num, singular, plural, locale) {
   if (locale == undefined) { locale = "en-US" }
   if (num.constructor.name == "Array") { num = num.length }
+  if (num.constructor.name == "String") { num = Number(num.replace(/[^0-9.]/, "")) }
   if (locale == "en-US") {
 	if (plural == undefined) {
 	  if      (singular == "my")  { plural = "our" }
 	  else if (singular == "its") { plural = "their" }
 	  else                        { plural = singular + "s" }
 	}
-	if (num  > 1) { return plural }
-	if (num == 1) { return singular }
-	if (num == 0) { return plural }
+	if (isNaN(num)) { return plural }
+	if (num  > 1)   { return plural }
+	if (num == 1)   { return singular }
+	if (num == 0)   { return plural }
 	Logger.log("WARNING: unable to determine if %s is singular or plural.", num);
   }
 }
