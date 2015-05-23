@@ -48,7 +48,7 @@ function getEchoSignService() {
       .setTokenUrl('https://secure.echosign.com/oauth/token')
       // Set the name of the callback function in the script referenced 
       // above that should be invoked to complete the OAuth flow.
-      .setCallbackFunction('authCallback')
+      .setCallbackFunction('legaleseSignature.authCallback')
 
       // Set the property store where authorized tokens should be persisted.
       .setPropertyStore(PropertiesService.getDocumentProperties())
@@ -156,7 +156,7 @@ function fauxMegaSign(sheet) {
   var sheetPassedIn = ! (sheet == undefined);
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var entitiesByName = {};
-  var readRows = readRows_(sheet, entitiesByName);
+  var readRows = legaleseMain.readRows(sheet, entitiesByName);
   var terms    = readRows.terms;
   var config   = readRows.config;
 
@@ -180,7 +180,7 @@ function fauxMegaSign(sheet) {
   for (var p in parties._unmailed) {
 	var party = parties._unmailed[p];
 	// if multi-address, then first address is To: and subsequent addresses are CC
-	var to_cc = legaleseMain.email_to_cc_(party.email);
+	var to_cc = legaleseMain.email_to_cc(party.email);
 	if (to_cc[0] != undefined && to_cc[0].length > 0) {
 	  party._email_to = to_cc[0];
 	  to_list.push(party);
@@ -230,6 +230,12 @@ function fauxMegaSign(sheet) {
   Logger.log("fauxMegaSign: that's all, folks!");
 }
 
+function templateTitles(templates) {
+  if (templates.length == 1) { return templates[0].title }
+  return templates.map(function(t){return t.sequence}).join(", ");
+}
+
+
 // ---------------------------------------------------------------------------------------------------------------- uploadAgreement
 // send PDFs to echosign.
 // if the PDFs don't exist, send them to InDesign for creation and wait.
@@ -269,21 +275,21 @@ function uploadAgreement(sheet, interactive) {
 
   var ss = sheet.getParent();
   var entitiesByName = {};
-  var readRows = legaleseMain.readRows_(sheet, entitiesByName);
+  var readRows = legaleseMain.readRows(sheet, entitiesByName);
   var terms    = readRows.terms;
   var config   = readRows.config;
 
-  var readmeDoc = legaleseMain.getReadme_(sheet);
+  var readmeDoc = legaleseMain.getReadme(sheet);
 
   // TODO: be more organized about this. in the same way that we generated one or more output PDFs for each input template
   // we now need to upload exactly that number of PDFs as transientdocuments, then we need to uploadAgreement once for each PDF.
 
-  var parties = legaleseMain.roles2parties_(readRows);
+  var parties = legaleseMain.roles2parties(readRows);
 
-  var suitables = legaleseMain.suitableTemplates_(config);
+  var suitables = legaleseMain.suitableTemplates(config);
   Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
-  var docsetEmails = new legaleseMain.docsetEmails_(sheet, readRows, parties, suitables);
+  var docsetEmails = new legaleseMain.docsetEmails(sheet, readRows, parties, suitables);
 
   // we need to establish:
   // an AGREEMENT contains one or more transientDocuments
@@ -297,15 +303,14 @@ function uploadAgreement(sheet, interactive) {
 
   var uploadTransientDocument = function(sourceTemplates, entity, rcpts) {
 	var sourceTemplate = sourceTemplates[0];
-	var filename = legaleseMain.filenameFor_(sourceTemplate, entity) + ".pdf";
+	var filename = legaleseMain.filenameFor(sourceTemplate, entity) + ".pdf";
 
 	var api = getEchoSignService();
 	var o = { headers: { "Access-Token": api.getAccessToken() } };
 	o.method = "post";
-	var uniq = legaleseMain.uniqueKey_(sheet);
-	var folderId   = JSON.parse(PropertiesService.getDocumentProperties().getProperty("legalese."+uniq+".folder.id"));
-	var folderName = JSON.parse(PropertiesService.getDocumentProperties().getProperty("legalese."+uniq+".folder.name"));
-	Logger.log("uploadTransientDocument: for spreadsheet %s, folder.id = %s", uniq, folderId);
+	var folderId   = legaleseMain.getDocumentProperty(sheet, "folder.id");
+	var folderName = legaleseMain.getDocumentProperty(sheet, "folder.name");
+	Logger.log("uploadTransientDocument: folder.id = %s", folderId);
 	if (folderId == undefined) {
 	  throw("can't find folder for PDFs. try Generate PDFs.");
 	}
@@ -339,7 +344,7 @@ function uploadAgreement(sheet, interactive) {
   };
 
   var multiTitles = function(templates, entity) { var ts = templates.constructor.name == "Array" ? templates : [templates];
-												  return ts.map(function(t){return filenameFor_(t, entity)+".pdf"}).join(",") };
+												  return ts.map(function(t){return legaleseMain.filenameFor(t, entity)+".pdf"}).join(",") };
 
   var createAgreement = function(templates, entity, rcpts) {
 	Logger.log("at this point we would call postAgreement for %s to %s",
@@ -351,7 +356,7 @@ function uploadAgreement(sheet, interactive) {
 	  return "skipping echosign as requested by entity";
 	}
 	
-	var tDocIds = templates.map(function(t){return transientDocumentIds[filenameFor_(t,entity)+".pdf"]});
+	var tDocIds = templates.map(function(t){return transientDocumentIds[legaleseMain.filenameFor(t,entity)+".pdf"]});
 
 	if (tDocIds == undefined || tDocIds.length == 0) {
  	  Logger.log("transient documents were not uploaded to EchoSign. not uploading agreement.");
@@ -376,7 +381,7 @@ function uploadAgreement(sheet, interactive) {
 	readmeDoc.appendParagraph("CC: " + cc_list.join(", "));
 
 	// the exploded version needs a more specific title so the filenames don't clobber
-	var esTitle = config.echosign.tree.title + " - " + templateTitles_(templates);
+	var esTitle = config.echosign.tree.title + " - " + templateTitles(templates);
 	if (entity) esTitle += " - " + entity.name;
 	
  	var acr = postAgreement_( tDocIds.map(function(t){return { "transientDocumentId": t } }),
@@ -417,7 +422,7 @@ function uploadAgreement(sheet, interactive) {
 
 // ---------------------------------------------------------------------------------------------------------------- uploadOtherAgreements_
 function uploadOtherAgreements_(interactive) {
-  var sheets = otherSheets_();
+  var sheets = legaleseMain.otherSheets();
   
   for (var i = 0; i < sheets.length; i++) {
 	var sheet = sheets[i];

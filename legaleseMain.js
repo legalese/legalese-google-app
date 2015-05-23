@@ -59,7 +59,7 @@
  * For more information on using the Spreadsheet API, see
  * https://developers.google.com/apps-script/service_spreadsheet
  */
-function onOpen(addOnMenu) {
+function onOpen(addOnMenu, legaleseSignature) {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getActiveSheet();
 
@@ -182,21 +182,21 @@ function setupForm(sheet) {
 
   var ss = sheet.getParent();
   var entitiesByName = {};
-  var readRows = readRows_(sheet, entitiesByName);
+  var readRows_ = readRows(sheet, entitiesByName);
 
   Logger.log("setupForm: readRows complete: %s", readRows);
 
-  if (readRows.principal
-	  && readRows.principal._origin_sheet_id
-	  && readRows.principal._origin_sheet_id != sheet.getSheetId()) {
+  if (readRows_.principal
+	  && readRows_.principal._origin_sheet_id
+	  && readRows_.principal._origin_sheet_id != sheet.getSheetId()) {
 	Logger.log("setupForm: switching target of the form to the %s sheet.", sheet.getSheetName());
-	sheet = getSheetById_(ss, readRows.principal._origin_sheet_id);
+	sheet = getSheetById_(ss, readRows_.principal._origin_sheet_id);
 	entitiesByName = {};
-	readRows = readRows_(sheet, entitiesByName);
+	readRows_ = readRows(sheet, entitiesByName);
   }
   
-  var data   = readRows.terms;
-  var config = readRows.config;
+  var data   = readRows_.terms;
+  var config = readRows_.config;
 
   var form = ss.getFormUrl();
 
@@ -243,7 +243,7 @@ function setupForm(sheet) {
   PropertiesService.getUserProperties().setProperty("legalese."+ss.getId()+".formActiveSheetId", sheet.getSheetId().toString());
   Logger.log("setting formActiveSheetId to %s", sheet.getSheetId().toString());
 
-  var origentityfields = readRows._origentityfields;
+  var origentityfields = readRows_._origentityfields;
   Logger.log("origentityfields = " + origentityfields);
   for (var i in origentityfields) {
 	if (i == undefined) { continue }
@@ -399,14 +399,14 @@ function onFormSubmit(e) {
 
   var sheet = getSheetById_(SpreadsheetApp.getActiveSpreadsheet(), sheetId);
   var entitiesByName = {}
-  var readRows = readRows_(sheet, entitiesByName);
-  var data   = readRows.terms;
-  var config = readRows.config;
+  var readRows_ = readRows(sheet, entitiesByName);
+  var data   = readRows_.terms;
+  var config = readRows_.config;
 
   // add a row and insert the investor fields
-  Logger.log("onFormSubmit: inserting a row after " + (parseInt(readRows._last_entity_row)+1));
-  sheet.insertRowAfter(readRows._last_entity_row+1); // might need to update the commitment sum range
-  var newrow = sheet.getRange(readRows._last_entity_row+2,1,1,sheet.getMaxColumns());
+  Logger.log("onFormSubmit: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
+  sheet.insertRowAfter(readRows_._last_entity_row+1); // might need to update the commitment sum range
+  var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
 //  newrow.getCell(0,0).setValue("bar");
 
   // loop through the origentityfields inserting the new data in the right place.
@@ -414,7 +414,7 @@ function onFormSubmit(e) {
 	Logger.log("onFormSubmit: e.namedValues = " + names + ": "+e.namedValues[names][0]);
   }
 
-  var origentityfields = readRows._origentityfields;
+  var origentityfields = readRows_._origentityfields;
   Logger.log("onFormSubmit: origentityfields = " + origentityfields);
 
   for (var i = 0; i < origentityfields.length; i++) {
@@ -467,8 +467,8 @@ function hyperlink2sheet_(hyperlink) { // input: either a =HYPERLINK formula or 
  * the ENTITIES go into entitiesByName
  * the TERMS go into data.* directly.
  */
-function readRows_(sheet, entitiesByName) {
-  Logger.log("readRows_: will use sheet " + sheet.getName());
+function readRows(sheet, entitiesByName) {
+  Logger.log("readRows: will use sheet " + sheet.getName());
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
@@ -528,7 +528,7 @@ function readRows_(sheet, entitiesByName) {
 	  Logger.log("readRows(%s): encountered INCLUDE %s", sheet.getSheetName(), row[1]);
 	  if (include_sheet == undefined) { throw("unable to fetch included sheet " + row[1]) }
 	  
-	  var includedReadRows = readRows_(include_sheet, entitiesByName);
+	  var includedReadRows = readRows(include_sheet, entitiesByName);
 	  Logger.log("readRows(%s): back from INCLUDE %s; returned principal = %s",
 				 sheet.getSheetName(), row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined);
 	  // hopefully we've learned about a bunch of new Entities directly into the entitiesByName shared dict.
@@ -1184,7 +1184,7 @@ function showclause_(clausetext) {
 
 
 // ---------------------------------------------------------------------------------------------------------------- otherSheets
-function otherSheets_() {
+function otherSheets() {
   var activeRange = SpreadsheetApp.getActiveRange(); // user-selected range
   var rangeValues = activeRange.getValues();
   var toreturn = [];
@@ -1237,14 +1237,14 @@ function quicktest() {
 }
 
 // ---------------------------------------------------------------------------------------------------------------- uniqueKey_
-function uniqueKey_(sheet) {
+function uniqueKey(sheet) {
   var ss = sheet.getParent();
   return ss.getId() + "/" + sheet.getSheetId();
 }
 
 // ---------------------------------------------------------------------------------------------------------------- setupOtherForms_
 function setupOtherForms_() {
-  var sheets = otherSheets_();
+  var sheets = otherSheets();
   for (var i = 0; i < sheets.length; i++) {
 	var sheet = sheets[i];
 	var shortUrl = setupForm(sheet);
@@ -1256,13 +1256,13 @@ function setupOtherForms_() {
 
 // ---------------------------------------------------------------------------------------------------------------- fillOtherTemplates_
 function fillOtherTemplates_() {
-  var sheets = otherSheets_();
+  var sheets = otherSheets();
   for (var i = 0; i < sheets.length; i++) {
 	var sheet = sheets[i];
 	Logger.log("will generate template for " + sheet.getName());
 	fillTemplates(sheet);
 
-	var uniq = uniqueKey_(sheet);
+	var uniq = uniqueKey(sheet);
 
 	var myRow = SpreadsheetApp.getActiveSheet().getRange(SpreadsheetApp.getActiveRange().getRow()+i, 1, 1, 10);
 
@@ -1609,7 +1609,7 @@ function desiredTemplates_(config) {
   return toreturn;
 }
 
-function suitableTemplates_(config) {
+function suitableTemplates(config) {
   var availables = availableTemplates_();
   Logger.log("suitableTemplates: available templates are %s", availables);
   var desireds = desiredTemplates_(config);
@@ -1630,9 +1630,9 @@ function intersect_(array1, array2) {
   return toreturn;
 }
 
-// ---------------------------------------------------------------------------------------------------------------- filenameFor_
+// ---------------------------------------------------------------------------------------------------------------- filenameFor
 // create a canonical filename for a given sourceTemplate,entity pair
-function filenameFor_ (sourceTemplate, entity) {
+function filenameFor (sourceTemplate, entity) {
   var sequence = sourceTemplate.sequence;
   if (sequence == undefined) { sequence = "" } else { sequence = (sequence < 100 && sequence >= 10  ? "0" : "") + sequence + " - " }
   if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.name)
@@ -1718,13 +1718,13 @@ function uniq_( arr ) {
 }
 
 // see documentation in notes-to-self.org
-var docsetEmails_ = function (sheet, readRows, parties, suitables) {
+var docsetEmails = function (sheet, readRows, parties, suitables) {
   this.sheet = sheet;
   this.readRows = readRows;
   this.parties = parties;
   this.suitables = suitables;
 
-  var readmeDoc = getReadme_(sheet);
+  var readmeDoc = getReadme(sheet);
 
   this.sequence;
   if (this.suitables.length > 1) { this.sequence = 1; } // each sourcetemplate gets a sequence ID. exploded templates all share the same sequence id.
@@ -1781,7 +1781,7 @@ var docsetEmails_ = function (sheet, readRows, parties, suitables) {
 		var entity = parties[sourceTemplate.explode][j];
 		// we step through the desired {investor,company}.* arrays.
 		// we set the singular as we step through.
-		var mytitle = filenameFor_(sourceTemplate, entity);
+		var mytitle = filenameFor(sourceTemplate, entity);
 		Logger.log("docsetEmails(): preparing %s exploded %s", sourceTemplate.explode, mytitle);
 		var exploder_to_list = primary_to_list.concat([entity.name]);
 		// TODO: if the exploder's email is multiline there needs to be a way for it to append to the cc_list.
@@ -1807,7 +1807,7 @@ var docsetEmails_ = function (sheet, readRows, parties, suitables) {
 	for (var st in sourceTemplates) {
 	  var sourceTemplate = sourceTemplates[st];
 	  if (explodeEntity) {
-		var mytitle = filenameFor_(sourceTemplate, explodeEntity);
+		var mytitle = filenameFor(sourceTemplate, explodeEntity);
 		all_to = all_to.concat(this._rcpts.exploders[mytitle].to);
 		all_cc = all_cc.concat(this._rcpts.exploders[mytitle].cc);
 	  } else {
@@ -1831,14 +1831,14 @@ var docsetEmails_ = function (sheet, readRows, parties, suitables) {
 
 	  if (this.readRows.config.email_override && this.readRows.config.email_override.values[0]
 		 &&
-		 email_to_cc_(entity.email)[0] && email_to_cc_(entity.email)[0]) {
+		 email_to_cc(entity.email)[0] && email_to_cc(entity.email)[0]) {
 		entity._to_email = plusNum(es_num, this.readRows.config.email_override.values[0]);
 	  }
 	  else {
-		var email_to_cc = email_to_cc_(entity.email);
-		entity._to_email = email_to_cc[0];
+		var email_to_cc_ = email_to_cc(entity.email);
+		entity._to_email = email_to_cc_[0];
 		Logger.log("DEBUG: given entity %s, entity.email is %s and _to_email is %s", entityName, entity.email, entity._to_email);
-		cc_emails = cc_emails.concat(email_to_cc[1]);
+		cc_emails = cc_emails.concat(email_to_cc_[1]);
 	  }
 	  to_emails.push(entity._to_email);
 	  entity._es_num = es_num++;
@@ -1846,8 +1846,8 @@ var docsetEmails_ = function (sheet, readRows, parties, suitables) {
 	}
 	for (var ti in all_cc) {
 	  var entityName = all_cc[ti]; var entity = this.readRows.entitiesByName[entityName];
-	  var email_to_cc = email_to_cc_(entity.email);
-	  cc_emails = cc_emails.concat(email_to_cc[0]).concat(email_to_cc[1]); // both top and subsequent will go to CC
+	  var email_to_cc_ = email_to_cc(entity.email);
+	  cc_emails = cc_emails.concat(email_to_cc_[0]).concat(email_to_cc_[1]); // both top and subsequent will go to CC
 	}
 	if (this.readRows.config.email_override && this.readRows.config.email_override.values[0]) {
 		cc_emails = [this.readRows.config.email_override.values[0]];
@@ -1899,27 +1899,32 @@ var docsetEmails_ = function (sheet, readRows, parties, suitables) {
 };
 
 // map 
-function roles2parties_(readRows) {
+function roles2parties(readRows_) {
   var parties = {};
   // each role shows a list of names. populate the parties array with a list of expanded entity objects.
-  for (var role in readRows.principal.roles) {
-	for (var i in readRows.principal.roles[role]) {
-	  var partyName = readRows.principal.roles[role][i];
-	  if (readRows.entitiesByName[partyName]) {
+  for (var role in readRows_.principal.roles) {
+	for (var i in readRows_.principal.roles[role]) {
+	  var partyName = readRows_.principal.roles[role][i];
+	  if (readRows_.entitiesByName[partyName]) {
 		parties[role] = parties[role] || [];
-		parties[role].push(readRows.entitiesByName[partyName]);
+		parties[role].push(readRows_.entitiesByName[partyName]);
 		// Logger.log("populated parties[%s] = %s (type=%s)",
-		// partyName, readRows.entitiesByName[partyName].email, readRows.entitiesByName[partyName].party_type);
+		// partyName, readRows_.entitiesByName[partyName].email, readRows_.entitiesByName[partyName].party_type);
 	  }
 	  else {
 		Logger.log("WARNING: the Roles section defines a party %s which is not defined in an Entities section, so omitting from the data.parties list.", partyName);
 	  }
 	}
   }
-  if (parties["company"] == undefined) { parties["company"] = [readRows.principal]; }
+  if (parties["company"] == undefined) { parties["company"] = [readRows_.principal]; }
   return parties;
 }
 
+function getDocumentProperty(sheet, propertyname) {
+  var uniq = uniqueKey(sheet);
+  return JSON.parse(PropertiesService.getDocumentProperties().getProperty("legalese."+uniq+"." + propertyname));
+}
+  
 // ---------------------------------------------------------------------------------------------------------------- fillTemplates
 function fillTemplates(sheet) {
 
@@ -1931,16 +1936,16 @@ function fillTemplates(sheet) {
   }
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var entitiesByName = {};
-  var readRows = readRows_(sheet, entitiesByName);
-  var templatedata   = readRows.terms;
-  var config         = readRows.config;
+  var readRows_ = readRows(sheet, entitiesByName);
+  var templatedata   = readRows_.terms;
+  var config         = readRows_.config;
   templatedata.clauses = {};
   templatedata._config = config;
   templatedata._todays_date = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "d MMMM YYYY");
   templatedata._todays_date_wdmy = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "EEEE d MMMM YYYY");
 
-  var entityNames = []; for (var eN in readRows.entityByName) { entityNames.push(eN) }
-  Logger.log("fillTemplates(%s): got back readRows.entitiesByName=%s",
+  var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
+  Logger.log("fillTemplates(%s): got back readRows_.entitiesByName=%s",
 			 sheet.getSheetName(),
 			 entityNames);
 
@@ -1949,7 +1954,7 @@ function fillTemplates(sheet) {
 	return;
   }
 
-  var uniq = uniqueKey_(sheet);
+  var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
   // and when that time comes we won't want to just send all the PDFs -- we'll need a more structured way to let the user decide which PDFs to send to echosign.
   var folder = createFolder_(sheet); var readmeDoc = createReadme_(folder, config, sheet);
@@ -1971,21 +1976,21 @@ function fillTemplates(sheet) {
   templatedata.whitespace_handling_use_characters = '<?whitespace-handling use-characters?>';
   templatedata._timezone = sheet.getParent().getSpreadsheetTimeZone();
 
-  var suitables = suitableTemplates_(config);
+  var suitables = suitableTemplates(config);
   Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   // the parties{} for a given docset are always the same -- all the defined roles are available
-  var parties = roles2parties_(readRows);
+  var parties = roles2parties(readRows_);
 
   templatedata.parties = parties;
 //  Logger.log("FillTemplates: send: assigning templatedata.parties = %s", templatedata.parties);
   templatedata.company = parties.company[0];
-  templatedata._entitiesByName = readRows.entitiesByName;
+  templatedata._entitiesByName = readRows_.entitiesByName;
   
-  var docsetEmails = new docsetEmails_(sheet, readRows, parties, suitables);
+  var docsetEmails_ = new docsetEmails(sheet, readRows_, parties, suitables);
 
   // you will see the same pattern in uploadAgreement.
-  var buildTemplate = function(sourceTemplates, entity, rcpts) { // this is a callback run within the docsetEmails object.
+  var buildTemplate = function(sourceTemplates, entity, rcpts) { // this is a callback run within the docsetEmails_ object.
 	var sourceTemplate = sourceTemplates[0];
 	var newTemplate = obtainTemplate_(sourceTemplate.url, sourceTemplate.nocache, readmeDoc);
 	newTemplate.data = templatedata; // NOTE: this is the  first global inside the XML context
@@ -2023,7 +2028,7 @@ function fillTemplates(sheet) {
 	  for (var kk in keyvalues) {
 		Logger.log("buildTemplate(%s): dealing with %s : %s", sourceTemplate.name, kk, keyvalues[kk]);
 
-		var matches; // there is similar code elsewhere in readRows_() under ROLES
+		var matches; // there is similar code elsewhere in readRows() under ROLES
 		if (matches = keyvalues[kk].match(/^\[(.*)\]$/)) {
 		  // company: [promoter]
 		  // means we temporarily substitute promoter for company
@@ -2054,17 +2059,17 @@ function fillTemplates(sheet) {
 	if (entity) { newTemplate.data.party = newTemplate.data.party || {};
 				  newTemplate.data.party[sourceTemplate.explode] = entity;
 				  newTemplate.data      [sourceTemplate.explode] = entity; }
-	fillTemplate_(newTemplate, sourceTemplate, filenameFor_(sourceTemplate, entity), folder, config);
+	fillTemplate_(newTemplate, sourceTemplate, filenameFor(sourceTemplate, entity), folder, config);
 	// todo: make the title configured in the spreadsheet itself, and get rid of the hardcoded title from the availabletemplates code below.
 	readmeDoc.getBody().appendParagraph("created " + sourceTemplate.title);
 	if (entity) { readmeDoc.getBody().appendParagraph("doing template for " + entity.name); }
   };
 
   Logger.log("FillTemplates(): we do the non-exploded normal templates");
-  docsetEmails.normal(buildTemplate);
+  docsetEmails_.normal(buildTemplate);
 
   Logger.log("FillTemplates(): we do the exploded templates");
-  docsetEmails.explode(buildTemplate);
+  docsetEmails_.explode(buildTemplate);
 
   var ROBOT = 'robot@legalese.io';
   Logger.log("fillTemplates(): sharing %s with %s", folder.getName(), ROBOT);
@@ -2234,13 +2239,13 @@ function createReadme_(folder, config, sheet) { // under the parent folder
   logs_para.setHeading(DocumentApp.ParagraphHeading.HEADING1);
 
   Logger.log("run started");
-  var uniq = uniqueKey_(sheet);
+  var uniq = uniqueKey(sheet);
   PropertiesService.getDocumentProperties().setProperty("legalese."+uniq+".readme.id", JSON.stringify(doc.getId()));
   return doc;
 }
 
-function getReadme_(sheet) {
-  var uniq = uniqueKey_(sheet);
+function getReadme(sheet) {
+  var uniq = uniqueKey(sheet);
   var id = PropertiesService.getDocumentProperties().getProperty("legalese."+uniq+".readme.id");
   if (id != undefined) {
 	return DocumentApp.openById(JSON.parse(id));
@@ -2301,19 +2306,13 @@ function showDocumentProperties_() {
   Logger.log("scriptProperties: %s", JSON.stringify(PropertiesService.getScriptProperties().getProperties()));
 }  
 
-function email_to_cc_(email) {
+function email_to_cc(email) {
   var to = null;
   var emails = email.split(/\s*[\n\r,]\s*/).filter(function(e){return e.length > 0});
   if (emails.length > 0) {
 	to = [emails.shift()];
   }
   return [to, emails];
-}
-
-
-function templateTitles_(templates) {
-  if (templates.length == 1) { return templates[0].title }
-  return templates.map(function(t){return t.sequence}).join(", ");
 }
 
 
@@ -2574,7 +2573,7 @@ function partiesWearingManyHats(data, principal, hats) {
 
 function cloneSpreadsheet() {
   // only callable from the legalese controller
-  // the code below was inspired by otherSheets_()
+  // the code below was inspired by otherSheets()
 
   var activeRange = SpreadsheetApp.getActiveRange(); // user-selected range
   var toreturn = [];
