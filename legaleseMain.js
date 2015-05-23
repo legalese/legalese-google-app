@@ -2,35 +2,8 @@
  *
  * does the form submission trigger DTRT if there are multiple forms all callbacking to the same formsubmit?
  *
- * directors resolution to appoint corporate representative
- *
- * notice of resolution to be filed with ACRA
- *
- * directors and members resolutions to amend the articles of association to define a new class of preferred shares
- *
- * dr-egm_notice-issue_shares should say more about how it's in the best interests of the company, etc etc.
- *
- * create a new company should instantiate a new spreadsheet and prefill it with all known workflows
- * the workflows should prefill terms from a schema or a template derived from the codebase itself
- * it would be nice to have a linter
- * 
- * think about and structure up the Events tab
- *
- * todo -- write to the Readme the list of To: and CC: for when the user is submitting to EchoSign manually.
- *
- * we need a high level way to say "generate workflow W containing agreements X1, X2, X3 for company Y".
- *
 ** import the termsheets from "How to invest in a JFDI Startup"
  *
-**  move the "templates:" configurator from the README to the ActiveSheet. refactor the config processing logic so readrows and readconfig both
- *  use a standard set of functions. this is particularly important to allow the user to select the desired template without having to go over
- *  to the README sheet.
- *  
- *  how do we intuitively allow the end-user to select from among multiple deal terms spreadsheets?
- *  i think we choose the leftmost one, if SpreadsheetApp allows us to disambiguate indexes.
- * 
- *  how do we make it convenient for multiple deal terms to operate against the same set of parties?
- * 
 **  reduce the security threat surface -- find a way to make this work with OnlyCurrentDoc.
  *  https://developers.google.com/apps-script/guides/services/authorization
  * 
@@ -96,7 +69,7 @@ function onOpen(addOnMenu) {
 	.addItem("Create Form", "legaleseMain.setupForm")
 	.addItem("Generate PDFs", "legaleseMain.fillTemplates");
 
-  if (legaleseSignature._loaded) {
+  if (legaleseSignature && legaleseSignature._loaded) {
 	var echosignService = legaleseSignature.getEchoSignService();
 	if (echosignService != null) { 
 	  addOnMenu.addItem("Send to EchoSign", "legaleseSignature.uploadAgreement");
@@ -124,7 +97,7 @@ function onOpen(addOnMenu) {
 	setDataValidation(sheet, "C2", myRange.getA1Notation());
   }
 
-  if (legaleseSignature._loaded) {
+  if (legaleseSignature && legaleseSignature._loaded) {
 	legaleseSignature.showSidebar(sheet);
   }
 };
