@@ -26,3 +26,12 @@ function onOpen() {
   }
 };
 
+
+function onFormSubmit(e) {
+  var legaleseMainExists = false;
+  try { if (legaleseMain) { legaleseMainExists = legaleseMain._loaded } }
+  catch (e) { Logger.log("caught error %s while testing legaleseMain", e) }
+  if (legaleseMainExists) {
+	legaleseMain.onFormSubmit(e);
+  }
+}
