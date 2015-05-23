@@ -550,19 +550,23 @@ function readRows_(sheet, entitiesByName) {
 	  if (include_sheet == undefined) { throw("unable to fetch included sheet " + row[1]) }
 	  
 	  var includedReadRows = readRows_(include_sheet, entitiesByName);
-	  Logger.log("readRows(%s): back from INCLUDE %s; toreturn.principal = %s",
-				 sheet.getSheetName(), row[1], toreturn.principal ? toreturn.principal.name : undefined);
+	  Logger.log("readRows(%s): back from INCLUDE %s; returned principal = %s",
+				 sheet.getSheetName(), row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined);
 	  // hopefully we've learned about a bunch of new Entities directly into the entitiesByName shared dict.
 	  // we throw away the returned object because we don't really care about the included sheet's terms or config.
 
 	  if (principal == undefined) { principal = includedReadRows.principal }
 
-	  Logger.log("readRows(%s): row[2] == %s ... wtf.", sheet.getSheetName(), row[2]);
-	  // if row[2] says "TERMS" then we include the TERMS as well.
-	  if (row[2] == "TERMS") {
-		Logger.log("readRows(%s): including TERMS as well.", sheet.getSheetName());
-		for (var ti in includedReadRows.terms) {
-		  terms[ti] = includedReadRows.terms[ti];
+	  if (row[2] != undefined && row[2].length) {
+		// if row[2] says "TERMS" then we include the TERMS as well.
+		if (row[2] == "TERMS") {
+		  Logger.log("readRows(%s): including TERMS as well.", sheet.getSheetName());
+		  for (var ti in includedReadRows.terms) {
+			terms[ti] = includedReadRows.terms[ti];
+		  }
+		}
+		else {
+		  Logger.log("WARNING: readRows(%s): unexpected row[2]==%s ... wtf. should only be TERMS if anything", sheet.getSheetName(), row[2]);
 		}
 	  }
 
@@ -653,6 +657,11 @@ function readRows_(sheet, entitiesByName) {
 		Logger.log("readRows(%s):         ROLES: merging role %s = %s", sheet.getSheetName(), relation, to_import);
 		if (! (roles[to_import] && roles[to_import].length)) {
 		  Logger.log("readRows(%s):         ERROR: roles[%s] is useless to us", sheet.getSheetName(), to_import);
+		  Logger.log("readRows(%s):         ERROR: maybe we can find it under the principal's roles?");
+		  if (principal.roles[to_import] && principal.roles[to_import].length) {
+			Logger.log("readRows(%s):         HANDLED: found it in principal.roles");
+			roles[relation] = roles[relation].concat(principal.roles[to_import]);
+		  }		  
 		  continue;
 		}
 		else {
