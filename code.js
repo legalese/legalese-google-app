@@ -1578,6 +1578,7 @@ function availableTemplates_() {
 	url:baseUrl + "templates/jfdi.asia/preemptive_waiver.xml",
 	parties:{to:["company"],cc:["corporate_secretary"]},
 	explode: "shareholder",
+	nocache:true,
   },
   { name:"loan_waiver", title:"Waiver of Convertible Loan",
 	url:baseUrl + "templates/jfdi.asia/convertible_loan_waiver.xml",
