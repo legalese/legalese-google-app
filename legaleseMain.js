@@ -218,9 +218,10 @@ function setupForm(sheet) {
   else {
 	var form_title = config.form_title != undefined ? config.form_title.value : ss.getName();
 	var form_description = config.form_description != undefined ? config.form_description.value : "Please fill in your details.";
+	var form_confirmation = config.form_confirmation || 'Thanks for responding!';
 	form = FormApp.create(form_title)
       .setDescription(form_description)
-      .setConfirmationMessage('Thanks for responding!')
+      .setConfirmationMessage(form_confirmation)
       .setAllowResponseEdits(true)
       .setAcceptingResponses(true)
 	  .setProgressBar(false);
