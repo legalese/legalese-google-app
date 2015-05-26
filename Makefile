@@ -1,8 +1,8 @@
-all:		build/code.gs build/legaleseSignature.gs build/legaleseMain.gs
+all:		build/legaleseSignature.gs
 
-build/%.gs:	%.js
+build/legaleseSignature.gs:	legaleseSignature.js build/echosign-api-keys.json
 			perl -ple 's/BUILD_INCLUDE\(([.\w-]+?)\)/qx(cat $$1)/e' $< > $@
 
 clean:		
-			rm build/code.gs
+			rm build/*.gs
 			
