@@ -1674,8 +1674,8 @@ function intersect_(array1, array2) {
 // create a canonical filename for a given sourceTemplate,entity pair
 function filenameFor (sourceTemplate, entity) {
   var sequence = sourceTemplate.sequence;
-  if (sequence == undefined) { sequence = "" } else { sequence = (sequence < 100 && sequence >= 10  ? "0" : "") + sequence + " - " }
-  if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.name)
+  if (sequence == undefined) { sequence = "" } else { sequence = (sequence < 10 ? "0" : "") + sequence + " - " }
+  if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.email || entity.name)
   else        return sequence + sourceTemplate.title;
 };
 
