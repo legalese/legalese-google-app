@@ -1674,7 +1674,7 @@ function intersect_(array1, array2) {
 // create a canonical filename for a given sourceTemplate,entity pair
 function filenameFor (sourceTemplate, entity) {
   var sequence = sourceTemplate.sequence;
-  if (sequence == undefined) { sequence = "" } else { sequence = (sequence < 10 ? "0" : "") + sequence + " - " }
+  if (sequence == undefined || sourceTemplate.sequence_length < 10) { sequence = "" } else { sequence = (sequence < 10 ? "0" : "") + sequence + " - " }
   if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.email || entity.name)
   else        return sequence + sourceTemplate.title;
 };
@@ -1784,7 +1784,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
   for (var i in suitables) {
     var sourceTemplate = suitables[i];
-	if (this.sequence) { sourceTemplate.sequence = this.sequence++ }
+	if (this.sequence) { sourceTemplate.sequence = this.sequence++; this.sequence_length = suitables.length; }
 	var to_list = [], cc_list = [];
 	for (var mailtype in sourceTemplate.parties) {
 	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
