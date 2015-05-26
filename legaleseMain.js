@@ -381,11 +381,9 @@ function treeify_(root, arr) {
  * @param {Object} e The event parameter for form submission to a spreadsheet;
  *     see https://developers.google.com/apps-script/understanding_events
  */
-function onFormSubmit(e) {
+function onFormSubmit(e, legaleseSignature) {
   Logger.log("onFormSubmit: beginning");
 
-  // URGENT TODO: this needs to key off e.source instead.
-  
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheetId = PropertiesService.getUserProperties().getProperty("legalese."+ss.getId()+".formActiveSheetId");
 
@@ -403,7 +401,27 @@ function onFormSubmit(e) {
   var data   = readRows_.terms;
   var config = readRows_.config;
 
-  // add a row and insert the investor fields
+  if (config.demo_mode) {
+	// delete any existing user lines, then add this new one.
+	
+	var parties = roles2parties(readRows_);
+	if (parties.user) {
+	  for (var pui = parties.user.length - 1; pui >=0; pui--) {
+		var party = parties.user[pui];
+		Logger.log("onFormSubmit: demo_mode = true, so deleting existing party %s on row %s", party.name, party._spreadsheet_row);
+		sheet.deleteRow(party._spreadsheet_row);
+	  }
+
+	  SpreadsheetApp.flush();
+	
+	// reread.
+	  readRows_ = readRows(sheet, entitiesByName);
+	  data   = readRows_.terms;
+	  config = readRows_.config;
+	}
+  }
+  
+  // add a row and insert the received fields
   Logger.log("onFormSubmit: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
   sheet.insertRowAfter(readRows_._last_entity_row+1); // might need to update the commitment sum range
   var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
@@ -447,6 +465,21 @@ function onFormSubmit(e) {
 	var newcell = newrow.getCell(1,parseInt(entityfield.column));
 	Logger.log("onFormSubmit: setting value of cell to " + e.namedValues[entityfield.fieldname]);
 	newcell.setValue(e.namedValues[entityfield.fieldname][0]);
+  }
+
+  if (config.demo_mode) {
+	Logger.log("onFormSubmit: demo_mode = TRUE ... will proceed to create templates and mail out");
+	fillTemplates(sheet);
+	Logger.log("onFormSubmit: demo_mode = TRUE ... fillTemplates() completed. next we should inject into echosign.");
+
+	if (legaleseSignature) {
+	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign. but first we will sleep for 3 minutes.");
+	  // we might have to move this to a separate run loop
+	  // because sometimes the InDesign script is busy and will take more than 3 minutes to produce results.
+	  Utilities.sleep(1000*60*3);
+	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign by calling uploadAgreement().");
+	  legaleseSignature.uploadAgreement(sheet, false);
+	}
   }
 }
 
@@ -1317,6 +1350,12 @@ function availableTemplates_() {
 //	parties:{to:["director"], cc:["corporate_secretary"]},
 //	nocache:true,
 //  },
+	{ name:"legalese_eula", title:"Legalese EULA",
+	   url:baseUrl + "templates/legalese/eula.xml",
+	  parties:{to:[], cc:[]},
+	  explode:"user",
+	  nocache:true,
+	},
 	{ name:"mod_party_sum", title:"add party attributes",
 	   url:baseUrl + "templates/jfdi.asia/mod_party_sum.xml",
 	  nocache:true,
@@ -1924,7 +1963,36 @@ function getDocumentProperty(sheet, propertyname) {
   var uniq = uniqueKey(sheet);
   return JSON.parse(PropertiesService.getDocumentProperties().getProperty("legalese."+uniq+"." + propertyname));
 }
-  
+
+// ---------------------------------------------------------------------------------------------------------------- createDemoUser_
+function createDemoUser_(sheet, readRows_, templatedata, config) {
+  if (! config.demo_mode) { return }
+
+  Logger.log("createDemoUser_: INFO: entering Demo Mode.");
+
+  var parties = roles2parties(readRows_);
+
+  if (parties.user) {
+	Logger.log("createDemoUser_: INFO: user is defined: %s", parties.user);
+	
+  } else {
+	var email = Session.getActiveUser().getEmail();
+	Logger.log("createDemoUser_: INFO: user is absent. creating user, who is %s", email);
+
+	Logger.log("createDemoUser_: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
+	sheet.insertRowAfter(readRows_._last_entity_row+1);
+	var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
+
+	newrow.getCell(1,1).setValue("User");
+	newrow.getCell(1,2).setValue(email);
+	newrow.getCell(1,3).setValue(email);
+
+	SpreadsheetApp.flush();
+  }
+
+  return true;
+}
+
 // ---------------------------------------------------------------------------------------------------------------- fillTemplates
 function fillTemplates(sheet) {
 
@@ -1944,6 +2012,15 @@ function fillTemplates(sheet) {
   templatedata._todays_date = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "d MMMM YYYY");
   templatedata._todays_date_wdmy = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "EEEE d MMMM YYYY");
 
+  // if the person is running this in Demo Mode, and there is no User entity defined, then we create one for them.
+  // then we have to reload.
+  if (createDemoUser_(sheet, readRows_, templatedata, config)) {
+	readRows_ = readRows(sheet, entitiesByName);
+	templatedata   = readRows_.terms;
+	config         = readRows_.config;
+	templatedata._config = config;
+  }
+    
   var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
   Logger.log("fillTemplates(%s): got back readRows_.entitiesByName=%s",
 			 sheet.getSheetName(),
@@ -2227,14 +2304,22 @@ function createReadme_(folder, config, sheet) { // under the parent folder
   folder.addFile(docfile);
   DriveApp.getRootFolder().removeFile(docfile);
 
-  doc.getBody().appendParagraph("this was created by Legalese.");
+  doc.getBody().appendParagraph("Hey there, Curious!").setHeading(DocumentApp.ParagraphHeading.TITLE);
+  
+  doc.getBody().appendParagraph("This README was created by Legalese, so you know what's going on.");
 
   var para = doc.getBody().appendParagraph("The origin spreadsheet is ");
   var text = para.appendText(spreadsheet.getName() + ", " + sheet.getName());
   text.setLinkUrl(spreadsheet.getUrl() + "#gid=" + sheet.getSheetId());
 
-  doc.getBody().appendParagraph("You will see a bunch of XMLs in the folder. To create PDFs, share the folder with robot@legalese.io");
+  doc.getBody().appendParagraph("You will see a bunch of XMLs in the folder. In a couple minutes, you should see a bunch of PDFs as well. If you don't see the PDFs, try reloading the page after two minutes have passed.");
 
+  doc.getBody().appendParagraph("Okay, so what next?").setHeading(DocumentApp.ParagraphHeading.HEADING1);;
+  doc.getBody().appendParagraph("The PDF showed up? Good. Now, go back to the yellow spreadsheet and run Add-Ons / Legalese / Send to EchoSign.");
+  doc.getBody().appendParagraph("Or ... add the Add-On for the e-signature backend of your choice; right-click the PDF and send it for signature.");
+  doc.getBody().appendParagraph("When it asks you who to send the document to, enter these email addresses, in this order:");
+  
+  
   var logs_para = doc.getBody().appendParagraph("Logs");
   logs_para.setHeading(DocumentApp.ParagraphHeading.HEADING1);
 
