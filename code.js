@@ -31,7 +31,13 @@ function onFormSubmit(e) {
   var legaleseMainExists = false;
   try { if (legaleseMain) { legaleseMainExists = legaleseMain._loaded } }
   catch (e) { Logger.log("caught error %s while testing legaleseMain", e) }
-  if (legaleseMainExists) {
-	legaleseMain.onFormSubmit(e);
-  }
+
+  if (! legaleseMainExists) return;
+
+  var legaleseSignatureExists = false;
+  try { if (legaleseSignature) { legaleseSignatureExists = legaleseSignature._loaded } }
+  catch (e) { Logger.log("caught error %s while testing legaleseSignature", e) }
+
+  if (legaleseSignatureExists) legaleseMain.onFormSubmit(e, legaleseSignature);
+  else                         legaleseMain.onFormSubmit(e, null);
 }
