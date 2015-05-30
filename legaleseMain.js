@@ -473,6 +473,8 @@ function onFormSubmit(e, legaleseSignature) {
 	fillTemplates(sheet);
 	Logger.log("onFormSubmit: demo_mode = TRUE ... fillTemplates() completed. next we should inject into echosign.");
 
+	SpreadsheetApp.flush();
+	
 	if (legaleseSignature) {
 	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign. but first we will sleep for 3 minutes.");
 	  // we might have to move this to a separate run loop
@@ -480,6 +482,9 @@ function onFormSubmit(e, legaleseSignature) {
 	  Utilities.sleep(1000*60*3);
 	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign by calling uploadAgreement().");
 	  legaleseSignature.uploadAgreement(sheet, false);
+	}
+	else {
+	  Logger.log("onFormSubmit: demo_mode = TRUE ... but the legaleseSignature library is not available, so no echosign.");
 	}
   }
 }
