@@ -2037,6 +2037,10 @@ function fillTemplates(sheet) {
 	return;
   }
 
+  // TODO: this is a stub for when one day we know how to properly parse a captable.
+  // for now we just make it all up
+  templatedata.cap = parseCapTable_(sheet);
+  
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
   // and when that time comes we won't want to just send all the PDFs -- we'll need a more structured way to let the user decide which PDFs to send to echosign.
@@ -2773,5 +2777,37 @@ function BootcampTeamsImportRange () {
 								"!"+myRow.getValues()[0][0]+"')");
   }
 }
+// parse a JFDI-style cap table
+function parseCapTable_(sheet) {
+  var cap = { col : { num_shares : { pre : { esop : { total : null,
+													  issued : null,
+													  reserved : null,
+													},
+											 f : null,
+											 ordinary : null,
+											 yc_aa : null,
+										   },
+									 post : { esop : { total : null,
+													  issued : null,
+													  reserved : null,
+													},
+											 f : null,
+											 ordinary : null,
+											 yc_aa : null,
+											},
+								   },
+					  price_per_share : null,
+					  pre_money_valuation : null,
+					  post_money_valuation: null,
+					  security_type : null,
+					  index : null,
+					},
+			  table : { sheet : sheet },
+			};
+  
+  return cap;
+}
+
+
 
 var _loaded = true;
