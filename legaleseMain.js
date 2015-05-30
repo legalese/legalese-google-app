@@ -1120,8 +1120,12 @@ function formatify_(format, string, sheet, fieldname) {
   var mymatch;
 
   if (format != undefined) {
-	// Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
-    var matches;
+	if (string != undefined && string.constructor.name == "Boolean") {
+	  Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
+	  return string;
+	}
+
+	var matches;
 	// currency: [$S$]#,##0.000
     if (matches = format.match(/\[\$(.*)\]/)) {
 	  toreturn = asCurrency_(format, string);
