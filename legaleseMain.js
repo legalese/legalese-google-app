@@ -1693,7 +1693,7 @@ function intersect_(array1, array2) {
 
 // ---------------------------------------------------------------------------------------------------------------- filenameFor
 // create a canonical filename for a given sourceTemplate,entity pair
-function filenameFor (sourceTemplate, entity) {
+function filenameFor(sourceTemplate, entity) {
   var sequence = sourceTemplate.sequence;
   if (sequence == undefined || sourceTemplate.sequence_length < 10) { sequence = "" } else { sequence = (sequence < 10 ? "0" : "") + sequence + " - " }
   if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.email || entity.name)
@@ -1834,7 +1834,6 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
 	} else { // explode first and then set this._rcpts.exploders
 	  Logger.log("docsetEmails(): will explode %s", sourceTemplate.explode);
-	  readmeDoc.getBody().appendParagraph("docsetEmails(): will explode template with one per doc for " + sourceTemplate.explode);
 
 	  var primary_to_list = to_list;
 	  
@@ -2164,8 +2163,10 @@ function fillTemplates(sheet) {
 				  newTemplate.data      [sourceTemplate.explode] = entity; }
 	fillTemplate_(newTemplate, sourceTemplate, filenameFor(sourceTemplate, entity), folder, config);
 	// todo: make the title configured in the spreadsheet itself, and get rid of the hardcoded title from the availabletemplates code below.
-	readmeDoc.getBody().appendParagraph("created " + sourceTemplate.title);
-	if (entity) { readmeDoc.getBody().appendParagraph("doing template for " + entity.name); }
+
+	readmeDoc.getBody().appendParagraph(filenameFor(sourceTemplate, entity)).setHeading(DocumentApp.ParagraphHeading.HEADING2);
+    readmeDoc.getBody().appendParagraph("To: " + rcpts[0].join(", "));
+	if (rcpts[1].length) readmeDoc.getBody().appendParagraph("CC: " + rcpts[1].join(", "));
   };
 
   Logger.log("FillTemplates(): we do the non-exploded normal templates");
@@ -2342,8 +2343,8 @@ function createReadme_(folder, config, sheet) { // under the parent folder
 
   doc.getBody().appendParagraph("Okay, so what next?").setHeading(DocumentApp.ParagraphHeading.HEADING1);;
   doc.getBody().appendParagraph("The PDF showed up? Good. Now, go back to the yellow spreadsheet and run Add-Ons / Legalese / Send to EchoSign.");
-  doc.getBody().appendParagraph("Or ... add the Add-On for the e-signature backend of your choice; right-click the PDF and send it for signature.");
-  doc.getBody().appendParagraph("When it asks you who to send the document to, enter these email addresses, in this order:");
+  doc.getBody().appendParagraph("Or ... if that menu option doesn't appear for you, then in Google Drive, add the Add-On for the e-signature backend of your choice; right-click the PDF and send it for signature.");
+  doc.getBody().appendParagraph("When it asks you who to send the document to, enter the email addresses, in the order shown below.");
   
   
   var logs_para = doc.getBody().appendParagraph("Logs");
