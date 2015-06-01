@@ -1568,7 +1568,7 @@ function availableTemplates_() {
   },
   { name:"kissing", title:"KISS (Singapore)",
 	url:baseUrl + "templates/jfdi.asia/kissing.xml",
-	parties:{to:["founder", "company"],cc:["corporate_secretary"]},
+	parties:{to:["company"],cc:["corporate_secretary"]},
 	explode:"new_investor",
 	nocache:true,
   },
@@ -1644,7 +1644,8 @@ function availableTemplates_() {
 	url:baseUrl + "templates/jfdi.asia/inc_member_notices.xml"
   },
   { name:"inc_additional_resolutions", title:"resolutions 2 and above",
-	url:baseUrl + "templates/jfdi.asia/inc_additional_resolutions.xml"
+	url:baseUrl + "templates/jfdi.asia/inc_additional_resolutions.xml",
+	nocache:true,
   },
   { name:"inc_resolved_mr", title:"members resolution preface",
 	url:baseUrl + "templates/jfdi.asia/inc_resolved_mr.xml"
