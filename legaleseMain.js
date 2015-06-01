@@ -2333,22 +2333,22 @@ function createReadme_(folder, config, sheet) { // under the parent folder
 
   doc.getBody().appendParagraph("Hey there, Curious!").setHeading(DocumentApp.ParagraphHeading.TITLE);
   
-  doc.getBody().appendParagraph("This README was created by Legalese, so you know what's going on.");
+  doc.getBody().appendParagraph("This README was created by Legalese, so you can peek behind the scenes and understand what's going on.");
 
-  var para = doc.getBody().appendParagraph("The origin spreadsheet is ");
+  var para = doc.getBody().appendParagraph("This folder was created when you clicked Add-Ons/Legalese/Generate PDFs, in the spreadsheet named ");
   var text = para.appendText(spreadsheet.getName() + ", " + sheet.getName());
   text.setLinkUrl(spreadsheet.getUrl() + "#gid=" + sheet.getSheetId());
 
-  doc.getBody().appendParagraph("You will see a bunch of XMLs in the folder. In a couple minutes, you should see a bunch of PDFs as well. If you don't see the PDFs, try reloading the page after two minutes have passed.");
+  doc.getBody().appendParagraph("You will see a bunch of XMLs in the folder. In a couple minutes, you should see a bunch of PDFs as well. If you don't see the PDFs, try reloading the page after two or three minutes.");
 
   doc.getBody().appendParagraph("Okay, so what next?").setHeading(DocumentApp.ParagraphHeading.HEADING1);;
-  doc.getBody().appendParagraph("The PDF showed up? Good. Now, go back to the yellow spreadsheet and run Add-Ons / Legalese / Send to EchoSign.");
-  doc.getBody().appendParagraph("Or ... if that menu option doesn't appear for you, then in Google Drive, add the Add-On for the e-signature backend of your choice; right-click the PDF and send it for signature.");
-  doc.getBody().appendParagraph("When it asks you who to send the document to, enter the email addresses, in the order shown below.");
+  doc.getBody().appendParagraph("Review the PDFs. If you're not satisfied, go back to the yellow spreadsheet and keep tweaking.");
+  doc.getBody().appendParagraph("When you are satisfied, if you have EchoSign set up, go back to the spreadsheet and run Add-Ons / Legalese / Send to EchoSign.");
+  doc.getBody().appendParagraph("Not everybody has EchoSign set up to work with Legalese. If that menu option doesn't appear for you, you will have to do it manually. In Google Drive, add the Add-On for EchoSign, or another e-signature service like DocuSign or HelloSign; right-click the PDF and send it for signature via your chosen e-signature service.");
+  doc.getBody().appendParagraph("When it asks you who to send the document to, enter the email addresses, in the order shown below. Review the PDF before it goes out; you may need to position the signature fields on the page.");
   
   
-  var logs_para = doc.getBody().appendParagraph("Logs");
-  logs_para.setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  var logs_para = doc.getBody().appendParagraph("Output PDFs").setHeading(DocumentApp.ParagraphHeading.HEADING1);
 
   Logger.log("run started");
   var uniq = uniqueKey(sheet);
