@@ -1121,7 +1121,6 @@ function formatify_(format, string, sheet, fieldname) {
 
   if (format != undefined) {
 	if (string != undefined && string.constructor.name == "Boolean") {
-	  Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
 	  return string;
 	}
 
@@ -1149,6 +1148,48 @@ function formatify_(format, string, sheet, fieldname) {
 //	  Logger.log("output date: " + toreturn);
 
     }
+	else if (string != undefined && string.constructor.name == "Date") {
+	  // [15-06-02 11:27:27:058 HKT] readRows: row 12: processing row Time of incorporation auto:
+	  // [15-06-02 11:27:27:059 HKT] formatify_(HH:mm, Sat Dec 30 17:41:17 GMT+07:36 1899) called. the input string is a Date
+	  // [15-06-02 11:27:27:061 HKT] readRows(Incorporation): TERMS: time_of_incorporation_auto = Sat Dec 30 17:41:17 GMT+07:36 1899 --> Sat Dec 30 17:41:17 GMT+07:36 1899 (Date)
+	  // [15-06-02 11:27:27:062 HKT] readRows: row 13: processing row Time of incorporation manual:
+	  // [15-06-02 11:27:27:063 HKT] formatify_(HH:mm:ss, Sat Dec 30 18:41:17 GMT+07:36 1899) called. the input string is a Date
+	  // [15-06-02 11:27:27:065 HKT] readRows(Incorporation): TERMS: time_of_incorporation_manual = Sat Dec 30 18:41:17 GMT+07:36 1899 --> Sat Dec 30 18:41:17 GMT+07:36 1899 (Date)
+	  // [15-06-02 11:27:27:066 HKT] readRows: row 14: processing row Time of incorporation manual hhmm:
+	  // [15-06-02 11:27:27:067 HKT] formatify_(h":"mm" "am/pm, Sat Dec 30 18:41:17 GMT+07:36 1899) called. the input string is a Date
+	  // [15-06-02 11:27:27:070 HKT] readRows(Incorporation): TERMS: time_of_incorporation_manual_hhmm = Sat Dec 30 18:41:17 GMT+07:36 1899 --> Sat Dec 30 18:41:17 GMT+07:36 1899 (Date)
+
+	  // http://stackoverflow.com/questions/17715841/gas-how-to-read-the-correct-time-values-form-google-spreadsheet/17727300#17727300
+	  
+	  Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
+
+	  // Get the date value in the spreadsheet's timezone.
+	  var spreadsheetTimezone = sheet.getParent().getSpreadsheetTimeZone();
+	  var dateString = Utilities.formatDate(string, spreadsheetTimezone, 
+											'EEE, d MMM yyyy HH:mm:ss');
+	  var date = new Date(dateString);
+	  
+  // Initialize the date of the epoch.
+	  var epoch = new Date('Dec 30, 1899 00:00:00');
+	  
+	  // Calculate the number of milliseconds between the epoch and the value.
+	  var diff = date.getTime() - epoch.getTime();
+
+	  var myformat;
+	  if      (format == 'h":"mm" "am/pm') { myformat = "h:mm a" }
+	  else if (format == 'HH:mm')          { myformat = "H:mm" }
+	  else if (format == 'HH:mm:ss')       { myformat = "H:mm:ss" }
+	  Logger.log("formatify_(): spreadsheetTimezone=%s", spreadsheetTimezone);
+	  
+	  toreturn = Utilities.formatDate(new Date(diff),
+									  "UTC",
+									  myformat);
+	  
+	  // http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
+
+	  return toreturn;
+	}
+
 	// automatic: 0   0.0   0.00
 	else if (format.match(/^0/) && ! format.match(/%|#/) && string.constructor.name == "Number") {
 	  if (mymatch = format.match(/0\.(0+)/)) { chop = mymatch[1].length }
@@ -1172,7 +1213,6 @@ function formatify_(format, string, sheet, fieldname) {
   // Logger.log("INFO: formatify_("+format+","+string+") = "+toreturn+ " ("+toreturn.constructor.name+")");
   return toreturn;
 }
-
 
 // ---------------------------------------------------------------------------------------------------------------- clauseroot / clausetext2num
 // this is a hints db which hasn't been implemented yet. For InDesign we indicate cross-references in the XML already.
@@ -2498,7 +2538,7 @@ function digitCommas_(numstr, chop, formatstr) {
   var asNum;
   if      (numstr.constructor.name == "Number") { asNum = numstr; }
   else { Logger.log("WARNING: digitCommas given a %s to work with (%s); hope Number() works!",
-					numstr.constructor.name, numstr);
+					numstr.constructor.name, numstr.replace(/[^0-9.]/g,""));
 		 asNum = Number(numstr);
 	   }
   if (chop == undefined && formatstr != undefined) {
@@ -2796,21 +2836,21 @@ function BootcampTeamsImportRange () {
 }
 // parse a JFDI-style cap table
 function parseCapTable_(sheet) {
-  var cap = { col : { num_shares : { pre : { esop : { total : null,
-													  issued : null,
-													  reserved : null,
+  var cap = { col : { num_shares : { pre : { esop : { total : 15000,
+													  issued : 2000,
+													  reserved : 13000,
 													},
-											 f : null,
-											 ordinary : null,
-											 yc_aa : null,
+											 f : 30000,
+											 ordinary : 200,
+											 yc_aa : 0,
 										   },
-									 post : { esop : { total : null,
-													  issued : null,
-													  reserved : null,
+									 post : { esop : { total : 15000,
+													  issued : 2000,
+													  reserved : 13000,
 													},
-											 f : null,
-											 ordinary : null,
-											 yc_aa : null,
+											 f : 30000,
+											 ordinary : 200,
+											 yc_aa : 1000,
 											},
 								   },
 					  price_per_share : null,
