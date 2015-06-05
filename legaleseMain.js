@@ -571,7 +571,7 @@ function readRows(sheet, entitiesByName) {
 	  Logger.log("readRows(%s): back from INCLUDE %s; returned principal = %s",
 				 sheet.getSheetName(), row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined);
 	  // hopefully we've learned about a bunch of new Entities directly into the entitiesByName shared dict.
-	  // we throw away the returned object because we don't really care about the included sheet's terms or config.
+	  // we usually throw away the returned object because we don't really care about the included sheet's terms or config.
 
 	  if (principal == undefined) { principal = includedReadRows.principal }
 
@@ -675,7 +675,12 @@ function readRows(sheet, entitiesByName) {
 		Logger.log("readRows(%s):         ROLES: merging role %s = %s", sheet.getSheetName(), relation, to_import);
 		if (! (roles[to_import] && roles[to_import].length)) {
 		  Logger.log("readRows(%s):         ERROR: roles[%s] is useless to us", sheet.getSheetName(), to_import);
+//		  Logger.log("readRows(%s):         ERROR: roles[] has keys %s", sheet.getSheetName(), roles.keys());
+		  Logger.log("readRows(%s):         ERROR: roles[] has keys %s", sheet.getSheetName(), Object.getOwnPropertyNames(roles));
 		  Logger.log("readRows(%s):         ERROR: maybe we can find it under the principal's roles?");
+
+		  // TODO: note that the import is incomplete because you don't get _format_ and _orig_.
+		  // in the future we should get this all cleaned up with a properly OOPy sheet management system.
 		  if (principal.roles[to_import] && principal.roles[to_import].length) {
 			Logger.log("readRows(%s):         HANDLED: found it in principal.roles");
 			roles[relation] = roles[relation].concat(principal.roles[to_import]);
@@ -2033,21 +2038,26 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
 
   var parties = roles2parties(readRows_);
 
-  if (parties.user) {
-	Logger.log("createDemoUser_: INFO: user is defined: %s", parties.user);
+  if (parties[asvar_(config.default_party_role.value)]) {
+	Logger.log("createDemoUser_: INFO: %s is defined: %s", config.default_party_role.value, parties[asvar_(config.default_party_role.value)].name);
 	
   } else {
 	var email = Session.getActiveUser().getEmail();
-	Logger.log("createDemoUser_: INFO: user is absent. creating user, who is %s", email);
+	Logger.log("createDemoUser_: INFO: user is absent. creating %s, who is %s", config.default_party_role.value, email);
 
 	Logger.log("createDemoUser_: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
 	sheet.insertRowAfter(readRows_._last_entity_row+1);
 	var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
 
-	newrow.getCell(1,1).setValue("User");
-	newrow.getCell(1,2).setValue(email);
+	newrow.getCell(1,1).setValue(config.default_party_role.value);
+	newrow.getCell(1,2).setValue(email.replace(/@.*/,""));
 	newrow.getCell(1,3).setValue(email);
-
+	newrow.getCell(1,4).setValue("Passport Number");
+	newrow.getCell(1,5).setValue("2222222");
+	newrow.getCell(1,6).setValue("1729 Taxicab Way\nRamanujanville NW 01234\nNowhere");
+	newrow.getCell(1,7).setValue("Nowhereland");
+	newrow.getCell(1,8).setValue("person");
+	newrow.getCell(1,9).setValue(config.default_party_role.value);
 	SpreadsheetApp.flush();
   }
 
@@ -2125,7 +2135,11 @@ function fillTemplates(sheet) {
   var parties = roles2parties(readRows_);
 
   templatedata.parties = parties;
-//  Logger.log("FillTemplates: send: assigning templatedata.parties = %s", templatedata.parties);
+  Logger.log("FillTemplates: INFO: assigning templatedata.parties = %s", Object.getOwnPropertyNames(templatedata.parties));
+  for (var p in parties) {
+	Logger.log("FillTemplates: INFO: parties[%s] = %s", p, parties[p].map(function(pp){return pp.name}));
+  }
+
   templatedata.company = parties.company[0];
   templatedata._entitiesByName = readRows_.entitiesByName;
   
@@ -2337,6 +2351,7 @@ function legaleseRootFolder_() {
 	Logger.log("legaleses = " + legaleses);
 	if (legaleses.hasNext()) {
 	  Logger.log("legaleses is defined");
+	  // TODO: exclude any Legalese Root folders that are in the trash.
 	  legalese_root = legaleses.next();
 	  Logger.log("legalese_root = " + legalese_root);
 	} else {
