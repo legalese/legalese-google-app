@@ -1405,6 +1405,12 @@ function availableTemplates_() {
 //	parties:{to:["director"], cc:["corporate_secretary"]},
 //	nocache:true,
 //  },
+	{ name:"hello_world", title:"Hello World",
+	   url:baseUrl + "templates/legalese/hello_world.xml",
+	  parties:{to:["company"],cc:[]},
+	  explode:"buyer",
+	  nocache:true,
+	},
 	{ name:"yc_aa_spa", title:"Y Combinator Series AA Singapore Share Purchase Agreement",
 	   url:baseUrl + "templates/ycombinator-seriesaa/AA-SG-SPA.xml",
 	  parties:{to:["company"],cc:["corporate_secretary"]},
@@ -1619,7 +1625,7 @@ function availableTemplates_() {
   },
   { name:"strikeoff_shareholders", title:"Striking Off for Shareholders",
 	url:baseUrl + "templates/jfdi.asia/strikeoff_shareholders.xml",
-	parties:{to:["director[0]",],cc:[]},
+	parties:{to:["director[0]"],cc:[]},
 	explode:"shareholder",
   },
   { name:"test_templatespec", title:"Test templateSpec",
@@ -1658,6 +1664,7 @@ function availableTemplates_() {
   { name:"founder_agreement", title:"JFDI Accelerate Founder Agreement",
 	url:baseUrl + "templates/jfdi.asia/founderagreement.xml",
 	parties:{to:["founder","investor"], cc:["corporate_secretary"]},
+	nocache:true,
   },
   { name:"dora", title:"DORA",
 	url:baseUrl + "templates/jfdi.asia/dora-signatures.xml",
@@ -1717,7 +1724,7 @@ function desiredTemplates_(config) {
 
 function suitableTemplates(config) {
   var availables = availableTemplates_();
-  Logger.log("suitableTemplates: available templates are %s", availables);
+  Logger.log("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
   var desireds = desiredTemplates_(config);
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // this is slightly buggy. kissing, kissing1, kissing2, didn't work
