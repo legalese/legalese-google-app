@@ -1855,15 +1855,38 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	for (var mailtype in sourceTemplate.parties) {
 	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
 				 sourceTemplate.name, mailtype);
+	  
 	  for (var i in sourceTemplate.parties[mailtype]) {
 		var partytype = sourceTemplate.parties[mailtype][i];
 		Logger.log("docsetEmails: discovered %s: %s", mailtype, partytype);
+
+		var mailindex = null;
+		
+		// sometimes partytype is "director"
+		// sometimes partytype is "director[0]" indicating that it would be sufficient to use just the first director in the list.
+		// so we pull the 0 out into the mailindex variable
+		// and we reset partytype from "director[0]" to "director".
+		
+		if (partytype.match(/\[(\d)\]$/)) { mailindex = partytype.match(/\[(\d)\]$/)[1];
+											partytype = partytype.replace(/\[\d\]/, "");
+										  }
+
 		if (readRows.principal.roles[partytype] == undefined) {
-		  Logger.log("docsetEmails:   principal does not possess a defined %s role!");
+		  Logger.log("docsetEmails:   principal does not possess a defined %s role!", partytype);
 		  continue;
 		}
 		for (var j in parties[partytype]) {
 		  var entity = parties[partytype][j];
+		  if (mailindex != undefined) {
+			if (j == mailindex) {
+			  Logger.log("docsetEmails:   matched mailindex %s == %s, chosen %s", mailindex, j, entity.name);
+			}
+			else {
+			  Logger.log("docsetEmails:   matched mailindex %s != %s, skipping %s", mailindex, j, entity.name);
+			  continue;
+			}
+		  }
+			  
 		  Logger.log("docsetEmails:     what to do with entity %s?", entity.name);
 		  if (mailtype == "to") {
 			to_list.push(entity.name);
