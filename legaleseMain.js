@@ -2405,6 +2405,8 @@ function createReadme_(folder, config, sheet) { // under the parent folder
   
   var logs_para = doc.getBody().appendParagraph("Output PDFs").setHeading(DocumentApp.ParagraphHeading.HEADING1);
 
+  doc.getBody().appendParagraph("Each PDF, when sent for signature, has its own To: and CC: email addresses. They are shown below.");
+  
   Logger.log("run started");
   var uniq = uniqueKey(sheet);
   PropertiesService.getDocumentProperties().setProperty("legalese."+uniq+".readme.id", JSON.stringify(doc.getId()));
