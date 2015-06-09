@@ -552,6 +552,7 @@ function readRows(sheet, entitiesByName) {
 			 row[0] == "TERMS") { section="TERMS"; continue; }
     else if (row[0] == "IGNORE")    { section = row[0]; continue; }
     else if (row[0] == "CAP TABLE") { section = row[0]; continue; }
+    else if (row[0] == "LOOKUPS")   { section = row[0]; continue; }
     else if (row[0] == "INCLUDE") {
 	  // the typical startup agreement sheet INCLUDEs its Entities sheet which INCLUDEs JFDI.2014's Entities which INCLUDEs JFDI.Asia's Entities
 	  var include_sheet;
@@ -816,6 +817,9 @@ function readRows(sheet, entitiesByName) {
 
 	  config[columna].dict[columnb] = columns_cde;
 	  Logger.log("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
+	}
+	else {
+	  Logger.log("ignoring %s line", section);
 	}
   }
 
@@ -1459,7 +1463,7 @@ function availableTemplates_() {
 	{ name:"safe", title:"Y Combinator SAFE",
 	   url:baseUrl + "templates/ycombinator-safe/safe_cap.xml",
 	  parties:{to:["company"], cc:["corporate_secretary"]},
-	  explode:"investor",
+	  explode:"new_investor",
 	  nocache:true,
 	},
 	{ name:"incorporation_corpsec_retention", title:"Retention of Corporate Secretary",
@@ -1513,6 +1517,10 @@ function availableTemplates_() {
 	},
 	{ name:"inc_cover_jfdi", title:"JFDI Cover Page Bottom",
 	   url:baseUrl + "templates/jfdi.asia/inc_cover_jfdi.xml",
+	},
+	{ name:"inc_cover_legalese", title:"Legalese Cover Page Bottom",
+	  url:baseUrl + "templates/legalese/inc_cover_legalese.xml",
+	  nocache: true,
 	},
 	{ name:"ordinary_share_subscription", title:"Ordinary Share Subscription Agreement",
 	   url:baseUrl + "templates/jfdi.asia/ordinary_share_subscription_agreement.xml",
@@ -1656,6 +1664,7 @@ function availableTemplates_() {
   { name:"loan_waiver", title:"Waiver of Convertible Loan",
 	url:baseUrl + "templates/jfdi.asia/convertible_loan_waiver.xml",
 	parties:{to:["jfdi_corporate_representative"],cc:["corporate_secretary","accountant"]},
+	nocache:true,
   },
   { name:"simplified_note", title:"Simplified Convertible Loan Agreement",
 	url:baseUrl + "templates/jfdi.asia/simplified_note.xml",
@@ -1975,9 +1984,11 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		Logger.log("DEBUG: given entity %s, entity.email is %s and _to_email is %s", entityName, entity.email, entity._to_email);
 		cc_emails = cc_emails.concat(email_to_cc_[1]);
 	  }
-	  to_emails.push(entity._to_email);
-	  entity._es_num = es_num++;
-	  entity._unmailed = true;
+	  if (entity._to_email) {
+		to_emails.push(entity._to_email);
+		entity._es_num = es_num++;
+		entity._unmailed = true;
+	  }
 	}
 	for (var ti in all_cc) {
 	  var entityName = all_cc[ti]; var entity = this.readRows.entitiesByName[entityName];
@@ -2912,6 +2923,26 @@ function parseCapTable_(sheet) {
   return cap;
 }
 
+// spreadsheet functions.
+// code.js needs to pass these through
+
+function LOOKUP2D(wanted, range, left_right_top_bottom) {
+  // LOOKUP2D will search for the wanted element in the range %s and return the top/bottom/left/right element corresponding from the range"
+  for (var i in range) {
+    for (var j in range[i]) {
+      if (range[i][j] == wanted) {
+        // "found it at "+i+","+j+"; returning "
+        switch (left_right_top_bottom) {
+          case "top":    return range[0][j];
+          case "right":  return range[i][range[i].length-1];
+          case "bottom": return range[range.length-1][j];
+          default:       return range[i][0];
+        }
+      }
+    }
+  }
+  return null;
+}
 
 
 var _loaded = true;

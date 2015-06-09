@@ -41,3 +41,8 @@ function onFormSubmit(e) {
   if (legaleseSignatureExists) legaleseMain.onFormSubmit(e, legaleseSignature);
   else                         legaleseMain.onFormSubmit(e, null);
 }
+
+
+function LOOKUP2D(w,r,lrtb) {
+  return legaleseMain.LOOKUP2D(w,r,lrtb);
+}
