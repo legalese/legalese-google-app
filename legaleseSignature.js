@@ -1,6 +1,8 @@
 // this is exposed as the legaleseSignature library
 //
 // upon loading it sets the variable legaleseSignature._loaded = true;
+// this is (not publicly) available at
+// M_Wuaitt08FDk5mzAwEoxpXYH5ITXFjPS
 
 var _loaded = true;
 
@@ -286,7 +288,7 @@ function uploadAgreement(sheet, interactive) {
 
   var parties = legaleseMain.roles2parties(readRows);
 
-  var suitables = legaleseMain.suitableTemplates(config);
+  var suitables = legaleseMain.suitableTemplates(readRows);
   Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   var docsetEmails = new legaleseMain.docsetEmails(sheet, readRows, parties, suitables);

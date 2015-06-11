@@ -521,6 +521,7 @@ function readRows(sheet, entitiesByName) {
 					 _entityfields    : [],
 					 _last_entity_row : null,
 					 // principal gets filled in later.
+					 availableTemplates: [],
 				   };
 
   var terms = toreturn.terms;
@@ -530,7 +531,8 @@ function readRows(sheet, entitiesByName) {
   var principal, roles = {};
 
   var section = "prologue";
-  var entityfieldorder = []; // table that remaps column number to order-in-the-form
+  var entityfieldorder = [];    // table that remaps column number to order-in-the-form
+  var templatefieldorder = [];  // table that remaps column number to order-in-the-form
   // maybe we should do it this way and just synthesize the partygroups as needed, along with any other filters.
   var previous = [];
 
@@ -550,10 +552,12 @@ function readRows(sheet, entitiesByName) {
 	else 	Logger.log("readRows: row " + i + ": processing row "+row[0]);
     if      (row[0] == "KEY TERMS" ||
 			 row[0] == "TERMS") { section="TERMS"; continue; }
-    else if (row[0] == "IGNORE")    { section = row[0]; continue; }
-    else if (row[0] == "CAP TABLE") { section = row[0]; continue; }
-    else if (row[0] == "LOOKUPS")   { section = row[0]; continue; }
-    else if (row[0] == "INCLUDE") {
+    else if (row[0] == "IGNORE"        ||
+			 row[0] == "CAP TABLE"     ||
+			 row[0] == "CONFIGURATION" ||
+			 row[0] == "LOOKUPS"       ||
+			 row[0] == "ROLES") { section = row[0]; continue; }
+	else if (row[0] == "INCLUDE") {
 	  // the typical startup agreement sheet INCLUDEs its Entities sheet which INCLUDEs JFDI.2014's Entities which INCLUDEs JFDI.Asia's Entities
 	  var include_sheet;
 	  var formula = formulas[i][1];
@@ -641,10 +645,21 @@ function readRows(sheet, entitiesByName) {
 	  }
 	  continue;
 	}
-	else if (row[0] == "CONFIGURATION") { section = row[0]; continue }
-	else if (row[0] == "ROLES") { section = row[0]; continue; }
+	else if (row[0] == "AVAILABLE TEMPLATES") {
+	  section = row[0];
+	  templatefields = [];
+	  Logger.log("we got an Available Templates section heading");
+	  while (row[row.length-1] === "") { row.pop() }
+		
+	  for (var ki in row) {
+		if (ki < 1 || row[ki] == undefined) { continue }
+        templatefields[ki] = asvar_(row[ki]);
+		Logger.log("readRows(%s): learned templatefields[%s]=%s", sheet.getSheetName(), ki, templatefields[ki]);
+	  }
+	  continue;
+	}
 
-	// process data rows
+	// not a section header row. so process data rows depending on what section we're in
     if (section == "TERMS") {
       if ( row[0].length == 0) { continue }
 
@@ -713,6 +728,25 @@ function readRows(sheet, entitiesByName) {
 		  }
 		}
 	  }
+	}
+    else if (section == "AVAILABLE TEMPLATES") {
+	  var template = { _origin_spreadsheet_id:sheet.getParent().getId(),
+					   _origin_sheet_id:sheet.getSheetId(),
+					   _spreadsheet_row:i+1,
+					   parties: {to:[],cc:[]},
+					 };
+      for (var ki in templatefields) {
+        if (ki < 1) { continue }
+        var k = templatefields[ki];
+		var v = row[ki];
+		switch (k) {
+		case "to":
+		case "cc":
+		  template.parties[k] = v.split(','); break;
+		default: template[k] = v;
+		}
+	  }
+	  toreturn.availableTemplates.push(template);
 	}
     else if (section == "ENTITIES") {
       var entity = { _origin_spreadsheet_id:sheet.getParent().getId(),
@@ -823,6 +857,19 @@ function readRows(sheet, entitiesByName) {
 	}
   }
 
+  // if we've read the entire spreadsheet, and it doesn't have an AVAILABLE TEMPLATES section, then we load the default AVAILABLE TEMPLATES from the demo master.
+  if (principal != undefined &&
+	  toreturn.availableTemplates.length == 0) {
+	Logger.log("readRows: need to load default Available Templates from master spreadsheet.");
+	var rrAT = readRows(SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052").getSheetByName("Available Templates"), entitiesByName);
+	toreturn.availableTemplates = rrAT.availableTemplates;
+  }
+  Logger.log("readRows: returning toreturn.availableTemplates with length %s", toreturn.availableTemplates.length);
+
+  // an Available Templates sheet has no ENTITIES.
+  if (principal == undefined) { Logger.log("readRows: principal is undefined ... we must be in an Available Templates sheet.");
+								return toreturn; }
+  
   toreturn.principal = principal;
   Logger.log("readRows(%s): setting toreturn.principal = %s", sheet.getSheetName(), principal.name);
 
@@ -835,7 +882,7 @@ function readRows(sheet, entitiesByName) {
 	Logger.log("readRows(%s): principal %s now has %s %s roles", sheet.getSheetName(), toreturn.principal.name, roles[k].length, k);
 	for (var pi in roles[k]) {
 	  var entity = entitiesByName[roles[k][pi]];
-	  if (entity == undefined) { throw(k + " role " + roles[k][pi] + " refers to an entity that is not defined!") }
+	  if (entity == undefined) { throw(k + " role " + pi + ' "' + roles[k][pi] + "\" refers to an entity that is not defined!") }
 	  entity._role = entity._role || {};
 	  entity._role[toreturn.principal.name] = entity._role[toreturn.principal.name] || [];
 	  entity._role[toreturn.principal.name].push(k);
@@ -1387,339 +1434,6 @@ function fillOtherTemplates_() {
   * 
   */
 
-// ---------------------------------------------------------------------------------------------------------------- availableTemplates_
-function availableTemplates_() {
-  // return a bunch of URLs
-
-  var baseUrl = "http://www.legalese.io/";
-  var baseUrl = "http://www.mengwong.com/legalese.io/";
-  
-  var availables = [
-
-// templates don't always have to live at an HTTP url.
-// you can also create an HTML file in the code editor and just give the filename directly.
-// the url will be something like termsheet_xml.html instead of termsheet.xml.
-
-// you may be tempted to open this up so that the spreadsheet can specify any URL.
-// this is unwise, because the XML template runs with the same privileges as this script,
-// and if you randomly execute templates from all over the Internet, sooner or later you will regret it.
-
-//  { name:"", title:"",
-//	url:"http://www.legalese.io/templates/jfdi.asia/.xml",
-//	parties:{to:["director"], cc:["corporate_secretary"]},
-//	nocache:true,
-//  },
-	{ name:"hello_world", title:"Hello World",
-	   url:baseUrl + "templates/legalese/hello_world.xml",
-	  parties:{to:["company"],cc:[]},
-	  explode:"buyer",
-	  nocache:true,
-	},
-	{ name:"yc_aa_spa", title:"Y Combinator Series AA Singapore Share Purchase Agreement",
-	   url:baseUrl + "templates/ycombinator-seriesaa/AA-SG-SPA.xml",
-	  parties:{to:["company"],cc:["corporate_secretary"]},
-	  explode:"new_investor",
-	  nocache:true,
-	},
-	{ name:"yc_aa_coi", title:"Y Combinator Series AA Singapore Articles",
-	   url:baseUrl + "templates/ycombinator-seriesaa/AA-SG-AA.xml",
-	  nocache:true,
-	},
-	{ name:"legalese_eula", title:"Legalese EULA",
-	   url:baseUrl + "templates/legalese/eula.xml",
-	  parties:{to:[], cc:[]},
-	  explode:"user",
-	  nocache:true,
-	},
-	{ name:"mod_party_sum", title:"add party attributes",
-	   url:baseUrl + "templates/jfdi.asia/mod_party_sum.xml",
-	  nocache:true,
-	},
-	{ name:"mod_test1_modules", title:"test module 1",
-	   url:baseUrl + "templates/jfdi.asia/mod_test1_modules.xml",
-	  nocache:true,
-	},
-	{ name:"nda", title:"Nondisclosure Agreement",
-	   url:baseUrl + "templates/jfdi.asia/nondisclosure.xml",
-	  parties:{to:["company"], cc:[]},
-	  explode:"counterparty",
-	  nocache:true,
-	},
-	{ name:"kindle", title:"Kindle Introduction",
-	   url:baseUrl + "templates/legalese/kindle.xml",
-	  parties:{to:[], cc:[]},
-	  explode:"new_participant",
-	  nocache:true,
-	},
-	{ name:"dr_fundraising", title:"Directors' Resolution in favour of Fundraising",
-	   url:baseUrl + "templates/jfdi.asia/dr-fundraising.xml",
-	  parties:{to:["director"], cc:["corporate_secretary"]},
-	  nocache:true,
-	},
-	{ name:"inc_disclaimer", title:"top securities disclaimer",
-	   url:baseUrl + "templates/ycombinator-safe/inc_disclaimer.xml",
-	  nocache:true,
-	},
-	{ name:"safe", title:"Y Combinator SAFE",
-	   url:baseUrl + "templates/ycombinator-safe/safe_cap.xml",
-	  parties:{to:["company"], cc:["corporate_secretary"]},
-	  explode:"new_investor",
-	  nocache:true,
-	},
-	{ name:"incorporation_corpsec_retention", title:"Retention of Corporate Secretary",
-	   url:baseUrl + "templates/jfdi.asia/incorporation_corpsec_retention.xml",
-	  parties:{to:["corporate_secretary", "founder"], cc:["investor"]},
-	},
-	{ name:"jfdi_articles_2015", title:"JFDI Articles",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_articles_2015.xml",
-//	  nocache:true,
-	},
-	{ name:"jfdi_volunteer_agreement", title:"Volunteer Agreement",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_06_volunteer_agreement.xml",
-	  parties:{to:["company"], cc:["corporate_secretary"]},
-	  explode:"volunteer",
-//	  nocache:true,
-	},
-	{ name:"form45", title:"Form 45 Consent to Act as a Director",
-	   url:baseUrl + "templates/jfdi.asia/form45.xml",
-	  parties:{to:[], cc:["corporate_secretary"]},
-	  explode:"director",
-	  // nocache:true,
-	},
-	{ name:"jfdi_class_f_agreement", title:"Class F Agreement",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_05_class_f_agreement.xml",
-	  parties:{to:["founder", "company"], cc:["corporate_secretary", "investor"]},
-	  // nocache:true,
-	},
-	{ name:"jfdi_shareholders_agreement", title:"Shareholders' Agreement",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_04_shareholders_agreement.xml",
-	  parties:{to:["founder", "existing_investor", "company", "investor"], cc:["corporate_secretary"]},
-	  nocache:true,
-	},
-	{ name:"jfdi_investment_agreement", title:"JFDI Investment Agreement",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_03_convertible_note_agreement.xml",
-	  parties:{to:["founder", "company", "investor"], cc:["corporate_secretary"]},
-	  // nocache:true,
-	},
-	{ name:"jfdi_articles_table_a", title:"Articles of Association",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_02_articles_table_a.xml",
-	  parties:{to:[], cc:["corporate_secretary"]},
-	},
-	{ name:"jfdi_memorandum", title:"Memorandum and Articles of Association",
-	   url:baseUrl + "templates/jfdi.asia/jfdi_01_memorandum.xml",
-	  parties:{to:["shareholder"], cc:["corporate_secretary"]},
-	},
-	{ name:"inc_cover_2_parties", title:"JFDI Cover Page with 2 Parties",
-	   url:baseUrl + "templates/jfdi.asia/inc_cover_2_parties.xml",
-	},
-	{ name:"inc_cover_standard_parties", title:"JFDI Cover Page all Parties",
-	   url:baseUrl + "templates/jfdi.asia/inc_cover_standard_parties.xml",
-	},
-	{ name:"inc_cover_jfdi", title:"JFDI Cover Page Bottom",
-	   url:baseUrl + "templates/jfdi.asia/inc_cover_jfdi.xml",
-	},
-	{ name:"inc_cover_legalese", title:"Legalese Cover Page Bottom",
-	  url:baseUrl + "templates/legalese/inc_cover_legalese.xml",
-	  nocache: true,
-	},
-	{ name:"ordinary_share_subscription", title:"Ordinary Share Subscription Agreement",
-	   url:baseUrl + "templates/jfdi.asia/ordinary_share_subscription_agreement.xml",
-	  parties:{to:["company"], cc:["corporate_secretary"]},
-	  explode:"new_investor",
-	  nocache:true,
-	},
-	{ name:"tgas_subscription", title:"TradeGecko-A Share Subscription Agreement",
-	   url:baseUrl + "templates/jfdi.asia/subscription_agreement_tga.xml",
-	  parties:{to:["company"], cc:["corporate_secretary"]},
-	  explode:"new_investor",
-	},
- { name:"dr_proxy", title:"Appointment of Proxy",
-	url:baseUrl + "templates/jfdi.asia/dr_proxy.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
- },
- { name:"dr_proxy_cert", title:"Certficate of Appointment of Proxy",
-	url:baseUrl + "templates/jfdi.asia/dr_proxy_cert.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
- },
- { name:"dr_corp_rep_cert", title:"Certificate of Appointment of Corporate Representative",
-	url:baseUrl + "templates/jfdi.asia/dr_corp_rep_cert.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
- },
- { name:"dr_corp_rep", title:"Appointment of Corporate Representative",
-	url:baseUrl + "templates/jfdi.asia/dr_corp_rep.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
- },
- { name:"dr_generic", title:"Directors' Resolutions",
-	url:baseUrl + "templates/jfdi.asia/dr_generic.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
- },
- { name:"new_share_class_mr", title:"Members' Resolutions to Create a New Class of Shares",
-	url:baseUrl + "templates/jfdi.asia/new_share_class_mr.xml",
-	parties:{to:["shareholder"], cc:["corporate_secretary"]},
- },
- { name:"new_share_class_dr", title:"Directors' Resolutions to Create a New Class of Shares",
-	url:baseUrl + "templates/jfdi.asia/new_share_class_dr.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
- },
-  { name:"new_share_class_spec", title:"Details of New Share Class",
-	url:baseUrl + "templates/jfdi.asia/new_share_class_spec.xml",
-  },
-  { name:"mr_issue_shares", title:"Members Approve Ordinary Resolution to Issue Shares",
-	url:baseUrl + "templates/jfdi.asia/mr-issue_shares.xml",
-	parties:{to:["shareholder"], cc:["corporate_secretary"]},
-  },
-  { name:"dr_egm_notice_issue_shares", title:"Directors Give Notice of New Share Issue",
-	url:baseUrl + "templates/jfdi.asia/dr-egm_notice-issue_shares.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"strikeoff_financial_report", title:"Financial Report",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_financial_report.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"change_of_address", title:"Resolutions to Change Registered Address",
-	url:baseUrl + "templates/jfdi.asia/dr_change_of_address.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"strikeoff_bank_closure", title:"Resolutions to Close Bank Accounts",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_directors-bank-closure.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-	explode:"bank",
-  },
-  { name:"strikeoff_accountant_retention", title:"Retainer of Accountant for Financial Statements",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_accountant-retention.xml",
-	parties:{to:[], cc:["accountant"]},
-	explode:"director",
-  },
-  { name:"strikeoff_financials_letter", title:"Letter to Accountant regarding Financial Statements",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_financials-letter.xml",
-	parties:{to:["director"], cc:["accountant"]},
-  },
-  { name:"strikeoff_indemnity", title:"Directors' Indemnity regarding Accounts",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_indemnity.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"strikeoff_report", title:"DR for Report and Statement",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_directors-report-and-statement.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"strikeoff_application", title:"Instruction to Corporate Secretary",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_application.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"strikeoff_acra_declaration", title:"Directors' Declaration to ACRA",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_directors-declaration.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-  },
-  { name:"corpsec_allotment", title:"Instruction to Corpsec for Allotment",
-	url:baseUrl + "templates/jfdi.asia/corpsec-allotment.xml",
-	parties:{to:["director"], cc:["corporate_secretary"]},
-	// nocache:true,
-  },
-  { name:"dr_allotment", title:"Directors' Resolution for Allotment",
-	url:baseUrl + "templates/jfdi.asia/dr-allotment.xml",
-	parties:{to:["director"],cc:["corporate_secretary"]},
-	nocache:true,
-  },
-  { name:"jfdi_2014_rcps", title:"JFDI.2014 Subscription Agreement",
-	url:"jfdi_2014_rcps_xml.html",
-	parties:{to:["promoter", "company"],cc:["corporate_secretary"]},
-	explode:"new_investor",
-  },
-  { name:"kissing", title:"KISS (Singapore)",
-	url:baseUrl + "templates/jfdi.asia/kissing.xml",
-	parties:{to:["company"],cc:["corporate_secretary"]},
-	explode:"new_investor",
-	nocache:true,
-  },
-  { name:"strikeoff_shareholders", title:"Striking Off for Shareholders",
-	url:baseUrl + "templates/jfdi.asia/strikeoff_shareholders.xml",
-	parties:{to:["director[0]"],cc:[]},
-	explode:"shareholder",
-  },
-  { name:"test_templatespec", title:"Test templateSpec",
-	url:baseUrl + "templates/jfdi.asia/test-templatespec.xml",
-	parties:{to:["company"],cc:["founder"]},
-	// nocache:true,
-  },
-  { name:"employment_agreement", title:"Employment Agreement",
-	url:baseUrl + "templates/jfdi.asia/employment-agreement.xml",
-	parties:{to:["employee","company"],cc:[]},
-  },
-  { name:"termsheet", title:"Seed Term Sheet",
-	url:baseUrl + "templates/jfdi.asia/termsheet.xml",
-	parties:{to:[],cc:[]},
-	nocache: true,
-  },
-  { name:"preemptive_notice", title:"Pre-Emptive Notice to Shareholders",
-	url:baseUrl + "templates/jfdi.asia/preemptive_notice.xml",
-	parties:{to:[],cc:["company"]},
-	explode:"shareholder",
-  },
-  { name:"preemptive_waiver", title:"Issuance Offer Notice",
-	url:baseUrl + "templates/jfdi.asia/preemptive_waiver.xml",
-	parties:{to:["company"],cc:["corporate_secretary"]},
-	explode: "shareholder",
-	nocache:true,
-  },
-  { name:"loan_waiver", title:"Waiver of Convertible Loan",
-	url:baseUrl + "templates/jfdi.asia/convertible_loan_waiver.xml",
-	parties:{to:["jfdi_corporate_representative"],cc:["corporate_secretary","accountant"]},
-	nocache:true,
-  },
-  { name:"simplified_note", title:"Simplified Convertible Loan Agreement",
-	url:baseUrl + "templates/jfdi.asia/simplified_note.xml",
-	parties:{to:["investor","company"],cc:["corporate_secretary","accountant"]},
-  },
-  { name:"founder_agreement", title:"JFDI Accelerate Founder Agreement",
-	url:baseUrl + "templates/jfdi.asia/founderagreement.xml",
-	parties:{to:["founder","investor"], cc:["corporate_secretary"]},
-	nocache:true,
-  },
-  { name:"dora", title:"DORA",
-	url:baseUrl + "templates/jfdi.asia/dora-signatures.xml",
-	parties:{to:["new_investor","company","shareholder"],cc:["corporate_secretary"]},
-	nocache:true,
-  },
-  { name:"inc_plain_letterhead", title:"plain letterhead",
-	url:baseUrl + "templates/jfdi.asia/inc_plain_letterhead.xml"
-  },
-  { name:"inc_signature", title:"signature component",
-	url:baseUrl + "templates/jfdi.asia/inc_signature.xml",
-  },
-  { name:"inc_party", title:"party component",
-	url:baseUrl + "templates/jfdi.asia/inc_party.xml"
-  },
-  { name:"inc_dr_start", title:"directors resolutions start",
-	url:baseUrl + "templates/jfdi.asia/inc_dr_start.xml"
-  },
-  { name:"inc_dr_end", title:"directors resolution end",
-	url:baseUrl + "templates/jfdi.asia/inc_dr_end.xml"
-  },
-  { name:"mr_authority_to_issue_shares", title:"members resolution to issue shares",
-	url:baseUrl + "templates/jfdi.asia/mr-authority_to_issue_shares.xml"
-  },
-  { name:"inc_authority_to_bizfile", title:"authority for corp sec to bizfile notice of resolutions",
-	url:baseUrl + "templates/jfdi.asia/inc_authority_to_bizfile.xml"
-  },
-  { name:"inc_member_notices", title:"notice of resolutions at egm agm or written means",
-	url:baseUrl + "templates/jfdi.asia/inc_member_notices.xml"
-  },
-  { name:"inc_additional_resolutions", title:"resolutions 2 and above",
-	url:baseUrl + "templates/jfdi.asia/inc_additional_resolutions.xml",
-	nocache:true,
-  },
-  { name:"inc_resolved_mr", title:"members resolution preface",
-	url:baseUrl + "templates/jfdi.asia/inc_resolved_mr.xml"
-  },
-	{ name:"inc_mediation_arbitration", title:"ruben's mediation and arbitration clause",
-	  nocache:true,
-	url:baseUrl + "templates/jfdi.asia/inc_mediation_arbitration.xml" // define numberering_level = 3 or whatever. default is 2.
-  },
-
-  ];
-return availables;
-};
-
 // ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
 function desiredTemplates_(config) {
   var toreturn = [];
@@ -1731,12 +1445,12 @@ function desiredTemplates_(config) {
   return toreturn;
 }
 
-function suitableTemplates(config) {
-  var availables = availableTemplates_();
+function suitableTemplates(readRows) {
+  var availables = readRows.availableTemplates;
   Logger.log("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
-  var desireds = desiredTemplates_(config);
+  var desireds = desiredTemplates_(readRows.config);
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
-  // this is slightly buggy. kissing, kissing1, kissing2, didn't work
+  // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
   return suitables;
 }
 
@@ -1888,7 +1602,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 										  }
 
 		if (readRows.principal.roles[partytype] == undefined) {
-		  Logger.log("docsetEmails:   principal does not possess a defined %s role!", partytype);
+		  Logger.log("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
 		  continue;
 		}
 		for (var j in parties[partytype]) {
@@ -1912,7 +1626,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		}
 	  }
 	}
-	if (sourceTemplate.explode == undefined) {
+	if (sourceTemplate.explode == "") {
 	  this._rcpts.normals[sourceTemplate.title]={to:to_list, cc:cc_list};
 	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].to=%s",sourceTemplate.title, to_list);
 	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
@@ -2121,6 +1835,7 @@ function fillTemplates(sheet) {
   var config         = readRows_.config;
   templatedata.clauses = {};
   templatedata._config = config;
+  templatedata._availableTemplates = readRows_.availableTemplates;
   templatedata._todays_date = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "d MMMM YYYY");
   templatedata._todays_date_wdmy = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "EEEE d MMMM YYYY");
 
@@ -2131,6 +1846,7 @@ function fillTemplates(sheet) {
 	templatedata   = readRows_.terms;
 	config         = readRows_.config;
 	templatedata._config = config;
+	templatedata._availableTemplates = readRows_.availableTemplates;
   }
     
   var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
@@ -2169,7 +1885,7 @@ function fillTemplates(sheet) {
   templatedata.whitespace_handling_use_characters = '<?whitespace-handling use-characters?>';
   templatedata._timezone = sheet.getParent().getSpreadsheetTimeZone();
 
-  var suitables = suitableTemplates(config);
+  var suitables = suitableTemplates(readRows_);
   Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   // the parties{} for a given docset are always the same -- all the defined roles are available
@@ -2347,7 +2063,7 @@ function include(name, data, _include, _include2) {
 //  Logger.log("include(%s) _include=%s, _include2=%s", name, _include, _include2);
   var origInclude = data._include;
   var origInclude2 = data._include2;
-  var filtered = availableTemplates_().filter(function(t){return t.name == name});
+  var filtered = data._availableTemplates.filter(function(t){return t.name == name});
   if (filtered.length == 1) {
 	var template = filtered[0];
 	var childTemplate = obtainTemplate_(template.url, template.nocache);
@@ -2681,7 +2397,7 @@ function onEdit(e){
 
 	sheet.getRange("D2").setValue("");
 	sheet.getRange("D2").setFontStyle("normal");
-;	sheet.getRange("D2").activate();
+	sheet.getRange("D2").activate();
 
 	sheet.getRange("C3").setValue("");
 	sheet.getRange("C3").setBackground('white');
