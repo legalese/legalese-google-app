@@ -1471,7 +1471,8 @@ function intersect_(array1, array2) {
 function filenameFor(sourceTemplate, entity) {
   var sequence = sourceTemplate.sequence;
   if (sequence == undefined || sourceTemplate.sequence_length < 10) { sequence = "" } else { sequence = (sequence < 10 ? "0" : "") + sequence + " - " }
-  if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.email || entity.name)
+  if (entity) return sequence + sourceTemplate.title + " for " + firstline_(entity.name) +
+	(entity.email ? (" " + firstline_(entity.email)) : "");
   else        return sequence + sourceTemplate.title;
 };
 
