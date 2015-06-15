@@ -742,6 +742,7 @@ function readRows(sheet, entitiesByName) {
 	  }
 	}
     else if (section == "AVAILABLE TEMPLATES") {
+	  if (row[0].toLowerCase().replace(/[: ]/g,"") == "ignore") { continue }
 	  var template = { _origin_spreadsheet_id:sheet.getParent().getId(),
 					   _origin_sheet_id:sheet.getSheetId(),
 					   _spreadsheet_row:i+1,
