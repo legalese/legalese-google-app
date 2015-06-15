@@ -1572,6 +1572,20 @@ function uniq_( arr ) {
   }).reverse();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // see documentation in notes-to-self.org
 var docsetEmails = function (sheet, readRows, parties, suitables) {
   this.sheet = sheet;
@@ -1595,27 +1609,32 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 //			);
 
   // populate rcpts
-  this._rcpts = { exploders: { }, normals: { } };
+  this._rcpts   = { exploders: { }, normals: { } };
+  this._parties = { exploders: { }, normals: { } };
 
   for (var i in suitables) {
     var sourceTemplate = suitables[i];
 	if (this.sequence) { sourceTemplate.sequence = this.sequence++; this.sequence_length = suitables.length; }
 	var to_list = [], cc_list = [];
+	var to_parties = { }; // { director: [ Entity1, Entity2 ], company: [Company] }
+	var cc_parties = { };
+	var ex_parties = { }; // { new_investor: EntityX }
+  
 	for (var mailtype in sourceTemplate.parties) {
 	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
 				 sourceTemplate.name, mailtype);
 	  
-	  for (var i in sourceTemplate.parties[mailtype]) {
-		var partytype = sourceTemplate.parties[mailtype][i];
+	  for (var i in sourceTemplate.parties[mailtype]) { // to | cc
+		var partytype = sourceTemplate.parties[mailtype][i]; // company, director, shareholder, etc
 		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
-
+		if (mailtype == "to") to_parties[partytype] = [];
+		else                  cc_parties[partytype] = [];
 		var mailindex = null;
 		
 		// sometimes partytype is "director"
 		// sometimes partytype is "director[0]" indicating that it would be sufficient to use just the first director in the list.
 		// so we pull the 0 out into the mailindex variable
 		// and we reset partytype from "director[0]" to "director".
-		
 		if (partytype.match(/\[(\d)\]$/)) { mailindex = partytype.match(/\[(\d)\]$/)[1];
 											partytype = partytype.replace(/\[\d\]/, "");
 										  }
@@ -1638,34 +1657,41 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 			  
 		  Logger.log("docsetEmails:     what to do with entity %s?", entity.name);
 		  if (mailtype == "to") {
-			to_list.push(entity.name);
+			to_list.push(entity.name);			to_parties[partytype].push(entity);
 		  } else { // mailtype == "cc"
-			cc_list.push(entity.name);
+			cc_list.push(entity.name);			cc_parties[partytype].push(entity);
 		  }
 		}
 	  }
 	}
 	if (sourceTemplate.explode == "") {
-	  this._rcpts.normals[sourceTemplate.title]={to:to_list, cc:cc_list};
+	  this._rcpts  .normals[sourceTemplate.title]={to:to_list,    cc:cc_list};
+	  this._parties.normals[sourceTemplate.title]={to:to_parties, cc:cc_parties};
 	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].to=%s",sourceTemplate.title, to_list);
 	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
+	  Logger.log("docsetEmails: defining this._parties.normals[%s].to=%s",sourceTemplate.title,Object.keys(to_parties));
 	} else { // explode first and then set this._rcpts.exploders
 	  Logger.log("docsetEmails(): will explode %s", sourceTemplate.explode);
-
-	  var primary_to_list = to_list;
-	  
+	  var primary_to_list    = to_list; // probably unnecessary
       for (var j in this.parties[sourceTemplate.explode]) {
 		var entity = parties[sourceTemplate.explode][j];
 		// we step through the desired {investor,company}.* arrays.
 		// we set the singular as we step through.
+		ex_parties[sourceTemplate.explode] = entity;
 		var mytitle = filenameFor(sourceTemplate, entity);
 		Logger.log("docsetEmails(): preparing %s exploded %s", sourceTemplate.explode, mytitle);
-		var exploder_to_list = primary_to_list.concat([entity.name]);
+		var exploder_to_list    = primary_to_list.concat([entity.name]);
 		// TODO: if the exploder's email is multiline there needs to be a way for it to append to the cc_list.
+		var exploder_to_parties = {};
+		for (var pp in to_parties) { exploder_to_parties[pp] = to_parties[pp] }
+		exploder_to_parties[sourceTemplate.explode] = [ entity ];
 		
-		this._rcpts.exploders[mytitle] = {to:exploder_to_list,cc:cc_list};
+		this._rcpts  .exploders[mytitle] = {to:exploder_to_list,   cc:cc_list};
+		this._parties.exploders[mytitle] = {to:exploder_to_parties,cc:cc_parties};
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
+
+		Logger.log("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
 	  }
 	}
   }
@@ -1684,15 +1710,21 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	// pull up all the entities relevant to this particular set of sourceTemplates
 	// this should be easy, we've already done the hard work above.
 	var all_to = [], all_cc = [];
+	var to_parties = {}, cc_parties = {}, explode_party = {};
+
 	for (var st in sourceTemplates) {
 	  var sourceTemplate = sourceTemplates[st];
 	  if (explodeEntity) {
 		var mytitle = filenameFor(sourceTemplate, explodeEntity);
 		all_to = all_to.concat(this._rcpts.exploders[mytitle].to);
 		all_cc = all_cc.concat(this._rcpts.exploders[mytitle].cc);
+		to_parties = this._parties.exploders[mytitle].to;
+		cc_parties = this._parties.exploders[mytitle].cc;
 	  } else {
 		all_to = all_to.concat(this._rcpts.normals[sourceTemplate.title].to);
 		all_cc = all_cc.concat(this._rcpts.normals[sourceTemplate.title].cc);
+		to_parties = this._parties.normals[sourceTemplate.title].to;
+		cc_parties = this._parties.normals[sourceTemplate.title].cc;
 	  }
 	}
 
@@ -1708,7 +1740,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	for (var ti in all_to) {
 	  var entityName = all_to[ti];
 	  var entity = this.readRows.entitiesByName[entityName];
-
+	  
 	  if (this.readRows.config.email_override && this.readRows.config.email_override.values[0]
 		 &&
 		 email_to_cc(entity.email)[0] && email_to_cc(entity.email)[0]) {
@@ -1728,13 +1760,14 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	}
 	for (var ti in all_cc) {
 	  var entityName = all_cc[ti]; var entity = this.readRows.entitiesByName[entityName];
+
 	  var email_to_cc_ = email_to_cc(entity.email);
 	  cc_emails = cc_emails.concat(email_to_cc_[0]).concat(email_to_cc_[1]); // both top and subsequent will go to CC
 	}
 	if (this.readRows.config.email_override && this.readRows.config.email_override.values[0]) {
 		cc_emails = [this.readRows.config.email_override.values[0]];
 	}
-	return [to_emails, cc_emails];
+	return [to_emails, cc_emails, to_parties, cc_parties];
   };
 
   // callback framework for doing things to do with normal sourceTemplates, for both concatenate_pdfs modes
@@ -1779,6 +1812,21 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
   };
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // map 
 function roles2parties(readRows_) {
@@ -1992,10 +2040,16 @@ function fillTemplates(sheet) {
 //	Logger.log("buildTemplate: newTemplate.data.parties has length = %s", templatedata.data.parties.length);
 //	Logger.log("FillTemplates: recv: templatedata.parties = %s", templatedata.parties);
 	if (entity) { newTemplate.data.party = newTemplate.data.party || {};
-				  newTemplate.data.party[sourceTemplate.explode] = entity;
+				  newTemplate.data.party[sourceTemplate.explode] = entity; // do we really want this? it seems to clobber the previous array
 				  newTemplate.data      [sourceTemplate.explode] = entity; }
+
+	newTemplate.rcpts = rcpts;
+	newTemplate.rcpts_to = rcpts[2];
+	newTemplate.rcpts_cc = rcpts[3];
+
+	Logger.log("buildTemplate: newTemplate.rcpts_to = %s", Object.keys(newTemplate.rcpts_to));
+	
 	fillTemplate_(newTemplate, sourceTemplate, filenameFor(sourceTemplate, entity), folder, config);
-	// todo: make the title configured in the spreadsheet itself, and get rid of the hardcoded title from the availabletemplates code below.
 
 	readmeDoc.getBody().appendParagraph(filenameFor(sourceTemplate, entity)).setHeading(DocumentApp.ParagraphHeading.HEADING2);
     readmeDoc.getBody().appendParagraph("To: " + rcpts[0].join(", "));
@@ -2047,7 +2101,7 @@ function fillTemplates(sheet) {
 //
 // so, we define an include() function.
 
-function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config) {
+function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_parties, explode_party) {
   // reset "globals"
   clauseroot = [];
   clausetext2num = {};
