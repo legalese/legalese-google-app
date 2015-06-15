@@ -10,17 +10,13 @@
  *  the risk is that a malicious commit on the legalese codebase will embed undesirable content in an xml template file
  *  which then runs with user permissions with access to all the user's docs. this is clearly undesirable.
  *  
- *  a functionally equivalent man-in-the-middle attack would intercept the UrlFetch() operation and return a malicious XML template file.
+ *  a functionally equivalent man-in-the-middle attack would intercept the UrlFetch() operation and return a malicious XML template file,
+ *  either attacking obtainTemplate or INCLUDE(Available Templates).
  * 
  *  lodging the XML templates inside the app itself is a seemingly attractive alternative, but it reduces to the same threat scenario because that data
  *  has to populate from somewhere in the first place.
  * 
- *  an alternative design sees the user sharing the spreadsheet with the Legalese Robot, which only has access to that one spreadsheet and no other files.
- *  the legalese robot would run, then share back a folder that contains the output. that limits exposure to user data.
- *  this sharing situation is clumsy -- why not just bring up a REST API that submits the active sheet's data as a sort of RPC to the robot?
- *  the robot would then issue a drive share in response.
- * 
- *  while we work on implementing that approach, we require that all committers with access to GitHub must have 2FA.
+ *  we should require that all committers with access to GitHub must have 2FA.
  * 
  *  ideally we would reduce the authorization scope of this script to only the current doc.
  *  but we need a way to share the resulting PDF with the user without access to everything in Drive!
@@ -50,6 +46,8 @@
 //
 // 
 
+
+var DEFAULT_AVAILABLE_TEMPLATES = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052";
 
 // ---------------------------------------------------------------------------------------------------------------- onOpen
 /**
@@ -461,6 +459,8 @@ function onFormSubmit(e, legaleseSignature) {
 	  }
 	}
 
+	// TODO: set the time and date of submission if there is a timestamp
+	
 	Logger.log("onFormSubmit: entityfield "+i+" (" + entityfield.fieldname+") (column="+entityfield.column+") = " + e.namedValues[entityfield.fieldname][0]);
 
 	var newcell = newrow.getCell(1,parseInt(entityfield.column));
@@ -565,7 +565,9 @@ function readRows(sheet, entitiesByName) {
 		// =HYPERLINK("https://docs.google.com/a/jfdi.asia/spreadsheets/d/1Ix5OYS7EpmEIqA93S4_JWxV1OO82tRM0MLNj9C8IwHU/edit#gid=1249418813","Entities JFDI.2014")
 		include_sheet = hyperlink2sheet_(formula);
 	  }
-	  else {
+	  else if (row[1].match(/https?:/)) {
+		include_sheet = hyperlink2sheet_(row[1]);
+	  } else {
 		include_sheet = sheet.getParent().getSheetByName(row[1]);
 	  }
 	  
@@ -578,6 +580,16 @@ function readRows(sheet, entitiesByName) {
 	  // hopefully we've learned about a bunch of new Entities directly into the entitiesByName shared dict.
 	  // we usually throw away the returned object because we don't really care about the included sheet's terms or config.
 
+	  // one may also INCLUDE an Available Templates sheet. if one does so, the default Available Templates sheet will NOT be loaded
+	  // unless you explicitly load it.
+	  // load an included availableTemplate. also, update the default loading behaviour so it only loads in an actual sheet not an included sheet.
+
+	  if (includedReadRows.availableTemplates.length > 0) {
+		// TODO: overwrite existing templates, don't just concatenate.
+		Logger.log("readRows(%s): back from INCLUDE %s; absorbing %s new templates",
+				   sheet.getSheetName(), row[1], includedReadRows.availableTemplates.length);
+		toreturn.availableTemplates = toreturn.availableTemplates.concat(includedReadRows.availableTemplates);
+	  }
 	  if (principal == undefined) { principal = includedReadRows.principal }
 
 	  if (row[2] != undefined && row[2].length) {
@@ -859,9 +871,11 @@ function readRows(sheet, entitiesByName) {
 
   // if we've read the entire spreadsheet, and it doesn't have an AVAILABLE TEMPLATES section, then we load the default AVAILABLE TEMPLATES from the demo master.
   if (principal != undefined &&
-	  toreturn.availableTemplates.length == 0) {
+	  toreturn.availableTemplates.length == 0 &&
+	  config.templates != undefined
+	 ) {
 	Logger.log("readRows: need to load default Available Templates from master spreadsheet.");
-	var rrAT = readRows(SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052").getSheetByName("Available Templates"), entitiesByName);
+	var rrAT = readRows(SpreadsheetApp.openByUrl(DEFAULT_AVAILABLE_TEMPLATES).getSheetByName("Available Templates"), entitiesByName);
 	toreturn.availableTemplates = rrAT.availableTemplates;
   }
   Logger.log("readRows: returning toreturn.availableTemplates with length %s", toreturn.availableTemplates.length);
@@ -1537,6 +1551,9 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	// Logger.log("obtained template %s, length %s bytes", url, contents.length);
 	return HtmlService.createTemplate(contents);
   }
+  // TODO: find a way to expose the original script context to this section ... otherwise the add-on tries to satisfy createTemplateFromFile()
+  //       out of the add-on library's script environment, which kinda defeats the purpose.
+  //       this is tricky. it gets called from include() and it gets called from fillTemplates().
   else return HtmlService.createTemplateFromFile(url);
 }
 
@@ -1589,7 +1606,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  
 	  for (var i in sourceTemplate.parties[mailtype]) {
 		var partytype = sourceTemplate.parties[mailtype][i];
-		Logger.log("docsetEmails: discovered %s: %s", mailtype, partytype);
+		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
 
 		var mailindex = null;
 		
@@ -1651,7 +1668,10 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  }
 	}
   }
-
+  if (to_list.length == 0) {
+	throw("did your Templates sheet define To and CC for " + sourceTemplate.name + "?");
+  }
+  
   // return to_cc for a given set of sourceTemplates
   this.Rcpts = function(sourceTemplates, explodeEntity) { // explodeEntity may be null -- that's OK, just means we're not exploding.
 	// clear es_nums in entities
