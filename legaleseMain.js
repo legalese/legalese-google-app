@@ -2067,9 +2067,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config) {
   var xmlfile;
 
   if (sourceTemplate.url.match(/[._]xml(\.html)?$/)) {
-	xmlfile = DriveApp.createFile(mytitle+".xml", filledHTML, 'text/xml');
-	folder.addFile(xmlfile);
-	DriveApp.getRootFolder().removeFile(xmlfile);
+	xmlfile = folder.createFile(mytitle+".xml", filledHTML, 'text/xml');
   }
   else {
 	Logger.log("we only support xml file types. i am not happy about %s", sourceTemplate.url);
