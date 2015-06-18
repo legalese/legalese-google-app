@@ -2777,6 +2777,150 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 }
 
 
+// parseCaptable
+// previously known as "Show Me The Money!"
+
+// returns a hash (all the rounds) of hashes (each round) with hashes (each investor).
+// { round_name:
+//  {
+//    security_type: string,
+//    approximate_date: Date,
+//    pre_money: NNN,
+//    price_per_share: P,
+//    discount: D,
+//    new_investors:
+//      { investorName: {
+//           shares: N,
+//           money:  D,
+//           percentage: P,
+//        },
+//        investorName: {
+//           shares: N,
+//           money:  D,
+//           percentage: P,
+//        },
+//      },
+//    amount_raised: NNN,
+//    shares_post: NNN,
+//    post_money: NNN,
+//  },
+//  ... // another round
+//  ... // another round
+//  round_name: { "TOTAL", ... }
+//    
+function parseCaptable() {
+  var captableRounds = {};
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+  var rows = sheet.getDataRange();
+  var numRows  = rows.getNumRows();
+  var values   = rows.getValues();
+  var formulas = rows.getFormulas();
+  var formats  = rows.getNumberFormats();
+
+  var section = null;
+  var majorByName = {}; // round_name: column_index
+  var majorByNum  = {}; // column_index: round_name
+  var minorByName = {}; // money / shares / percentage is in column N
+  var minorByNum  = {}; // column N is a money column, or whatever
+
+  for (var i = 0; i <= numRows - 1; i++) {
+    var row = values[i];
+
+    if (row[0] == "CAP TABLE") { section = row[0]; continue }
+    
+    if (section == "CAP TABLE") {
+      // INITIALIZE A NEW ROUND
+	  // each major column is on a 3-column repeat.
+      if (row[0] == "round name") {
+        for (var j = 1; j<= row.length; j++) {
+          if (! row[j]) { continue }
+          Logger.log("captable/roundname: looking at row[%s], which is %s",
+                                                          j,        row[j]);
+          majorByName[row[j]] =     j;
+          majorByNum     [j]  = row[j];
+          
+          captableRounds[row[j]] = { name: row[j], new_investors: {} }; // we haz a new round!
+          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
+        }
+      }
+	  // ABSORB THE MAJOR-COLUMN ROUND ATTRIBUTES
+      else if (row[0] == "security type" ||
+			   row[0] == "approximate date"
+      ) {
+        for (var j = 1; j<= row.length; j++) {
+          if (! row[j]) { continue }
+          Logger.log("captable/securitytype: looking at row[%s], which is %s",
+                                                             j,        row[j]);
+  
+          // if i'm in column j, what round am i in?
+          var myRound = captableRounds[majorByNum[j]];
+          myRound[row[0]] = row[j];
+        }
+      }
+	  // LEARN ABOUT THE MINOR COLUMN ATTRIBUTES
+      else if (row[0] == "break it down for me") {
+        // each minor column has its own thang, so that later we will have
+        // myRound.pre_money.money = x, myRound.pre_money.shares = y, myRound.pre_money.percentage = z
+        // myRound[investorName].money = x, myRound[investorName].shares = y, myRound[investorName].percentage = z
+        for (var j = 1; j<= row.length; j++) {
+          if (! row[j]) { continue }
+          Logger.log("captable/breakdown: looking at row[%s], which is %s",
+                                                          j,        row[j]);
+          var myRound; // we might be offset from a major column boundary so keep looking left until we find a major column.
+
+          for (var k = 0; k < j; k++) {
+            if (! captableRounds[majorByNum[j-k]]) { continue }
+            myRound = captableRounds[majorByNum[j-k]];
+            Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
+            break;
+          }
+
+          minorByName[myRound.name + row[j]] =     j;
+          minorByNum [j]  = { round: myRound, minor: row[j] };
+          
+          Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
+                                                                                                   j,                    myRound.name, minorByNum[j].minor);
+        }
+      }
+	  // LEARN ABOUT THE ROUND MINOR ATTRIBUTES
+      else if (row[0] == "pre-money" ||
+          row[0] == "price per share" ||
+          row[0] == "discount" ||
+          row[0] == "amount raised" ||
+          row[0] == "shares, post" ||
+          row[0] == "post-money"
+      ) {
+        for (var j = 1; j<= row.length; j++) {
+          if (! row[j]) { continue }
+          Logger.log("captable/%s: looking at row[%s], which is %s",
+                               row[0],            j,        row[j]);
+          Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
+                               row[0],                                                      minorByNum[j].round.name, minorByNum[j].minor);
+          // learn something useful. er. where do we put the value?
+          var myRound = minorByNum[j].round;
+          myRound[minorByNum[j].minor] = row[j];
+        }
+      }
+	  // WE MUST BE DEALING WITH AN INVESTOR!
+      else {
+        for (var j = 1; j<= row.length; j++) {
+          if (! row[j]) { continue }
+          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is %s",
+                               row[0],                   row[0],                      j,        row[j]);
+          // learn something useful. er. where do we put the value?
+          var myRound = minorByNum[j].round;
+          myRound.new_investors[row[0]] = myRound.new_investors[row[0]] || {};
+          myRound.new_investors[row[0]][minorByNum[j].minor] = row[j];
+        }
+      }
+    }
+  }
+  Logger.log("we have learned about the cap table rounds: %s", captableRounds);
+  return captableRounds;
+}
+
 
 
 
