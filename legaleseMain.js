@@ -1696,7 +1696,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  }
 	}
   }
-  if (to_list.length == 0) {
+  if (to_list.length == 0 && sourceTemplate.explode=="") {
 	throw("did your Templates sheet define To and CC for " + sourceTemplate.name + "?");
   }
   
