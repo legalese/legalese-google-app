@@ -1628,8 +1628,6 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  for (var i in sourceTemplate.parties[mailtype]) { // to | cc
 		var partytype = sourceTemplate.parties[mailtype][i]; // company, director, shareholder, etc
 		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
-		if (mailtype == "to") to_parties[partytype] = [];
-		else                  cc_parties[partytype] = [];
 		var mailindex = null;
 		
 		// sometimes partytype is "director"
@@ -1638,7 +1636,14 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		// and we reset partytype from "director[0]" to "director".
 		if (partytype.match(/\[(\d)\]$/)) { mailindex = partytype.match(/\[(\d)\]$/)[1];
 											partytype = partytype.replace(/\[\d\]/, "");
+											Logger.log("docsetEmails: simplified partytype to %s", partytype);
 										  }
+
+		if (mailtype == "to") { Logger.log("docsetEmails: initializing to_parties[%s] as array",
+										   partytype);
+								to_parties[partytype] = [];
+							  }
+		else                  cc_parties[partytype] = [];
 
 		if (readRows.principal.roles[partytype] == undefined) {
 		  Logger.log("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
@@ -1656,11 +1661,13 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 			}
 		  }
 			  
-		  Logger.log("docsetEmails:     what to do with entity %s?", entity.name);
+		  Logger.log("docsetEmails:     what to do with %s entity %s?", partytype, entity.name);
 		  if (mailtype == "to") {
-			to_list.push(entity.name);			to_parties[partytype].push(entity);
+			to_list.push(entity.name);
+			to_parties[partytype].push(entity);
 		  } else { // mailtype == "cc"
-			cc_list.push(entity.name);			cc_parties[partytype].push(entity);
+			cc_list.push(entity.name);
+			cc_parties[partytype].push(entity);
 		  }
 		}
 	  }
