@@ -1394,27 +1394,10 @@ function otherSheets() {
 
 // ---------------------------------------------------------------------------------------------------------------- quicktest
 function quicktest() {
-
-  var toreturn = "";
-  var mydate = new Date("Mar 1 2015 12:02:03 GMT+0000 (UTC)");
-  toreturn = toreturn + "date: " + mydate.toString() + "\n";
-  toreturn = toreturn + "mar 1 UTC: " + Utilities.formatDate(mydate, "UTC", "EEEE d MMMM YYYY HH:mm:ss") + "\n";
-  toreturn = toreturn + "mar 1 SGT: " + Utilities.formatDate(mydate, "SGT", "EEEE d MMMM YYYY HH:mm:ss") + "\n";
-  toreturn = toreturn + "mar 1 HKT: " + Utilities.formatDate(mydate, "HKT", "EEEE d MMMM YYYY HH:mm:ss") + "\n";
-  toreturn = toreturn + "mar 1 GMT: " + Utilities.formatDate(mydate, "GMT", "EEEE d MMMM YYYY HH:mm:ss") + "\n";
-  toreturn = toreturn + "mar 1 Asia/Singapore:   " + Utilities.formatDate(mydate,     "Asia/Singapore", "EEEE d MMMM YYYY HH:mm:ss") + "\n";
-  toreturn = toreturn + "spreadsheet timezone = " + SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone() + "\n";
-  Logger.log(toreturn);
-
- // [15-03-10 13:29:05:951 HKT] date: Sun Mar 01 2015 20:02:03 GMT+0800 (HKT)
- // mar 1 UTC: Sunday 1 March 2015 12:02:03
- // mar 1 SGT: Sunday 1 March 2015 12:02:03
- // mar 1 HKT: Sunday 1 March 2015 12:02:03
- // mar 1 GMT: Sunday 1 March 2015 12:02:03
- // mar 1 Asia/Singapore:   Sunday 1 March 2015 20:02:03
- //  spreadsheet timezone = Asia/Singapore
-
-  
+  Logger.log("i will run new capTable_()");
+  var capTable = new capTable_();
+  // Logger.log("i haz run new capTable_() and got back %s", capTable);
+  capTable.columnNames();
 }
 
 // ---------------------------------------------------------------------------------------------------------------- uniqueKey_
