@@ -2838,10 +2838,10 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 //  },
 //  ... // another round
 //  ... // another round
-//  round_name: { "TOTAL", ... }
-//    
-function parseCaptable() {
-  var captableRounds = {};
+//  { name: "TOTAL", ... }
+// ]   
+function parseCaptable(sheet) {
+  var captableRounds = [];
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
@@ -2852,6 +2852,7 @@ function parseCaptable() {
   var formats  = rows.getNumberFormats();
 
   var section = null;
+  var majorToRound = {};
   var majorByName = {}; // round_name: column_index
   var majorByNum  = {}; // column_index: round_name
   var minorByName = {}; // money / shares / percentage is in column N
@@ -2872,8 +2873,9 @@ function parseCaptable() {
                                                           j,        row[j]);
           majorByName[row[j]] =     j;
           majorByNum     [j]  = row[j];
+		  majorToRound[row[j]]= captableRounds.length;
           
-          captableRounds[row[j]] = { name: row[j], new_investors: {} }; // we haz a new round!
+          captableRounds.push( { name: row[j], new_investors: {} } ); // we haz a new round!
           Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
       }
@@ -2887,7 +2889,7 @@ function parseCaptable() {
                                                              j,        row[j]);
   
           // if i'm in column j, what round am i in?
-          var myRound = captableRounds[majorByNum[j]];
+          var myRound = captableRounds[majorToRound[majorByNum[j]]];
           myRound[row[0]] = row[j];
         }
       }
@@ -2903,8 +2905,8 @@ function parseCaptable() {
           var myRound; // we might be offset from a major column boundary so keep looking left until we find a major column.
 
           for (var k = 0; k < j; k++) {
-            if (! captableRounds[majorByNum[j-k]]) { continue }
-            myRound = captableRounds[majorByNum[j-k]];
+            if (! captableRounds[majorToRound[majorByNum[j-k]]]) { continue }
+            myRound = captableRounds[majorToRound[majorByNum[j-k]]];
             Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
             break;
           }
