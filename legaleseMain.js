@@ -967,6 +967,7 @@ function asvar_(str) {
 	.replace(/\W/g, "_")
 	.replace(/^_+/, "")
 	.replace(/_+$/, "")
+	.replace(/_+/g, "_")
 	.toLowerCase();
 }
 
