@@ -1948,7 +1948,7 @@ function fillTemplates(sheet) {
 
   // TODO: this is a stub for when one day we know how to properly parse a captable.
   // for now we just make it all up
-  templatedata.cap = parseCapTable_(sheet);
+  templatedata.capTable = new capTable_(sheet.getParent().getSheetByName("Cap Table"));
   
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
@@ -2741,35 +2741,35 @@ function BootcampTeamsImportRange () {
   }
 }
 // parse a JFDI-style cap table
-function parseCapTable_(sheet) {
-  var cap = { col : { num_shares : { pre : { esop : { total : 15000,
-													  issued : 2000,
-													  reserved : 13000,
-													},
-											 f : 30000,
-											 ordinary : 200,
-											 yc_aa : 0,
-										   },
-									 post : { esop : { total : 15000,
-													  issued : 2000,
-													  reserved : 13000,
-													},
-											 f : 30000,
-											 ordinary : 200,
-											 yc_aa : 1000,
-											},
-								   },
-					  price_per_share : null,
-					  pre_money_valuation : null,
-					  post_money_valuation: null,
-					  security_type : null,
-					  index : null,
-					},
-			  table : { sheet : sheet },
-			};
-  
-  return cap;
-}
+// function parseCapTable_(sheet) {
+//   var cap = { col : { num_shares : { pre : { esop : { total : 15000,
+// 													  issued : 2000,
+// 													  reserved : 13000,
+// 													},
+// 											 f : 30000,
+// 											 ordinary : 200,
+// 											 yc_aa : 0,
+// 										   },
+// 									 post : { esop : { total : 15000,
+// 													  issued : 2000,
+// 													  reserved : 13000,
+// 													},
+// 											 f : 30000,
+// 											 ordinary : 200,
+// 											 yc_aa : 1000,
+// 											},
+// 								   },
+// 					  price_per_share : null,
+// 					  pre_money_valuation : null,
+// 					  post_money_valuation: null,
+// 					  security_type : null,
+// 					  index : null,
+// 					},
+// 			  table : { sheet : sheet },
+// 			};
+//   
+//   return cap;
+// }
 
 // spreadsheet functions.
 // code.js needs to pass these through
@@ -2793,11 +2793,116 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 }
 
 
+/*
+ * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
+ *
+ * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= data.cap.col.num_shares.pre.ordinary ?> ordinary shares, <?= data.cap.col.num_shares.pre.f ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= data.cap.col.num_shares.pre.yc_aa ?> shares of YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
+ * <numbered_3_para>The outstanding shares have been duly authorized and validly issued in compliance with applicable laws, and are fully paid and nonassessable.</numbered_3_para>
+ * <numbered_3_para>The Company's ESOP consists of a total of <?= data.cap.col.num_shares.pre.esop.total ?> shares, of which <?= data.cap.col.num_shares.pre.esop.issued ?> have been issued and <?= data.cap.col.num_shares.pre.esop.reserved ?> remain reserved.</numbered_3_para>
+ * 
+ * 
+ * How does it work?
+ * First we go off and parse the cap table into a data structure
+ * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
+ *
+ */
+
+function capTable_(sheet) {
+  sheet = sheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+  Logger.log("capTable_: running rounds()");
+  this.rounds = parseCaptable(sheet);
+
+  this.columnNames = function() {
+	for (var cn = 0; cn < this.rounds.length; cn++) {
+	  Logger.log("capTable.columnNames: column %s is named %s", cn, this.rounds[cn].name);
+	}
+  };
+
+  // for each major column we compute the pre/post values.
+  // example: we want to know:
+  // - who the existing shareholders are before the round:
+  //   old_investors: { investorName: { shares, money, percentage } }
+  // - how many total shares exist at the start of the round:
+  //   shares_pre
+  // - how many shares of different types exist at the start of the round:
+  //   shares_by_type
+
+  var totals = { shares_pre: 0,
+				 money_pre: 0,
+				 all_investors: {},
+				 by_security_type: {},
+			   };
+
+  for (var cn = 0; cn < this.rounds.length; cn++) {
+	var round = this.rounds[cn];
+	Logger.log("capTable.new(): embroidering column %s", round.name);
+
+	// if only we had some sort of native deepcopy method... oh well.
+	round.old_investors = {};
+	for (var ai in totals.all_investors) {
+	  round.old_investors[ai] = {};
+	  for (var attr in totals.all_investors[ai]) {
+		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
+	  }
+	}
+	round.by_security_type = {};
+	for (var bst in totals.by_security_type) {
+	  round.by_security_type[bst] = { TOTAL: 0};
+	  for (var inv in totals.by_security_type[bst]) {
+		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
+		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
+	  }
+	}
+
+	totals.by_security_type[round.security_type] = totals.by_security_type[round.security_type] || {};
+	
+	round.shares_pre = totals.shares_pre;
+
+	var new_shares = 0, new_money = 0;
+	for (var ni in round.new_investors) {
+	  if (round.new_investors[ni].shares == undefined) continue;
+	  new_shares += round.new_investors[ni].shares;
+	  new_money  += round.new_investors[ni].money;
+	  totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
+	  totals.by_security_type[round.security_type][ni] += round.new_investors[ni].shares;
+	  for (var attr in round.new_investors[ni]) {
+		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
+		if (attr == "percentage") { continue } // percentages don't need to add
+		if (round.new_investors[ni][attr] == undefined) { continue } // money and shares do, but we don't always get new ones of those.
+		totals.all_investors[ni] = totals.all_investors[ni] || {};
+		totals.all_investors[ni][attr] = totals.all_investors[ni][attr] || 0;
+		totals.all_investors[ni][attr] += round.new_investors[ni][attr];
+	  }
+	}
+	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
+	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
+	// TODO: we should probably raise a stink if those values are not the same.
+	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new money", round.name, new_money);
+	Logger.log("capTable.new(): the sheet says that we should have %s new money", round.amount_raised.money);
+  }
+
+  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
+
+  this.getRound = function(roundName) {
+	var toreturn;
+	for (var ri = 0; ri < this.rounds.length; ri++) {
+	  if (this.rounds[ri].name == roundName) {
+		toreturn = this.rounds[ri];
+		break;
+	  }
+	}
+	return toreturn;
+  };
+}
+
 // parseCaptable
 // previously known as "Show Me The Money!"
 
-// returns a hash (all the rounds) of hashes (each round) with hashes (each investor).
-// { round_name:
+// returns an array (all the rounds) of hashes (each round) with hashes (each investor).
+// ECMAscript 6 specifies that hashes maintain key ordering, so i did that at first,
+// but some random guy on the Internet said that hashes are unordered, so I used an array lor.
+// [
 //  {
 //    security_type: string,
 //    approximate_date: Date,
@@ -2827,8 +2932,7 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 function parseCaptable(sheet) {
   var captableRounds = [];
   
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-
+  Logger.log("parseCaptable: running");
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
@@ -2850,6 +2954,7 @@ function parseCaptable(sheet) {
     if (section == "CAP TABLE") {
       // INITIALIZE A NEW ROUND
 	  // each major column is on a 3-column repeat.
+	  var asvar0 = asvar_(row[0]);
       if (row[0] == "round name") {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
@@ -2874,7 +2979,7 @@ function parseCaptable(sheet) {
   
           // if i'm in column j, what round am i in?
           var myRound = captableRounds[majorToRound[majorByNum[j]]];
-          myRound[row[0]] = row[j];
+          myRound[asvar_(row[0])] = row[j];
         }
       }
 	  // LEARN ABOUT THE MINOR COLUMN ATTRIBUTES
@@ -2895,8 +3000,10 @@ function parseCaptable(sheet) {
             break;
           }
 
-          minorByName[myRound.name + row[j]] =     j;
-          minorByNum [j]  = { round: myRound, minor: row[j] };
+		  var asvar = asvar_(row[j]);
+		  
+          minorByName[myRound.name + asvar] =     j;
+          minorByNum [j]  = { round: myRound, minor: asvar };
           
           Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
                                                                                                    j,                    myRound.name, minorByNum[j].minor);
@@ -2913,20 +3020,21 @@ function parseCaptable(sheet) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
           Logger.log("captable/%s: looking at row[%s], which is %s",
-                               row[0],            j,        row[j]);
+                               asvar0,            j,        row[j]);
           Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
-                               row[0],                                                      minorByNum[j].round.name, minorByNum[j].minor);
+                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
-          myRound[minorByNum[j].minor] = row[j];
+		  myRound[asvar0] = myRound[asvar0] || {};
+          myRound[asvar0][minorByNum[j].minor] = row[j];
         }
       }
 	  // WE MUST BE DEALING WITH AN INVESTOR!
       else {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is %s",
-                               row[0],                   row[0],                      j,        row[j]);
+          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+                     row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
           myRound.new_investors[row[0]] = myRound.new_investors[row[0]] || {};
@@ -2935,7 +3043,7 @@ function parseCaptable(sheet) {
       }
     }
   }
-  Logger.log("we have learned about the cap table rounds: %s", captableRounds);
+//  Logger.log("we have learned about the cap table rounds: %s", captableRounds);
   return captableRounds;
 }
 
