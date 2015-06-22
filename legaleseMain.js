@@ -697,8 +697,23 @@ function readRows(sheet, entitiesByName) {
 		// Shareholder: [Founder]
 		// means all founders are also shareholders and we should populate the Shareholder parties accordinlgy
 
-		var to_import = asvar_(matches[1]);
+		var extendedAttrs = {};
+		if (row[2]) {
+		  Logger.log("WARNING: readRows(%s): [merge] syntax learning extended attributes.", sheet.getSheetName());
 
+		  for (var role_x = 2; role_x < row.length; role_x+=2) {
+			if (row[role_x] && row[role_x+1] != undefined) {
+			  Logger.log("ROLES: [merge] learning extended attribute %s = %s", asvar_(row[role_x]), formatify_(formats[i][role_x+1], row[role_x+1], sheet));
+			  extendedAttrs[             asvar_(row[role_x])] = formatify_(formats[i][role_x+1], row[role_x+1], sheet, asvar_(row[role_x]));
+			  extendedAttrs["_format_" + asvar_(row[role_x])] = formats[i][role_x+1];
+			  extendedAttrs["_orig_"   + asvar_(row[role_x])] = row[role_x+1];
+			}
+		  }
+		  Logger.log("WARNING: readRows(): [merge] syntax learned extended attributes: %s", extendedAttrs);
+		}
+		
+		var to_import = asvar_(matches[1]);
+		
 		// TODO: sanity check so we don't do a reflexive assignment
 		
 		Logger.log("readRows(%s):         ROLES: merging role %s = %s", sheet.getSheetName(), relation, to_import);
@@ -711,20 +726,30 @@ function readRows(sheet, entitiesByName) {
 		  // TODO: note that the import is incomplete because you don't get _format_ and _orig_.
 		  // in the future we should get this all cleaned up with a properly OOPy sheet management system.
 		  if (principal.roles[to_import] && principal.roles[to_import].length) {
-			Logger.log("readRows(%s):         HANDLED: found it in principal.roles");
+			Logger.log("readRows(%s):         HANDLED: found it in principal.roles", sheet.getSheetName());
+			if (Object.keys(extendedAttrs).length) {
+			  Logger.log("readRows(%s):         applying extended Attributes to %s %s parties", sheet.getSheetName(), principal.roles[to_import].length, to_import);
+			  for (var ti = 0; ti<principal.roles[to_import].length; ti++) {
+				for (var k in extendedAttrs) { entitiesByName[principal.roles[to_import][ti]][k] = extendedAttrs[k];
+											   Logger.log("readRows(%s):      %s.%s = %s", sheet.getSheetName(), principal.roles[to_import][ti], k, extendedAttrs[k]);
+											 }
+			  }
+			}
 			roles[relation] = roles[relation].concat(principal.roles[to_import]);
 		  }		  
 		  continue;
 		}
 		else {
+		  if (Object.keys(extendedAttrs).length) {
+			Logger.log("readRows(%s):         applying extended Attributes", sheet.getSheetName());
+			for (var ti = 0; ti<roles[to_import].length; ti++) {
+			  for (var k in extendedAttrs) { entitiesByName[roles[to_import][ti]][k] = extendedAttrs[k] }
+			}
+		  }
+
 		  Logger.log("readRows(%s):         ROLES: before, roles[%s] = %s", sheet.getSheetName(), relation, roles[relation]);
 		  roles[relation] = roles[relation].concat(roles[to_import]);
 		  Logger.log("readRows(%s):         ROLES: after, roles[%s] = %s", sheet.getSheetName(), relation, roles[relation]);
-		}
-
-		if (row[2]) {
-		  Logger.log("WARNING: readRows(%s): [merge] syntax doesn't currently support extended attributes.");
-		  // but there's no reason it couldn't ... just gotta tweak the code below.
 		}
 	  }
 	  else {
