@@ -46,3 +46,7 @@ function onFormSubmit(e) {
 function LOOKUP2D(w,r,lrtb) {
   return legaleseMain.LOOKUP2D(w,r,lrtb);
 }
+
+function quicktest() {
+  return legaleseMain.quicktest();
+}
