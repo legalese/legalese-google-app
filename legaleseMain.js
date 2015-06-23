@@ -2740,36 +2740,6 @@ function BootcampTeamsImportRange () {
 								"!"+myRow.getValues()[0][0]+"')");
   }
 }
-// parse a JFDI-style cap table
-// function parseCapTable_(sheet) {
-//   var cap = { col : { num_shares : { pre : { esop : { total : 15000,
-// 													  issued : 2000,
-// 													  reserved : 13000,
-// 													},
-// 											 f : 30000,
-// 											 ordinary : 200,
-// 											 yc_aa : 0,
-// 										   },
-// 									 post : { esop : { total : 15000,
-// 													  issued : 2000,
-// 													  reserved : 13000,
-// 													},
-// 											 f : 30000,
-// 											 ordinary : 200,
-// 											 yc_aa : 1000,
-// 											},
-// 								   },
-// 					  price_per_share : null,
-// 					  pre_money_valuation : null,
-// 					  post_money_valuation: null,
-// 					  security_type : null,
-// 					  index : null,
-// 					},
-// 			  table : { sheet : sheet },
-// 			};
-//   
-//   return cap;
-// }
 
 // spreadsheet functions.
 // code.js needs to pass these through
@@ -2796,12 +2766,15 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 /*
  * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
  *
- * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= data.cap.col.num_shares.pre.ordinary ?> ordinary shares, <?= data.cap.col.num_shares.pre.f ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= data.cap.col.num_shares.pre.yc_aa ?> shares of YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
+ * <numbered_2_firstbold>Capitalization</numbered_2_firstbold>
+ * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
  * <numbered_3_para>The outstanding shares have been duly authorized and validly issued in compliance with applicable laws, and are fully paid and nonassessable.</numbered_3_para>
- * <numbered_3_para>The Company's ESOP consists of a total of <?= data.cap.col.num_shares.pre.esop.total ?> shares, of which <?= data.cap.col.num_shares.pre.esop.issued ?> have been issued and <?= data.cap.col.num_shares.pre.esop.reserved ?> remain reserved.</numbered_3_para>
+ * <numbered_3_para>The Company's ESOP consists of a total of <?= data.parties.esop[0].num_shares ?> shares, of which <?= digitCommas_(data.parties.esop[0]._orig_num_shares - data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares) ?> have been issued and <?= digitCommas_(data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares)?> remain reserved.</numbered_3_para>
  * 
+ * the above hardcodes the name of the round into the XML. this is clearly undesirable.
+ * we need a better way to relate the active round with the relevant terms spreadsheet.
  * 
- * How does it work?
+ * How does this work?
  * First we go off and parse the cap table into a data structure
  * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
  *
@@ -2819,15 +2792,16 @@ function capTable_(sheet) {
 	}
   };
 
-  // for each major column we compute the pre/post values.
-  // example: we want to know:
+  // for each major column we compute the pre/post, old/new investor values.
+  // we want to know:
   // - who the existing shareholders are before the round:
   //   old_investors: { investorName: { shares, money, percentage } }
   // - how many total shares exist at the start of the round:
   //   shares_pre
   // - how many shares of different types exist at the start of the round:
   //   shares_by_type
-
+  //   
+  // - we keep a running total to carry forward from round to round
   var totals = { shares_pre: 0,
 				 money_pre: 0,
 				 all_investors: {},
