@@ -2767,6 +2767,10 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
  * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
  *
  * <numbered_2_firstbold>Capitalization</numbered_2_firstbold>
+ *
+ * in future it will be something like data.capTable.getCurrentRound().by_security_type(...)
+ * and it will know what the currentRound is from the name of the ...getActiveSheet()
+ *
  * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
  * <numbered_3_para>The outstanding shares have been duly authorized and validly issued in compliance with applicable laws, and are fully paid and nonassessable.</numbered_3_para>
  * <numbered_3_para>The Company's ESOP consists of a total of <?= data.parties.esop[0].num_shares ?> shares, of which <?= digitCommas_(data.parties.esop[0]._orig_num_shares - data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares) ?> have been issued and <?= digitCommas_(data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares)?> remain reserved.</numbered_3_para>
@@ -2868,6 +2872,54 @@ function capTable_(sheet) {
 	}
 	return toreturn;
   };
+
+  this.byInvestorName = {}; // investorName to Investor object
+
+  // what does an Investor object look like?
+  // { name: someName,
+  //   rounds: [ { name: roundName,
+  //               price_per_share: whatever,
+  //               shares: whatever,
+  //               money: whatever,
+  //               percentage: whatever,
+  //             }, ...
+  //           ]
+  
+  // all the investors
+  this.allInvestors = function() {
+	var toreturn = []; // ordered list of investor objects
+
+	// walk through each round and add the investor to toreturn
+	for (var cn = 0; cn < this.rounds.length; cn++) {
+	  var round = this.rounds[cn];
+	  if (round.name == "TOTAL") { continue; }
+	  var new_investors = round.new_investors;
+
+	  for (var investorName in new_investors) {
+		var investorInRound = new_investors[investorName];
+		var investor;
+		if (this.byInvestorName[investorName] == undefined) {
+		  investor = this.byInvestorName[investorName] = { name: investorName };
+		  toreturn.push(investor);
+		} else {
+		  investor = this.byInvestorName[investorName];
+		}
+
+		if (investor.rounds == undefined) {
+		  investor.rounds = [];
+		}
+		investor.rounds.push({name:            round.name,
+							  price_per_share: round.price_per_share.shares,
+							  shares:          investorInRound.shares,
+							  money:           investorInRound.money,
+							  percentage:      investorInRound.percentage,
+							 });
+	  }
+	}
+	Logger.log("i have built allInvestors: %s", JSON.stringify(toreturn));
+	return toreturn;
+  };
+  
 }
 
 // parseCaptable
@@ -2905,8 +2957,10 @@ function capTable_(sheet) {
 // ]   
 function parseCaptable(sheet) {
   var captableRounds = [];
+
+  sheet = sheet || SpreadsheetApp.getActiveSheet();
   
-  Logger.log("parseCaptable: running");
+  Logger.log("parseCaptable: running on sheet %s", sheet.getSheetName());
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
@@ -2929,6 +2983,8 @@ function parseCaptable(sheet) {
       // INITIALIZE A NEW ROUND
 	  // each major column is on a 3-column repeat.
 	  var asvar0 = asvar_(row[0]);
+	  // asvar_("my Cool String (draft)") is "my_cool_string_draft".
+	  // other people might do myCoolStringDraft, but I don't like camelCase.
       if (row[0] == "round name") {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
@@ -3000,6 +3056,7 @@ function parseCaptable(sheet) {
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  myRound[asvar0] = myRound[asvar0] || {};
+		  // for rows "price per share" and "discount" we save it one layer deeper than we actually need to -- so when you pull it out, dereference the minor col.
           myRound[asvar0][minorByNum[j].minor] = row[j];
         }
       }
