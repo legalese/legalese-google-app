@@ -2808,7 +2808,7 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 function capTable_(sheet) {
   sheet = sheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-  Logger.log("capTable_: running rounds()");
+  Logger.log("capTable_: running rounds() for sheet %s", sheet.getSheetName());
   this.rounds = parseCaptable(sheet);
 
   this.columnNames = function() {
@@ -2824,7 +2824,7 @@ function capTable_(sheet) {
   // - how many total shares exist at the start of the round:
   //   shares_pre
   // - how many shares of different types exist at the start of the round:
-  //   shares_by_type
+  //   by_security_type = { "Class F Shares" : { "Investor Name" : nnn, "TOTAL" : mmm }, ... }
   //   
   // - we keep a running total to carry forward from round to round
   var totals = { shares_pre: 0,
@@ -2843,14 +2843,6 @@ function capTable_(sheet) {
 	  round.old_investors[ai] = {};
 	  for (var attr in totals.all_investors[ai]) {
 		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
-	  }
-	}
-	round.by_security_type = {};
-	for (var bst in totals.by_security_type) {
-	  round.by_security_type[bst] = { TOTAL: 0};
-	  for (var inv in totals.by_security_type[bst]) {
-		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
-		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
 	  }
 	}
 
@@ -2874,6 +2866,18 @@ function capTable_(sheet) {
 		totals.all_investors[ni][attr] += round.new_investors[ni][attr];
 	  }
 	}
+
+	round.by_security_type = {};
+	for (var bst in totals.by_security_type) {
+	  round.by_security_type[bst] = { TOTAL: 0};
+	  for (var inv in totals.by_security_type[bst]) {
+		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
+		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
+	  }
+	}
+	Logger.log("capTable: round.by_security_type = %s", JSON.stringify(round.by_security_type));
+
+
 //	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
 //	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
 	// TODO: we should probably raise a stink if those values are not the same.
