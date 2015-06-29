@@ -836,24 +836,24 @@ function readRows(sheet, entitiesByName) {
 	  // config.columna.values is an array of values -- if columna repeats, then values from last line only
 	  // config.columna.dict is a dictionary of b: [c,d,e] across multiple lines
 	  
-	  Logger.log("CONF: row " + i + ": processing row "+row[0]);
+//	  Logger.log("CONF: row " + i + ": processing row "+row[0]);
 	  
 	  // populate the previous
 	  var columna = asvar_(row[0]) || previous[0];
 	  if (columna == "template") { columna = "templates"; Logger.log("CONF: correcting 'template' to 'templates'"); }
 	  previous[0] = columna;
 
-	  Logger.log("CONF: columna="+columna);
+//	  Logger.log("CONF: columna="+columna);
 
 	  config[columna] = config[columna] || { asRange:null, values:null, dict:{}, tree:{} };
-	  Logger.log("CONF: config[columna]="+config[columna]);
+//	  Logger.log("CONF: config[columna]="+config[columna]);
 
 	  config[columna].asRange = sheet.getRange(i+1,1,1,sheet.getMaxColumns());
-	  Logger.log("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
+//	  Logger.log("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
 
 	  var rowvalues = config[columna].asRange.getValues()[0];
 	  while (rowvalues[rowvalues.length-1] === "") { rowvalues.pop() }
-	  Logger.log("CONF: rowvalues = %s", rowvalues);
+//	  Logger.log("CONF: rowvalues = %s", rowvalues);
 
 	  var descended = [columna];
 
@@ -862,7 +862,7 @@ function readRows(sheet, entitiesByName) {
 		if (leftmost_nonblank == -1
 			&& (! (rowvalues[j] === ""))) { leftmost_nonblank = j }
 	  }
-	  Logger.log("CONF: leftmost_nonblank=%s", leftmost_nonblank);
+//	  Logger.log("CONF: leftmost_nonblank=%s", leftmost_nonblank);
 
 	  for (var j = 0; j < leftmost_nonblank; j++) {
 		descended[j] = previous[j];
@@ -871,14 +871,14 @@ function readRows(sheet, entitiesByName) {
 		if (j >= 1 && ! (rowvalues[j] === "")) { previous[j] = rowvalues[j] }
 		descended[j] = rowvalues[j];
 	  }
-	  Logger.log("CONF: descended = %s", descended);
+//	  Logger.log("CONF: descended = %s", descended);
 
 	  // build value -- config.a.value = b
 	  config[columna].value = descended[1];
 
 	  // build values -- config.a.values = [b,c,d]
 	  config[columna].values = descended.slice(1);
-	  Logger.log("CONF: " + columna+".values=%s", config[columna].values.join(","));
+//	  Logger.log("CONF: " + columna+".values=%s", config[columna].values.join(","));
 
 	  // build tree -- config.a.tree.b.c.d.e.f=g
 	  treeify_(config[columna].tree, descended.slice(1));
@@ -889,7 +889,7 @@ function readRows(sheet, entitiesByName) {
 	  var columnb = asvar_(descended[1]);
 
 	  config[columna].dict[columnb] = columns_cde;
-	  Logger.log("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
+//	  Logger.log("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
 	}
 	else {
 	  Logger.log("readRows: no handler for %s line %s %s ... ignoring", section, row[0], row[1]);
