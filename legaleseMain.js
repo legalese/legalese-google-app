@@ -1629,13 +1629,23 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	var to_parties = { }; // { director: [ Entity1, Entity2 ], company: [Company] }
 	var cc_parties = { };
 	var ex_parties = { }; // { new_investor: EntityX }
+	var nullIsOK = false;
   
 	for (var mailtype in sourceTemplate.parties) {
 	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
 				 sourceTemplate.name, mailtype);
 	  
-	  for (var i in sourceTemplate.parties[mailtype]) { // to | cc
-		var partytype = sourceTemplate.parties[mailtype][i]; // company, director, shareholder, etc
+	  for (var mti in sourceTemplate.parties[mailtype]) { // to | cc
+		var partytype = sourceTemplate.parties[mailtype][mti]; // company, director, shareholder, etc
+		if (partytype == "") {
+		  Logger.log("docsetEmails:   %s mailtype %s has blank partytypes. skipping.", sourceTemplate.name, mailtype);
+		  continue;
+		}
+		if (partytype.toLowerCase() == "null") {
+		  Logger.log("docsetEmails:   %s mailtype %s has deliberately blank partytypes. skipping.", sourceTemplate.name, mailtype);
+		  nullIsOK = true;
+		  continue;
+		}
 		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
 		var mailindex = null;
 		
@@ -1707,13 +1717,18 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		this._parties.exploders[mytitle] = {to:exploder_to_parties,cc:cc_parties};
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
-
 		Logger.log("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
 	  }
 	}
-  }
-  if (to_list.length == 0 && sourceTemplate.explode=="") {
-	throw("did your Templates sheet define To and CC for " + sourceTemplate.name + "?");
+	Logger.log("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
+			   sourceTemplate.name, to_list, sourceTemplate.explode);
+	if (to_list.length == 0 && sourceTemplate.explode=="" && ! nullIsOK) {
+	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties?");
+	}
+	else {
+	  Logger.log("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
+				 sourceTemplate.name, to_list, sourceTemplate.explode);
+	}
   }
   
   // return to_cc for a given set of sourceTemplates
