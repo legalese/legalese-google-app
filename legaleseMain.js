@@ -1838,7 +1838,9 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		  continue;
 		}
 		var rcpts = this.Rcpts([sourceTemplate], entity);
-		callback([sourceTemplate], entity, rcpts);
+		callback([sourceTemplate], entity, rcpts,
+				 { explodee:entity, partytype:sourceTemplate.explode, explodees:parties[partytype] } // details of the explosion
+				);
 	  }
 	}
   };
@@ -2005,12 +2007,16 @@ function fillTemplates(sheet) {
   var docsetEmails_ = new docsetEmails(sheet, readRows_, parties, suitables);
 
   // you will see the same pattern in uploadAgreement.
-  var buildTemplate = function(sourceTemplates, entity, rcpts) { // this is a callback run within the docsetEmails_ object.
+  var buildTemplate = function(sourceTemplates, entity, rcpts, explosion) { // this is a callback run within the docsetEmails_ object.
 	var sourceTemplate = sourceTemplates[0];
 	var newTemplate = obtainTemplate_(sourceTemplate.url, sourceTemplate.nocache, readmeDoc);
 	newTemplate.data = templatedata; // NOTE: this is the  first global inside the XML context
 	newTemplate.data.sheet = sheet;  // NOTE: this is the second global inside the XML context
 
+	if (explosion != undefined) {
+	  newTemplate.explosion = explosion;
+	}
+	
 	if (templatedata._origparties == undefined) {
 	  templatedata._origparties = {};
 	  for (var p in parties) { templatedata._origparties[p] = parties[p] }
