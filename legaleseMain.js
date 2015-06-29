@@ -2874,14 +2874,14 @@ function capTable_(sheet) {
 		totals.all_investors[ni][attr] += round.new_investors[ni][attr];
 	  }
 	}
-	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
-	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
+//	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
+//	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
 	// TODO: we should probably raise a stink if those values are not the same.
-	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new money", round.name, new_money);
-	Logger.log("capTable.new(): the sheet says that we should have %s new money", round.amount_raised.money);
+//	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new money", round.name, new_money);
+//	Logger.log("capTable.new(): the sheet says that we should have %s new money", round.amount_raised.money);
   }
 
-  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
+//  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
 
   this.getRound = function(roundName) {
 	var toreturn;
@@ -3009,14 +3009,14 @@ function parseCaptable(sheet) {
       if (row[0] == "round name") {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/roundname: looking at row[%s], which is %s",
-                                                          j,        row[j]);
+//          Logger.log("captable/roundname: looking at row[%s], which is %s",
+//                                                          j,        row[j]);
           majorByName[row[j]] =     j;
           majorByNum     [j]  = row[j];
 		  majorToRound[row[j]]= captableRounds.length;
           
           captableRounds.push( { name: row[j], new_investors: {} } ); // we haz a new round!
-          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
+//          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
       }
 	  // ABSORB THE MAJOR-COLUMN ROUND ATTRIBUTES
@@ -3025,8 +3025,8 @@ function parseCaptable(sheet) {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/securitytype: looking at row[%s], which is %s",
-                                                             j,        row[j]);
+//          Logger.log("captable/securitytype: looking at row[%s], which is %s",
+//                                                             j,        row[j]);
   
           // if i'm in column j, what round am i in?
           var myRound = captableRounds[majorToRound[majorByNum[j]]];
@@ -3040,14 +3040,14 @@ function parseCaptable(sheet) {
         // myRound[investorName].money = x, myRound[investorName].shares = y, myRound[investorName].percentage = z
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/breakdown: looking at row[%s], which is %s",
-                                                          j,        row[j]);
+//          Logger.log("captable/breakdown: looking at row[%s], which is %s",
+//                                                          j,        row[j]);
           var myRound; // we might be offset from a major column boundary so keep looking left until we find a major column.
 
           for (var k = 0; k < j; k++) {
             if (! captableRounds[majorToRound[majorByNum[j-k]]]) { continue }
             myRound = captableRounds[majorToRound[majorByNum[j-k]]];
-            Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
+//            Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
             break;
           }
 
@@ -3056,8 +3056,8 @@ function parseCaptable(sheet) {
           minorByName[myRound.name + asvar] =     j;
           minorByNum [j]  = { round: myRound, minor: asvar };
           
-          Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
-                                                                                                   j,                    myRound.name, minorByNum[j].minor);
+//          Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
+//                                                                                                   j,                    myRound.name, minorByNum[j].minor);
         }
       }
 	  // LEARN ABOUT THE ROUND MINOR ATTRIBUTES
@@ -3070,10 +3070,10 @@ function parseCaptable(sheet) {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/%s: looking at row[%s], which is %s",
-                               asvar0,            j,        row[j]);
-          Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
-                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
+//          Logger.log("captable/%s: looking at row[%s], which is %s",
+//                               asvar0,            j,        row[j]);
+//          Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
+//                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  myRound[asvar0] = myRound[asvar0] || {};
@@ -3085,8 +3085,8 @@ function parseCaptable(sheet) {
       else {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
-                     row[0],                           j,    minorByNum[j].minor,    row[j]);
+//          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+//                     row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
           myRound.new_investors[row[0]] = myRound.new_investors[row[0]] || {};
