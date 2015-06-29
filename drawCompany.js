@@ -5,7 +5,7 @@
 // size of the captable.svg bars
 
 var w = 500;
-var h =100;
+var h = 100;
 var barPadding = 1; 
 
 // insert source captable data here
@@ -22,7 +22,7 @@ svg.selectAll("rect")
     .enter()
     .append("rect")
     .attr("x", function(d, i) {
-	return i * (w / dataset.length); // Bar width of 20 plus 1 for padding
+	return i * (w / dataset.length);
 })
     .attr("y", function(d) {
 	return h - d;
