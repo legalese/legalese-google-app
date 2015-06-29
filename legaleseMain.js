@@ -1810,10 +1810,10 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 			   normals.map(function(t){return t.name}));
 	if (this.readRows.config.concatenate_pdfs && this.readRows.config.concatenate_pdfs.values[0] == true) {
 	                           var rcpts = this.Rcpts(normals);
-	  for (var i in normals) {                                       individual_callback([normals[i]], null, rcpts); }
+	  for (var ni in normals) {                                       individual_callback([normals[i]], null, rcpts); }
       if (group_callback) {            group_callback(normals, null, rcpts); }
 	} else {
-	  for (var i in normals) { var rcpts = this.Rcpts([normals[i]]); individual_callback([normals[i]], null, rcpts); }
+	  for (var ni in normals) { var rcpts = this.Rcpts([normals[i]]); individual_callback([normals[i]], null, rcpts); }
 	}
   };	
 
