@@ -171,7 +171,10 @@ function muteTemplateActiveSheetWarnings_(setter) {
 function setupForm(sheet) {
 
   var sheetPassedIn = ! (sheet == undefined);
-  if (! sheetPassedIn && SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller") {
+  if (! sheetPassedIn && (SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller"
+						  ||
+						  SpreadsheetApp.getActiveSheet().getSheetName().toLowerCase() == "controller")
+						 ) {
 	Logger.log("in controller mode, switching to setupOtherForms_()");
 	setupOtherForms_();
 	return;
@@ -1927,7 +1930,10 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
 function fillTemplates(sheet) {
 
   var sheetPassedIn = ! (sheet == undefined);
-  if (! sheetPassedIn && SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller") {
+  if (! sheetPassedIn && (SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller"
+						  ||
+						  SpreadsheetApp.getActiveSheet().getSheetName().toLowerCase() == "controller")
+						 ) {
 	Logger.log("in controller mode, switching to fillOtherTemplates()");
 	fillOtherTemplates_();
 	return;
