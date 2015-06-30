@@ -3091,7 +3091,7 @@ function parseCaptable(sheet) {
           majorByNum     [j]  = row[j];
 		  majorToRound[row[j]]= captableRounds.length;
           
-          captableRounds.push( { name: row[j], new_investors: {} } ); // we haz a new round!
+          captableRounds.push( { name: row[j], new_investors: {}, ordered_investors: [] } ); // we haz a new round!
 //          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
       }
@@ -3161,11 +3161,14 @@ function parseCaptable(sheet) {
       else {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-//          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
-//                     row[0],                           j,    minorByNum[j].minor,    row[j]);
+          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+                     row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
-          myRound.new_investors[row[0]] = myRound.new_investors[row[0]] || {};
+		  if (myRound.new_investors[row[0]] == undefined) {
+			myRound.ordered_investors.push(row[0]);
+			myRound.new_investors[row[0]] = {};
+		  }
           myRound.new_investors[row[0]][minorByNum[j].minor] = row[j];
         }
       }
