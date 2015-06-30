@@ -34,4 +34,6 @@ svg.selectAll("rect")
 
 //  we would need to add colour.
 
+//  we would need to show data values as well. add text elements to svg
+
 
