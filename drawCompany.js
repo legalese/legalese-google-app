@@ -34,6 +34,10 @@ svg.selectAll("rect")
 
 //  we would need to add colour.
 
+    .attr("fill". function(d) {
+	return "rgb(0, 0, " + (d *10) + ")";
+});
+
 //  we would need to show data values as well. add text elements to svg
 
 
