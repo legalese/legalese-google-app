@@ -2790,6 +2790,46 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 }
 
 
+/* this object handles ESOP-related calculations for the capTable.
+ESOP semantics are as follows:
+
+in the Entities table,
+  there should be a row whose investorName is "ESOP".
+  the num_shares attribute should be the initial ESOP reservation.
+  (subsequent ESOP reservations may be expressed by adding to the cap table's ESOP.shares count in a subsequent round.)
+
+in the Cap Tbale, 
+  there should be a row in the Cap Table whose investorName is "ESOP".
+  positive entries in its .shares attribute represent addition to the ESOP reservation.
+  negative entries in its .shares attribute represent allocation from the ESOP reservation to an employee.
+
+  only those rows that occur below the ESOP line, and have the same class of shares as the original ESOP, are considered part of the ESOP.
+
+  this means that it is possible for founders to be granted shares of the same class as the ESOP (i.e. Class F) without them being counted against the ESOP.
+
+ */
+function ESOP_(security_type, initial_num_shares) {
+  this.security_type = security_type;
+  this.initial_num_shares = initial_num_shares;
+
+  this.holders = {}; // { investor name : num esop shares }
+
+  this.createHolder = function(name) { this.holders[name] = this.holders[name] || 0 };
+  this.deleteHolder = function(name) { delete this.holders[name] };
+  this.holderGains  = function(name, num) { this.holders[name] += num };
+  this.holderLoses  = function(name, num) { this.holders[name] -= num };
+
+  this.reserved  = function() { return this.holders["ESOP"] };
+  this.issued    = function() {
+	var toreturn = 0;
+	for (var hk in this.holders) {
+	  if (hk != "ESOP") toreturn += this.holders[hk];
+	}
+	return toreturn;
+  };
+}
+
+
 /*
  * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
  *
@@ -2883,7 +2923,33 @@ function capTable_(sheet) {
 	}
 	Logger.log("capTable: round.by_security_type = %s", JSON.stringify(round.by_security_type));
 
+	if (round.new_investors["ESOP"] != undefined && round.new_investors["ESOP"].shares) {
+	  Logger.log("capTable: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
+	  round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);
+	  Logger.log("capTable: establishing ESOP object for round %s", round.name);
+	  var seen_ESOP_investor = false;
+	  for (var oi in round.ordered_investors) {
+		var inv = round.ordered_investors[oi];
+		Logger.log("capTable: considering investor %s", inv);
+		if (inv == "ESOP") { seen_ESOP_investor = true;
+							 round.ESOP.createHolder(inv);
+							 round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+							 continue;
+						   }
+		else if ( seen_ESOP_investor ) {
+		  round.ESOP.createHolder(inv);
+		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+		}
+		else {
+		  Logger.log("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
+		}
+		// TODO: in future add a running total, similar to the rest of how we manage shares by type above.
+		// if we don't do this, then multiple columns which deal with ESOP will not do the right thing.
+	  }
+	  Logger.log("capTable: created an ESOP object for round %s: %s", round.name, JSON.stringify(round.ESOP.holders));
+	}
 
+	
 //	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
 //	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
 	// TODO: we should probably raise a stink if those values are not the same.
