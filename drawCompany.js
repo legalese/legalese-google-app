@@ -40,4 +40,20 @@ svg.selectAll("rect")
 
 //  we would need to show data values as well. add text elements to svg
 
-
+svg.selectAll("text")
+    .data(dataset)
+    .enter()
+    .append("text")
+    .text(function(d) {
+	return d;
+})
+    .attr("text-anchor", "middle")
+    .attr("x", function(d, i) {
+	return i * (w / dataset.length) + (w / dataset.length - barPadding) / 2;
+})
+    .attr("y", function(d) {
+	return h - (d * 4) +14;
+})
+    .attr("font-family", "equity")
+    .attr("font-size", "11px")
+    .attr("fill", "white");
