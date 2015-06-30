@@ -3659,6 +3659,8 @@ function drawSVG() {
   var folder = createFolder_(SpreadsheetApp.getActiveSheet());
   var document = XmlService.createDocument(mySVGroot);
   var xml = XmlService.getPrettyFormat().format(document);
+  xml = xml.replace(/<svg xmlns=/, '<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns=')
+           .replace(/xmlns="" /g, '');
   var svgfile = folder.createFile("mytest.svg", xml, 'image/svg+xml');
 }
 
