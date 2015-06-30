@@ -1,6 +1,8 @@
 // most of the code for legalese lives inside libraries:
-// legaleseMain M6YlbsVrWR18KeWvOMc3708UQWaHMB8in
-// go to Resources / Libraries and import it.
+// legaleseMain       M6YlbsVrWR18KeWvOMc3708UQWaHMB8in
+// legaleseSignature  M_Wuaitt08FDk5mzAwEoxpXYH5ITXFjPS
+// go to Resources / Libraries and import it. the first is needed.
+// the second requires an API key and is local to each installation.
 
 //---------------------------------------------------------------------------------------------------------------- onOpen
 /**
