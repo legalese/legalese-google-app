@@ -171,7 +171,10 @@ function muteTemplateActiveSheetWarnings_(setter) {
 function setupForm(sheet) {
 
   var sheetPassedIn = ! (sheet == undefined);
-  if (! sheetPassedIn && SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller") {
+  if (! sheetPassedIn && (SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller"
+						  ||
+						  SpreadsheetApp.getActiveSheet().getSheetName().toLowerCase() == "controller")
+						 ) {
 	Logger.log("in controller mode, switching to setupOtherForms_()");
 	setupOtherForms_();
 	return;
@@ -836,24 +839,24 @@ function readRows(sheet, entitiesByName) {
 	  // config.columna.values is an array of values -- if columna repeats, then values from last line only
 	  // config.columna.dict is a dictionary of b: [c,d,e] across multiple lines
 	  
-	  Logger.log("CONF: row " + i + ": processing row "+row[0]);
+//	  Logger.log("CONF: row " + i + ": processing row "+row[0]);
 	  
 	  // populate the previous
 	  var columna = asvar_(row[0]) || previous[0];
 	  if (columna == "template") { columna = "templates"; Logger.log("CONF: correcting 'template' to 'templates'"); }
 	  previous[0] = columna;
 
-	  Logger.log("CONF: columna="+columna);
+//	  Logger.log("CONF: columna="+columna);
 
 	  config[columna] = config[columna] || { asRange:null, values:null, dict:{}, tree:{} };
-	  Logger.log("CONF: config[columna]="+config[columna]);
+//	  Logger.log("CONF: config[columna]="+config[columna]);
 
 	  config[columna].asRange = sheet.getRange(i+1,1,1,sheet.getMaxColumns());
-	  Logger.log("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
+//	  Logger.log("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
 
 	  var rowvalues = config[columna].asRange.getValues()[0];
 	  while (rowvalues[rowvalues.length-1] === "") { rowvalues.pop() }
-	  Logger.log("CONF: rowvalues = %s", rowvalues);
+//	  Logger.log("CONF: rowvalues = %s", rowvalues);
 
 	  var descended = [columna];
 
@@ -862,7 +865,7 @@ function readRows(sheet, entitiesByName) {
 		if (leftmost_nonblank == -1
 			&& (! (rowvalues[j] === ""))) { leftmost_nonblank = j }
 	  }
-	  Logger.log("CONF: leftmost_nonblank=%s", leftmost_nonblank);
+//	  Logger.log("CONF: leftmost_nonblank=%s", leftmost_nonblank);
 
 	  for (var j = 0; j < leftmost_nonblank; j++) {
 		descended[j] = previous[j];
@@ -871,14 +874,14 @@ function readRows(sheet, entitiesByName) {
 		if (j >= 1 && ! (rowvalues[j] === "")) { previous[j] = rowvalues[j] }
 		descended[j] = rowvalues[j];
 	  }
-	  Logger.log("CONF: descended = %s", descended);
+//	  Logger.log("CONF: descended = %s", descended);
 
 	  // build value -- config.a.value = b
 	  config[columna].value = descended[1];
 
 	  // build values -- config.a.values = [b,c,d]
 	  config[columna].values = descended.slice(1);
-	  Logger.log("CONF: " + columna+".values=%s", config[columna].values.join(","));
+//	  Logger.log("CONF: " + columna+".values=%s", config[columna].values.join(","));
 
 	  // build tree -- config.a.tree.b.c.d.e.f=g
 	  treeify_(config[columna].tree, descended.slice(1));
@@ -889,7 +892,7 @@ function readRows(sheet, entitiesByName) {
 	  var columnb = asvar_(descended[1]);
 
 	  config[columna].dict[columnb] = columns_cde;
-	  Logger.log("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
+//	  Logger.log("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
 	}
 	else {
 	  Logger.log("readRows: no handler for %s line %s %s ... ignoring", section, row[0], row[1]);
@@ -1629,13 +1632,23 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	var to_parties = { }; // { director: [ Entity1, Entity2 ], company: [Company] }
 	var cc_parties = { };
 	var ex_parties = { }; // { new_investor: EntityX }
+	var nullIsOK = false;
   
 	for (var mailtype in sourceTemplate.parties) {
 	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
 				 sourceTemplate.name, mailtype);
 	  
-	  for (var i in sourceTemplate.parties[mailtype]) { // to | cc
-		var partytype = sourceTemplate.parties[mailtype][i]; // company, director, shareholder, etc
+	  for (var mti in sourceTemplate.parties[mailtype]) { // to | cc
+		var partytype = sourceTemplate.parties[mailtype][mti]; // company, director, shareholder, etc
+		if (partytype == "") {
+		  Logger.log("docsetEmails:   %s mailtype %s has blank partytypes. skipping.", sourceTemplate.name, mailtype);
+		  continue;
+		}
+		if (partytype.toLowerCase() == "null") {
+		  Logger.log("docsetEmails:   %s mailtype %s has deliberately blank partytypes. skipping.", sourceTemplate.name, mailtype);
+		  nullIsOK = true;
+		  continue;
+		}
 		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
 		var mailindex = null;
 		
@@ -1707,13 +1720,18 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		this._parties.exploders[mytitle] = {to:exploder_to_parties,cc:cc_parties};
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
-
 		Logger.log("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
 	  }
 	}
-  }
-  if (to_list.length == 0 && sourceTemplate.explode=="") {
-	throw("did your Templates sheet define To and CC for " + sourceTemplate.name + "?");
+	Logger.log("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
+			   sourceTemplate.name, to_list, sourceTemplate.explode);
+	if (to_list.length == 0 && sourceTemplate.explode=="" && ! nullIsOK) {
+	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties?");
+	}
+	else {
+	  Logger.log("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
+				 sourceTemplate.name, to_list, sourceTemplate.explode);
+	}
   }
   
   // return to_cc for a given set of sourceTemplates
@@ -1795,10 +1813,10 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 			   normals.map(function(t){return t.name}));
 	if (this.readRows.config.concatenate_pdfs && this.readRows.config.concatenate_pdfs.values[0] == true) {
 	                           var rcpts = this.Rcpts(normals);
-	  for (var i in normals) {                                       individual_callback([normals[i]], null, rcpts); }
+	  for (var ni in normals) {                                       individual_callback([normals[ni]], null, rcpts); }
       if (group_callback) {            group_callback(normals, null, rcpts); }
 	} else {
-	  for (var i in normals) { var rcpts = this.Rcpts([normals[i]]); individual_callback([normals[i]], null, rcpts); }
+	  for (var ni in normals) { var rcpts = this.Rcpts([normals[ni]]); individual_callback([normals[ni]], null, rcpts); }
 	}
   };	
 
@@ -1823,7 +1841,9 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		  continue;
 		}
 		var rcpts = this.Rcpts([sourceTemplate], entity);
-		callback([sourceTemplate], entity, rcpts);
+		callback([sourceTemplate], entity, rcpts,
+				 { explodee:entity, partytype:sourceTemplate.explode, explodees:parties[partytype] } // details of the explosion
+				);
 	  }
 	}
   };
@@ -1910,7 +1930,10 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
 function fillTemplates(sheet) {
 
   var sheetPassedIn = ! (sheet == undefined);
-  if (! sheetPassedIn && SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller") {
+  if (! sheetPassedIn && (SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller"
+						  ||
+						  SpreadsheetApp.getActiveSheet().getSheetName().toLowerCase() == "controller")
+						 ) {
 	Logger.log("in controller mode, switching to fillOtherTemplates()");
 	fillOtherTemplates_();
 	return;
@@ -1990,12 +2013,16 @@ function fillTemplates(sheet) {
   var docsetEmails_ = new docsetEmails(sheet, readRows_, parties, suitables);
 
   // you will see the same pattern in uploadAgreement.
-  var buildTemplate = function(sourceTemplates, entity, rcpts) { // this is a callback run within the docsetEmails_ object.
+  var buildTemplate = function(sourceTemplates, entity, rcpts, explosion) { // this is a callback run within the docsetEmails_ object.
 	var sourceTemplate = sourceTemplates[0];
 	var newTemplate = obtainTemplate_(sourceTemplate.url, sourceTemplate.nocache, readmeDoc);
 	newTemplate.data = templatedata; // NOTE: this is the  first global inside the XML context
 	newTemplate.data.sheet = sheet;  // NOTE: this is the second global inside the XML context
 
+	if (explosion != undefined) {
+	  newTemplate.explosion = explosion;
+	}
+	
 	if (templatedata._origparties == undefined) {
 	  templatedata._origparties = {};
 	  for (var p in parties) { templatedata._origparties[p] = parties[p] }
@@ -2763,10 +2790,54 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 }
 
 
+/* this object handles ESOP-related calculations for the capTable.
+ESOP semantics are as follows:
+
+in the Entities table,
+  there should be a row whose investorName is "ESOP".
+  the num_shares attribute should be the initial ESOP reservation.
+  (subsequent ESOP reservations may be expressed by adding to the cap table's ESOP.shares count in a subsequent round.)
+
+in the Cap Tbale, 
+  there should be a row in the Cap Table whose investorName is "ESOP".
+  positive entries in its .shares attribute represent addition to the ESOP reservation.
+  negative entries in its .shares attribute represent allocation from the ESOP reservation to an employee.
+
+  only those rows that occur below the ESOP line, and have the same class of shares as the original ESOP, are considered part of the ESOP.
+
+  this means that it is possible for founders to be granted shares of the same class as the ESOP (i.e. Class F) without them being counted against the ESOP.
+
+ */
+function ESOP_(security_type, initial_num_shares) {
+  this.security_type = security_type;
+  this.initial_num_shares = initial_num_shares;
+
+  this.holders = {}; // { investor name : num esop shares }
+
+  this.createHolder = function(name) { this.holders[name] = this.holders[name] || 0 };
+  this.deleteHolder = function(name) { delete this.holders[name] };
+  this.holderGains  = function(name, num) { this.holders[name] += num };
+  this.holderLoses  = function(name, num) { this.holders[name] -= num };
+
+  this.reserved  = function() { return this.holders["ESOP"] };
+  this.issued    = function() {
+	var toreturn = 0;
+	for (var hk in this.holders) {
+	  if (hk != "ESOP") toreturn += this.holders[hk];
+	}
+	return toreturn;
+  };
+}
+
+
 /*
  * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
  *
  * <numbered_2_firstbold>Capitalization</numbered_2_firstbold>
+ *
+ * in future it will be something like data.capTable.getCurrentRound().by_security_type(...)
+ * and it will know what the currentRound is from the name of the ...getActiveSheet()
+ *
  * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
  * <numbered_3_para>The outstanding shares have been duly authorized and validly issued in compliance with applicable laws, and are fully paid and nonassessable.</numbered_3_para>
  * <numbered_3_para>The Company's ESOP consists of a total of <?= data.parties.esop[0].num_shares ?> shares, of which <?= digitCommas_(data.parties.esop[0]._orig_num_shares - data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares) ?> have been issued and <?= digitCommas_(data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares)?> remain reserved.</numbered_3_para>
@@ -2783,7 +2854,7 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 function capTable_(sheet) {
   sheet = sheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-  Logger.log("capTable_: running rounds()");
+  Logger.log("capTable_: running rounds() for sheet %s", sheet.getSheetName());
   this.rounds = parseCaptable(sheet);
 
   this.columnNames = function() {
@@ -2799,7 +2870,7 @@ function capTable_(sheet) {
   // - how many total shares exist at the start of the round:
   //   shares_pre
   // - how many shares of different types exist at the start of the round:
-  //   shares_by_type
+  //   by_security_type = { "Class F Shares" : { "Investor Name" : nnn, "TOTAL" : mmm }, ... }
   //   
   // - we keep a running total to carry forward from round to round
   var totals = { shares_pre: 0,
@@ -2818,14 +2889,6 @@ function capTable_(sheet) {
 	  round.old_investors[ai] = {};
 	  for (var attr in totals.all_investors[ai]) {
 		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
-	  }
-	}
-	round.by_security_type = {};
-	for (var bst in totals.by_security_type) {
-	  round.by_security_type[bst] = { TOTAL: 0};
-	  for (var inv in totals.by_security_type[bst]) {
-		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
-		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
 	  }
 	}
 
@@ -2849,14 +2912,52 @@ function capTable_(sheet) {
 		totals.all_investors[ni][attr] += round.new_investors[ni][attr];
 	  }
 	}
-	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
-	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
+
+	round.by_security_type = {};
+	for (var bst in totals.by_security_type) {
+	  round.by_security_type[bst] = { TOTAL: 0};
+	  for (var inv in totals.by_security_type[bst]) {
+		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
+		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
+	  }
+	}
+	Logger.log("capTable: round.by_security_type = %s", JSON.stringify(round.by_security_type));
+
+	if (round.new_investors["ESOP"] != undefined && round.new_investors["ESOP"].shares) {
+	  Logger.log("capTable: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
+	  round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);
+	  Logger.log("capTable: establishing ESOP object for round %s", round.name);
+	  var seen_ESOP_investor = false;
+	  for (var oi in round.ordered_investors) {
+		var inv = round.ordered_investors[oi];
+		Logger.log("capTable: considering investor %s", inv);
+		if (inv == "ESOP") { seen_ESOP_investor = true;
+							 round.ESOP.createHolder(inv);
+							 round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+							 continue;
+						   }
+		else if ( seen_ESOP_investor ) {
+		  round.ESOP.createHolder(inv);
+		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+		}
+		else {
+		  Logger.log("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
+		}
+		// TODO: in future add a running total, similar to the rest of how we manage shares by type above.
+		// if we don't do this, then multiple columns which deal with ESOP will not do the right thing.
+	  }
+	  Logger.log("capTable: created an ESOP object for round %s: %s", round.name, JSON.stringify(round.ESOP.holders));
+	}
+
+	
+//	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
+//	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
 	// TODO: we should probably raise a stink if those values are not the same.
-	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new money", round.name, new_money);
-	Logger.log("capTable.new(): the sheet says that we should have %s new money", round.amount_raised.money);
+//	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new money", round.name, new_money);
+//	Logger.log("capTable.new(): the sheet says that we should have %s new money", round.amount_raised.money);
   }
 
-  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
+//  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
 
   this.getRound = function(roundName) {
 	var toreturn;
@@ -2868,6 +2969,54 @@ function capTable_(sheet) {
 	}
 	return toreturn;
   };
+
+  this.byInvestorName = {}; // investorName to Investor object
+
+  // what does an Investor object look like?
+  // { name: someName,
+  //   rounds: [ { name: roundName,
+  //               price_per_share: whatever,
+  //               shares: whatever,
+  //               money: whatever,
+  //               percentage: whatever,
+  //             }, ...
+  //           ]
+  
+  // all the investors
+  this.allInvestors = function() {
+	var toreturn = []; // ordered list of investor objects
+
+	// walk through each round and add the investor to toreturn
+	for (var cn = 0; cn < this.rounds.length; cn++) {
+	  var round = this.rounds[cn];
+	  if (round.name == "TOTAL") { continue; }
+	  var new_investors = round.new_investors;
+
+	  for (var investorName in new_investors) {
+		var investorInRound = new_investors[investorName];
+		var investor;
+		if (this.byInvestorName[investorName] == undefined) {
+		  investor = this.byInvestorName[investorName] = { name: investorName };
+		  toreturn.push(investor);
+		} else {
+		  investor = this.byInvestorName[investorName];
+		}
+
+		if (investor.rounds == undefined) {
+		  investor.rounds = [];
+		}
+		investor.rounds.push({name:            round.name,
+							  price_per_share: round.price_per_share.shares,
+							  shares:          investorInRound.shares,
+							  money:           investorInRound.money,
+							  percentage:      investorInRound.percentage,
+							 });
+	  }
+	}
+	Logger.log("i have built allInvestors: %s", JSON.stringify(toreturn));
+	return toreturn;
+  };
+  
 }
 
 // parseCaptable
@@ -2905,8 +3054,10 @@ function capTable_(sheet) {
 // ]   
 function parseCaptable(sheet) {
   var captableRounds = [];
+
+  sheet = sheet || SpreadsheetApp.getActiveSheet();
   
-  Logger.log("parseCaptable: running");
+  Logger.log("parseCaptable: running on sheet %s", sheet.getSheetName());
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
@@ -2929,17 +3080,19 @@ function parseCaptable(sheet) {
       // INITIALIZE A NEW ROUND
 	  // each major column is on a 3-column repeat.
 	  var asvar0 = asvar_(row[0]);
+	  // asvar_("my Cool String (draft)") is "my_cool_string_draft".
+	  // other people might do myCoolStringDraft, but I don't like camelCase.
       if (row[0] == "round name") {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/roundname: looking at row[%s], which is %s",
-                                                          j,        row[j]);
+//          Logger.log("captable/roundname: looking at row[%s], which is %s",
+//                                                          j,        row[j]);
           majorByName[row[j]] =     j;
           majorByNum     [j]  = row[j];
 		  majorToRound[row[j]]= captableRounds.length;
           
-          captableRounds.push( { name: row[j], new_investors: {} } ); // we haz a new round!
-          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
+          captableRounds.push( { name: row[j], new_investors: {}, ordered_investors: [] } ); // we haz a new round!
+//          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
       }
 	  // ABSORB THE MAJOR-COLUMN ROUND ATTRIBUTES
@@ -2948,8 +3101,8 @@ function parseCaptable(sheet) {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/securitytype: looking at row[%s], which is %s",
-                                                             j,        row[j]);
+//          Logger.log("captable/securitytype: looking at row[%s], which is %s",
+//                                                             j,        row[j]);
   
           // if i'm in column j, what round am i in?
           var myRound = captableRounds[majorToRound[majorByNum[j]]];
@@ -2963,14 +3116,14 @@ function parseCaptable(sheet) {
         // myRound[investorName].money = x, myRound[investorName].shares = y, myRound[investorName].percentage = z
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/breakdown: looking at row[%s], which is %s",
-                                                          j,        row[j]);
+//          Logger.log("captable/breakdown: looking at row[%s], which is %s",
+//                                                          j,        row[j]);
           var myRound; // we might be offset from a major column boundary so keep looking left until we find a major column.
 
           for (var k = 0; k < j; k++) {
             if (! captableRounds[majorToRound[majorByNum[j-k]]]) { continue }
             myRound = captableRounds[majorToRound[majorByNum[j-k]]];
-            Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
+//            Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
             break;
           }
 
@@ -2979,8 +3132,8 @@ function parseCaptable(sheet) {
           minorByName[myRound.name + asvar] =     j;
           minorByNum [j]  = { round: myRound, minor: asvar };
           
-          Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
-                                                                                                   j,                    myRound.name, minorByNum[j].minor);
+//          Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
+//                                                                                                   j,                    myRound.name, minorByNum[j].minor);
         }
       }
 	  // LEARN ABOUT THE ROUND MINOR ATTRIBUTES
@@ -2993,13 +3146,14 @@ function parseCaptable(sheet) {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/%s: looking at row[%s], which is %s",
-                               asvar0,            j,        row[j]);
-          Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
-                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
+//          Logger.log("captable/%s: looking at row[%s], which is %s",
+//                               asvar0,            j,        row[j]);
+//          Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
+//                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  myRound[asvar0] = myRound[asvar0] || {};
+		  // for rows "price per share" and "discount" we save it one layer deeper than we actually need to -- so when you pull it out, dereference the minor col.
           myRound[asvar0][minorByNum[j].minor] = row[j];
         }
       }
@@ -3011,7 +3165,10 @@ function parseCaptable(sheet) {
                      row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
-          myRound.new_investors[row[0]] = myRound.new_investors[row[0]] || {};
+		  if (myRound.new_investors[row[0]] == undefined) {
+			myRound.ordered_investors.push(row[0]);
+			myRound.new_investors[row[0]] = {};
+		  }
           myRound.new_investors[row[0]][minorByNum[j].minor] = row[j];
         }
       }
@@ -3216,6 +3373,309 @@ owl.pluralize = (function() {
 	return pluralize;
 
 })();
+
+// ----------------------- code by Arjun and Lauren
+
+
+
+function reset(){
+  var cap = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
+  SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(cap);
+  parseCaptable(cap);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet10");
+  sheet.clear();
+}
+
+function createCaptable(captableRounds){
+  reset();
+  var capTable = parseCaptable();
+  
+//Find a blank sheet
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var sheet;
+  for (var i = 0; i < sheets.length ; i++ ) {
+//    Logger.log(sheets[i].getDataRange().getWidth());
+    if (sheets[i].getDataRange().isBlank()){
+      sheet = sheets[i]
+      break;
+    }
+  };
+  
+  //If no blank sheet, create a new one
+  if (!sheet){
+    sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+  }
+  
+  //create sheet title: CAP TABLE
+  var cell = sheet.getRange(1, 1);
+  cell.setValue("CAP TABLE");
+  
+  //hardcode catagories
+  var catagories = ["round name", 
+                    "security type", 
+                    "approximate date", 
+                    "break it down for me", 
+                    "pre-money", 
+                    "price per share", 
+                    "discount", 
+                    "amount raised", 
+                    "shares, post", 
+                    "post-money"];
+  
+  var roundArray = getRoundArray(capTable);
+  
+  for (var i = 2; i< catagories.length + 2; i++){
+    cell = sheet.getRange(i, 1);
+    cell.setValue(catagories[i-2]);
+    var roundNumber = 0;
+    
+    Logger.log(roundArray);
+    var j = 2;
+    Logger.log("roundArray.length is " + roundArray.length)
+    while (roundNumber < roundArray.length){
+      var dataCell = sheet.getRange(i, j);
+      var category = cell.getValue();
+      
+      if (category == "break it down for me"){
+        dataCell = sheet.getRange(i, j, 1, 3);
+        dataCell.setValues([['money', 'shares', 'percentage']]);
+      }
+      if (category == "round name"){
+        category = "name";
+      }
+      Logger.log("round number is " + roundNumber);
+      Logger.log("category is " + category);
+      var dataCellValue = getCategoryData(capTable, roundNumber, category);
+      
+      if (!dataCellValue){}
+      else if (dataCellValue.constructor == Object){
+        var shares = getSharesValue(capTable, roundNumber, category) || "";
+        var money = getMoneyValue(capTable, roundNumber, category) || "";
+        var percentage = getPercentageValue(capTable, roundNumber, category) || "";
+        dataCell = sheet.getRange(i, j, 1, 3);
+        dataCell.setValues([[money, shares, percentage]]);
+      }
+      else{
+        Logger.log("dataCell Value is " + dataCellValue);
+        if (dataCellValue){
+          dataCell.setValue(dataCellValue);
+        }
+      }
+      j += 3;
+      roundNumber++;
+    }
+  }
+  
+  
+  
+  var sheetResult = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet10");
+  SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sheetResult);
+
+
+}
+
+//get functions for each catagory
+
+//returns an array, given round number, gives round name
+function getRoundArray(capTable){
+  var roundToNumber = []
+  //key starts at 0
+  for (key in capTable){
+    roundToNumber[key] = capTable[key]["name"];
+  }
+  return roundToNumber
+}
+
+//returns the round name, given round number
+function getRoundName(capTable, roundNumber){
+  var round = getRoundArray(capTable);
+  var roundName = round[roundNumber];
+  return roundName;
+}
+
+//returns a number, given round name, gives round number
+function getRoundNumber(capTable, roundName){
+  var round = getRoundArray(capTable);
+  var roundNumber = round.indexOf(roundName);
+  return roundNumber;
+}
+
+function getCategoryData(capTable, round, category){
+  var key = asvar_(category);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key];
+  }
+  else{
+    return capTable[round][key]
+  }
+}
+
+function getMoneyValue(capTable, round, catagory){
+  var key = asvar_(catagory);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key]["money"];
+  }
+  else{
+    return capTable[round][key]["money"];
+  }
+}
+
+function getSharesValue(capTable, round, catagory){
+    var key = asvar_(catagory);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key]["shares"];
+  }
+  else{
+    return capTable[round][key]["shares"];
+  }
+}
+
+function getPercentageValue(capTable, round, catagory){
+    var key = asvar_(catagory);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key]["percentage"];
+  }
+  else{
+    return capTable[round][key]["percentage"];
+  }
+}
+
+
+
+function drawSVG() {
+  // dump out some kind of SVG somewhere
+
+// <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+// <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+// <svg height="800" id="circlechart" width="1280" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+//   <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+// </svg>
+
+  var xmlns = XmlService.getNamespace("http://www.w3.org/2000/svg");
+  var mySVGroot = XmlService.createElement('svg', xmlns);
+  
+
+  mySVGroot
+    .setAttribute("height", 800)
+    .setAttribute("width", 1200)
+//    .setAttribute("svg","http://www.w3.org/2000/svg", xmlns)
+//    .setAttribute("xlink","http://www.w3.org/1999/xlink", xmlns)
+  ;
+  Logger.log("ohai, i did a mySVGroot: %s", mySVGroot);
+
+  mySVGroot.addContent(
+    XmlService.createElement("circle")
+    .setAttribute("cx",50)
+    .setAttribute("cy",50)
+    .setAttribute("r",40)
+    .setAttribute("stroke","green")
+    .setAttribute("stroke-width",4)
+    .setAttribute("fill","yellow")
+    );
+
+  // let's create the columns representing each shareholder in the cap table.
+  // 
+
+  var capTable = new capTable_(SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table"));
+
+  // each round gets a different color.
+  // we want to draw a column for each shareholder.
+  // going left to right, each shareholder gets a column for each round in which they invested …
+  // 
+  var allInvestors = capTable.allInvestors();
+//[
+//  {
+//    "name": "Don Phan",
+//    "rounds": [
+//      {
+//        "name": "founders – incorporation",
+//        "price_per_share": 1,
+//        "shares": 100,
+//        "money": 100,
+//        "percentage": 1
+//      },
+//      {
+//        "name": "founders – vesting",
+//        "price_per_share": 0.0001,
+//        "shares": 32536,
+//        "money": 3.2536,
+//        "percentage": 0.4053219055212278
+//      },
+
+  // now let's draw some boxes
+
+  var current_x = 50;
+  var y_offset = 400;
+  var x_spacing = 5;
+
+  var max_price_per_share = 0;
+
+  for (var investor_i in allInvestors) {
+    var investor = allInvestors[investor_i];
+
+    mySVGroot.addContent(XmlService.createComment("INVESTOR: " + investor.name));
+
+    for (var round_i in investor.rounds) {
+      var round = investor.rounds[round_i];
+      if (! round.shares) { continue }
+
+      var downround = max_price_per_share > round.price_per_share;
+      if (!downround) max_price_per_share = round.price_per_share;
+
+      mySVGroot.addContent(XmlService.createComment("INVESTOR: " + investor.name + " ROUND: " + round.name));
+
+      // width represents number of shares
+      // height represents price per share
+
+      mySVGroot.addContent(
+        XmlService.createElement("rect")
+          .setAttribute("x",current_x)
+          .setAttribute("y",y_offset-heightForPrice(round.price_per_share))
+          .setAttribute("width",widthForShares(round.shares))
+          .setAttribute("height",heightForPrice(round.price_per_share))
+          .setAttribute("style","fill:blue") // todo: change the colour based on the round. but let's do that next.
+        );         
+        
+        // in a down round, we draw a box above the real box showing the cheapness.
+        if (downround) {
+          mySVGroot.addContent(
+            XmlService.createElement("rect")
+              .setAttribute("x",current_x)
+              .setAttribute("y",y_offset-heightForPrice(max_price_per_share-round.price_per_share))
+              .setAttribute("width",widthForShares(round.shares))
+              .setAttribute("height",heightForPrice(max_price_per_share-round.price_per_share))
+              .setAttribute("style","fill:lightblue") // todo: change the colour based on the round. but let's do that next.
+            );         
+        }
+        
+       current_x += widthForShares(round.shares) + x_spacing;
+     }
+  }
+
+  var folder = createFolder_(SpreadsheetApp.getActiveSheet());
+  var document = XmlService.createDocument(mySVGroot);
+  var xml = XmlService.getPrettyFormat().format(document);
+  var svgfile = folder.createFile("mytest.svg", xml, 'image/svg+xml');
+}
+
+function widthForShares(num_shares) {
+  return num_shares / 250;
+}
+
+function heightForPrice(price) {
+  return price * 30;
+}
+
+
+
+
+
+
+
 
 // -----------------------
 
