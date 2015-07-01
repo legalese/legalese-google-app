@@ -57,3 +57,6 @@ svg.selectAll("text")
     .attr("font-family", "equity")
     .attr("font-size", "11px")
     .attr("fill", "white");
+
+
+hello i am everyone is seeing the changes! 
