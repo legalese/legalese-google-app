@@ -30,13 +30,25 @@ Click Tools / Script Editor.
 
 ** Every Developer Should Have A Local Git Clone of the Repo.
 
-** Developers Work On (Public) Feature Branches Together. 
+*** Developers Work On (Public) Feature Branches Together. 
 
 If one or more devs are working ona  feature, they should make a branch to represent work on that feature.
 
 They can both work on local checkouts of that branch. All the usual drama about [[https://www.atlassian.com/git/tutorials/merging-vs-rebasing/][merge and rebase]] becomes relevant.
 
-** Copy and Paste.
+** A Developer Might Prefer the Web IDE
+
+If a Developer doesn't mind the awkwardness of editing in the script editor, she could just do that.
+
+But every time she wants to commit changes into Git, she would have to copy from the script editor and paste into a local editor, then commit those changes to Github.
+
+Or, I suppose, she could paste those changes directly into Github's Web UI. All web, all the time! No need for local emacs! You can do this on a Chromebook!
+
+But you can't do this on a plane, lol.
+
+** A Developer Might Prefer a Local IDE
+
+Some people are addicted to Emacs and can't get off it.
 
 In Ye Olde Days of mainframe computers, developers would write their code on physical paper punch cards, bring those cards to the computer center in a shoebox, and submit them to be run. The next day, they would come back, and their jobs would have run overnight, and they would be handed back the shoebox together with a large ream of paper representing the printout. Thus was born the edit-compile-run-debug loop, and it would take days or weeks to build the simplest thing.
 
@@ -46,7 +58,13 @@ Unfortunately, with the Cloud, we now have regressed a little. Because the Googl
 
 That's not so bad, all things considered. Back in Ye Olde Days, we had to trudge to the mainframe center in the snow, uphill both ways.
 
-So, count your blessings.
+So, if you are old school, want to keep it [[http://www.urbandictionary.com/define.php?term=Trill][trill]], and absolutely insist on developing on your own [[https://en.wikipedia.org/wiki/Novena_(computing_platform)][Novena]] laptop, then you can do it this way, and you will be [[https://www.youtube.com/watch?v=sLffURje0Zo][On Fleek]].
+
+** Copy and Paste is the Acme of Software Development
+
+So, after fifty years of software development practice, we still have to carry boxes of source code through the snow. The only question is uphill or downhill. Oh well.
+
+There are ways around this but they begin to get excessively hacky, like syncing emacs realtime with Google Apps Script in the background.
 
 * Illustration
 
