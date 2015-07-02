@@ -6,18 +6,18 @@
  *
 **  reduce the security threat surface -- find a way to make this work with OnlyCurrentDoc.
  *  https://developers.google.com/apps-script/guides/services/authorization
- * 
+ *
  *  the risk is that a malicious commit on the legalese codebase will embed undesirable content in an xml template file
  *  which then runs with user permissions with access to all the user's docs. this is clearly undesirable.
- *  
+ *
  *  a functionally equivalent man-in-the-middle attack would intercept the UrlFetch() operation and return a malicious XML template file,
  *  either attacking obtainTemplate or INCLUDE(Available Templates).
- * 
+ *
  *  lodging the XML templates inside the app itself is a seemingly attractive alternative, but it reduces to the same threat scenario because that data
  *  has to populate from somewhere in the first place.
- * 
+ *
  *  we should require that all committers with access to GitHub must have 2FA.
- * 
+ *
  *  ideally we would reduce the authorization scope of this script to only the current doc.
  *  but we need a way to share the resulting PDF with the user without access to everything in Drive!
 */
@@ -26,25 +26,25 @@
 // ---------------------------------------------------------------------------------------------------- state
 //
 // a brief discussion regarding state.
-// 
+//
 // A spreadsheet may contain one or more sheets with deal-terms and entity particulars.
-// 
+//
 // When the user launches a routine from the Legalese menu, the routine usually takes its configuration from the ActiveSheet.
-// 
+//
 // But some routines are not launched from the Legalese menu. The form's submission callback writes to a sheet. How will it know which sheet to write to?
 //
 // Whenever we create a form, we shall record the ID of the then activeSheet into a UserProperty, "formActiveSheetId".
 // Until the form is re-created, all submissions will feed that sheet.
 //
 // What happens if the user starts working on a different sheet? The user may expect that form submissions will magically follow their activity.
-// 
+//
 // To correct this impression, we give the user some feedback whenever the activeSheet is not the formActiveSheet.
 //
 // The showSidebar shall check and complain.
 //
 // That same test is also triggered when a function is called: if the activesheet is different to the form submission sheet, we alert() a warning.
 //
-// 
+//
 
 
 var DEFAULT_AVAILABLE_TEMPLATES = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052";
@@ -69,7 +69,7 @@ function onOpen(addOnMenu, legaleseSignature) {
 
   if (legaleseSignature && legaleseSignature._loaded) {
 	var echosignService = legaleseSignature.getEchoSignService();
-	if (echosignService != null) { 
+	if (echosignService != null) {
 	  addOnMenu.addItem("Send to EchoSign", "legaleseSignature.uploadAgreement");
 	}
   }
@@ -135,7 +135,7 @@ function muteFormActiveSheetWarnings_(setter) {
   }
 }
 
-// todo: rethink all this to work with both controller and native sheet mode. now that we save the sheetid into the uniq'ed 
+// todo: rethink all this to work with both controller and native sheet mode. now that we save the sheetid into the uniq'ed
 
 function templateActiveSheetChanged_(sheet) {
   var templateActiveSheetId = PropertiesService.getDocumentProperties().getProperty("legalese.templateActiveSheetId");
@@ -192,7 +192,7 @@ function setupForm(sheet) {
 	entitiesByName = {};
 	readRows_ = readRows(sheet, entitiesByName);
   }
-  
+
   var data   = readRows_.terms;
   var config = readRows_.config;
 
@@ -212,7 +212,7 @@ function setupForm(sheet) {
 	for (var i in items) {
 	  form.deleteItem(0);
 	}
-  }	  
+  }
   else {
 	var form_title = config.form_title != undefined ? config.form_title.value : ss.getName();
 	var form_description = config.form_description != undefined ? config.form_description.value : "Please fill in your details.";
@@ -274,16 +274,16 @@ function setupForm(sheet) {
 		.setTitle(entityfield.fieldname)
 		.setRequired(entityfield.required)
 		.setHelpText(entityfield.helptext);
-	}	  
+	}
 	else if (entityfield.itemtype.match(/^text/)) {
 	  form.addTextItem()
 		.setTitle(entityfield.fieldname)
 		.setRequired(entityfield.required)
 		.setHelpText(entityfield.helptext);
-	}	  
+	}
 	else if (entityfield.itemtype.match(/^hidden/)) {
 	  // we don't want to display the Legalese Status field.
-	}	  
+	}
   }
 
   if (config["form_extras"] != undefined) {
@@ -402,7 +402,7 @@ function onFormSubmit(e, legaleseSignature) {
 
   if (config.demo_mode) {
 	// delete any existing user lines, then add this new one.
-	
+
 	var parties = roles2parties(readRows_);
 	if (parties.user) {
 	  for (var pui = parties.user.length - 1; pui >=0; pui--) {
@@ -412,14 +412,14 @@ function onFormSubmit(e, legaleseSignature) {
 	  }
 
 	  SpreadsheetApp.flush();
-	
+
 	// reread.
 	  readRows_ = readRows(sheet, entitiesByName);
 	  data   = readRows_.terms;
 	  config = readRows_.config;
 	}
   }
-  
+
   // add a row and insert the received fields
   Logger.log("onFormSubmit: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
   sheet.insertRowAfter(readRows_._last_entity_row+1); // might need to update the commitment sum range
@@ -443,9 +443,9 @@ function onFormSubmit(e, legaleseSignature) {
 	  e.namedValues["_party_role"] = [ config.default_party_role ? config.default_party_role.value : "" ];
 	  Logger.log("setting default party row in column 1 to %s", e.namedValues["_party_role"]);
 	}
-	  
+
 	else if (entityfield == undefined) { Logger.log("entityfield %s is undefined!", i); continue; }
-	
+
 	// fill in any fields which are hidden and have a default value configured. maybe in future we should extend the default-filling to all blank submissions
 	else if (e.namedValues[entityfield.fieldname] == undefined) {
 	  Logger.log("did not receive form submission for %s", entityfield.fieldname);
@@ -460,7 +460,7 @@ function onFormSubmit(e, legaleseSignature) {
 	}
 
 	// TODO: set the time and date of submission if there is a timestamp
-	
+
 	Logger.log("onFormSubmit: entityfield "+i+" (" + entityfield.fieldname+") (column="+entityfield.column+") = " + e.namedValues[entityfield.fieldname][0]);
 
 	var newcell = newrow.getCell(1,parseInt(entityfield.column));
@@ -474,7 +474,7 @@ function onFormSubmit(e, legaleseSignature) {
 	Logger.log("onFormSubmit: demo_mode = TRUE ... fillTemplates() completed. next we should inject into echosign.");
 
 	SpreadsheetApp.flush();
-	
+
 	if (legaleseSignature) {
 	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign. but first we will sleep for 3 minutes.");
 	  // we might have to move this to a separate run loop
@@ -571,10 +571,10 @@ function readRows(sheet, entitiesByName) {
 	  } else {
 		include_sheet = sheet.getParent().getSheetByName(row[1]);
 	  }
-	  
+
 	  Logger.log("readRows(%s): encountered INCLUDE %s", sheet.getSheetName(), row[1]);
 	  if (include_sheet == undefined) { throw("unable to fetch included sheet " + row[1]) }
-	  
+
 	  var includedReadRows = readRows(include_sheet, entitiesByName);
 	  Logger.log("readRows(%s): back from INCLUDE %s; returned principal = %s",
 				 sheet.getSheetName(), row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined);
@@ -646,7 +646,7 @@ function readRows(sheet, entitiesByName) {
 		seen_entities_before = true;
 		entityfields = row;
 		while (row[row.length-1] === "") { row.pop() }
-		
+
 		for (var ki in entityfields) {
 		  if (ki < 1 || row[ki] == undefined) { continue }
           origentityfields[entityfieldorder[ki]] = origentityfields[entityfieldorder[ki]] || {};
@@ -663,7 +663,7 @@ function readRows(sheet, entitiesByName) {
 	  templatefields = [];
 	  Logger.log("we got an Available Templates section heading");
 	  while (row[row.length-1] === "") { row.pop() }
-		
+
 	  for (var ki in row) {
 		if (ki < 1 || row[ki] == undefined) { continue }
         templatefields[ki] = asvar_(row[ki]);
@@ -700,7 +700,7 @@ function readRows(sheet, entitiesByName) {
 		var to_import = asvar_(matches[1]);
 
 		// TODO: sanity check so we don't do a reflexive assignment
-		
+
 		Logger.log("readRows(%s):         ROLES: merging role %s = %s", sheet.getSheetName(), relation, to_import);
 		if (! (roles[to_import] && roles[to_import].length)) {
 		  Logger.log("readRows(%s):         ERROR: roles[%s] is useless to us", sheet.getSheetName(), to_import);
@@ -713,7 +713,7 @@ function readRows(sheet, entitiesByName) {
 		  if (principal.roles[to_import] && principal.roles[to_import].length) {
 			Logger.log("readRows(%s):         HANDLED: found it in principal.roles");
 			roles[relation] = roles[relation].concat(principal.roles[to_import]);
-		  }		  
+		  }
 		  continue;
 		}
 		else {
@@ -731,7 +731,7 @@ function readRows(sheet, entitiesByName) {
 		var entity = entitiesByName[entityname];
 		roles[relation].push(entityname);
 		Logger.log("readRows(%s):         ROLES: learning party role %s = %s", sheet.getSheetName(), relation, entityname);
-		
+
 		for (var role_x = 2; role_x < row.length; role_x+=2) {
 		  if (row[role_x] && row[role_x+1] != undefined) {
 			Logger.log("ROLES: learning attribute %s.%s = %s", entityname, asvar_(row[role_x]), formatify_(formats[i][role_x+1], row[role_x+1], sheet));
@@ -775,7 +775,7 @@ function readRows(sheet, entitiesByName) {
 	  if (coreRelation.toLowerCase() == "ignore") { Logger.log("ignoring %s line %s", coreRelation, row[1]); continue }
 
 	  toreturn._last_entity_row = i;
-	  
+
       for (var ki in entityfields) {
         if (ki < 1) { continue }
         var k = entityfields[ki];
@@ -810,9 +810,9 @@ function readRows(sheet, entitiesByName) {
 	  // each config row produces multiple representations:
 	  // config.columna.values is an array of values -- if columna repeats, then values from last line only
 	  // config.columna.dict is a dictionary of b: [c,d,e] across multiple lines
-	  
+
 	  Logger.log("CONF: row " + i + ": processing row "+row[0]);
-	  
+
 	  // populate the previous
 	  var columna = asvar_(row[0]) || previous[0];
 	  if (columna == "template") { columna = "templates"; Logger.log("CONF: correcting 'template' to 'templates'"); }
@@ -885,7 +885,7 @@ function readRows(sheet, entitiesByName) {
   // an Available Templates sheet has no ENTITIES.
   if (principal == undefined) { Logger.log("readRows: principal is undefined ... we must be in an Available Templates sheet.");
 								return toreturn; }
-  
+
   toreturn.principal = principal;
   Logger.log("readRows(%s): setting toreturn.principal = %s", sheet.getSheetName(), principal.name);
 
@@ -1232,18 +1232,18 @@ function formatify_(format, string, sheet, fieldname) {
 	  // [15-06-02 11:27:27:070 HKT] readRows(Incorporation): TERMS: time_of_incorporation_manual_hhmm = Sat Dec 30 18:41:17 GMT+07:36 1899 --> Sat Dec 30 18:41:17 GMT+07:36 1899 (Date)
 
 	  // http://stackoverflow.com/questions/17715841/gas-how-to-read-the-correct-time-values-form-google-spreadsheet/17727300#17727300
-	  
+
 	  Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
 
 	  // Get the date value in the spreadsheet's timezone.
 	  var spreadsheetTimezone = sheet.getParent().getSpreadsheetTimeZone();
-	  var dateString = Utilities.formatDate(string, spreadsheetTimezone, 
+	  var dateString = Utilities.formatDate(string, spreadsheetTimezone,
 											'EEE, d MMM yyyy HH:mm:ss');
 	  var date = new Date(dateString);
-	  
+
   // Initialize the date of the epoch.
 	  var epoch = new Date('Dec 30, 1899 00:00:00');
-	  
+
 	  // Calculate the number of milliseconds between the epoch and the value.
 	  var diff = date.getTime() - epoch.getTime();
 
@@ -1252,11 +1252,11 @@ function formatify_(format, string, sheet, fieldname) {
 	  else if (format == 'HH:mm')          { myformat = "H:mm" }
 	  else if (format == 'HH:mm:ss')       { myformat = "H:mm:ss" }
 	  Logger.log("formatify_(): spreadsheetTimezone=%s", spreadsheetTimezone);
-	  
+
 	  toreturn = Utilities.formatDate(new Date(diff),
 									  "UTC",
 									  myformat);
-	  
+
 	  // http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
 
 	  return toreturn;
@@ -1289,7 +1289,7 @@ function formatify_(format, string, sheet, fieldname) {
 // ---------------------------------------------------------------------------------------------------------------- clauseroot / clausetext2num
 // this is a hints db which hasn't been implemented yet. For InDesign we indicate cross-references in the XML already.
 // but for the non-InDesign version we have to then number by hand.
-// 
+//
 var clauseroot = [];
 var clausetext2num = {};
 var hintclause2num = {};
@@ -1331,7 +1331,7 @@ function newclause_(level, clausetext, uniqtext, tag) {
 function clausenum_(clausetext) {
   return clausetext2num[clausetext] || hintclause2num[clausetext] || "<<CLAUSE XREF MISSING>>";
 }
-  
+
 // ---------------------------------------------------------------------------------------------------------------- showclause
 function showclause_(clausetext) {
     return clausenum + " (" + clausetext + ")";
@@ -1388,7 +1388,7 @@ function quicktest() {
  // mar 1 Asia/Singapore:   Sunday 1 March 2015 20:02:03
  //  spreadsheet timezone = Asia/Singapore
 
-  
+
 }
 
 // ---------------------------------------------------------------------------------------------------------------- uniqueKey_
@@ -1441,13 +1441,13 @@ function fillOtherTemplates_() {
   * open up the configuring sheet
   * read the configuring sheet. It tells us which templates exist, and a little bit about those templates.
   * filter the templates, excluding all those which are not suitable for the current configuration.
-  * 
+  *
   * create a new folder
   * for each suitable template, load the source HTML
   * fill in the HTML template
   * convert the HTMLOutput into Google Docs native
   * put the google docs document into the new folder
-  * 
+  *
   */
 
 // ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
@@ -1517,14 +1517,14 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	  Logger.log("ERROR: caught error (%s) while fetching %s", e, url);
 	}
 	if (result == undefined) {
-	  try {	  
+	  try {
 		result = UrlFetchApp.fetch(url, { headers: { "Accept-Encoding": "identity" } } );
 	  } catch (e) {
 		Logger.log("ERROR: caught error (%s) while fetching %s for the second time!", e, url);
 		throw ("during obtainTemplate_(" + url + "): " + e);
 	  }
 	}
-	  
+
 	// by default the good people at Github Pages will gzip compress if we don't explicitly set this
 
 	var contents = result.getContentText();
@@ -1535,7 +1535,7 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	  contents = result.getContentText();
 	  if (readmeDoc) { readmeDoc.getBody().appendParagraph("obtainTemplate(" + url + ") second try returned response code " + result.getResponseCode()); }
 	}
-	
+
 	if (! contents || ! contents.length) {
 	  if (readmeDoc) {
 		readmeDoc.getBody().appendParagraph("obtainTemplate(" + url + ") returned no contents");  	  Logger.log("obtainTemplate(" + url + ") returned no contents");
@@ -1543,7 +1543,7 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	  }
 	  throw("received zero-length content when fetching " + url);
 	}
-	
+
 	// the cache service can only store keys of up to 250 characters and content of up to 100k, so over that, we don't cache.
 	if (nocache != true && contents.length < 100000 && url.length < 250) {
 	  cache.put(url, contents, 300);
@@ -1598,7 +1598,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
   this.sequence;
   if (this.suitables.length > 1) { this.sequence = 1; } // each sourcetemplate gets a sequence ID. exploded templates all share the same sequence id.
-  
+
   this.esNumForTemplate = { };
 
   Logger.log("docsetEmails(%s): now I will figure out who gets which PDFs.",
@@ -1620,16 +1620,16 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	var to_parties = { }; // { director: [ Entity1, Entity2 ], company: [Company] }
 	var cc_parties = { };
 	var ex_parties = { }; // { new_investor: EntityX }
-  
+
 	for (var mailtype in sourceTemplate.parties) {
 	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
 				 sourceTemplate.name, mailtype);
-	  
+
 	  for (var i in sourceTemplate.parties[mailtype]) { // to | cc
 		var partytype = sourceTemplate.parties[mailtype][i]; // company, director, shareholder, etc
 		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
 		var mailindex = null;
-		
+
 		// sometimes partytype is "director"
 		// sometimes partytype is "director[0]" indicating that it would be sufficient to use just the first director in the list.
 		// so we pull the 0 out into the mailindex variable
@@ -1660,7 +1660,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 			  continue;
 			}
 		  }
-			  
+
 		  Logger.log("docsetEmails:     what to do with %s entity %s?", partytype, entity.name);
 		  if (mailtype == "to") {
 			to_list.push(entity.name);
@@ -1693,7 +1693,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		var exploder_to_parties = {};
 		for (var pp in to_parties) { exploder_to_parties[pp] = to_parties[pp] }
 		exploder_to_parties[sourceTemplate.explode] = [ entity ];
-		
+
 		this._rcpts  .exploders[mytitle] = {to:exploder_to_list,   cc:cc_list};
 		this._parties.exploders[mytitle] = {to:exploder_to_parties,cc:cc_parties};
 		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
@@ -1706,7 +1706,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
   if (to_list.length == 0 && sourceTemplate.explode=="") {
 	throw("did your Templates sheet define To and CC for " + sourceTemplate.name + "?");
   }
-  
+
   // return to_cc for a given set of sourceTemplates
   this.Rcpts = function(sourceTemplates, explodeEntity) { // explodeEntity may be null -- that's OK, just means we're not exploding.
 	// clear es_nums in entities
@@ -1748,7 +1748,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	for (var ti in all_to) {
 	  var entityName = all_to[ti];
 	  var entity = this.readRows.entitiesByName[entityName];
-	  
+
 	  if (this.readRows.config.email_override && this.readRows.config.email_override.values[0]
 		 &&
 		 email_to_cc(entity.email)[0] && email_to_cc(entity.email)[0]) {
@@ -1791,7 +1791,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	} else {
 	  for (var i in normals) { var rcpts = this.Rcpts([normals[i]]); individual_callback([normals[i]], null, rcpts); }
 	}
-  };	
+  };
 
   // callback framework for doing things to do with exploded sourceTemplates
   this.explode = function(callback) {
@@ -1836,7 +1836,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
 
 
-// map 
+// map
 function roles2parties(readRows_) {
   var parties = {};
   // each role shows a list of names. populate the parties array with a list of expanded entity objects.
@@ -1873,7 +1873,7 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
 
   if (parties[asvar_(config.default_party_role.value)]) {
 	Logger.log("createDemoUser_: INFO: %s is defined: %s", config.default_party_role.value, parties[asvar_(config.default_party_role.value)].name);
-	
+
   } else {
 	var email = Session.getActiveUser().getEmail();
 	Logger.log("createDemoUser_: INFO: user is absent. creating %s, who is %s", config.default_party_role.value, email);
@@ -1926,7 +1926,7 @@ function fillTemplates(sheet) {
 	templatedata._config = config;
 	templatedata._availableTemplates = readRows_.availableTemplates;
   }
-    
+
   var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
   Logger.log("fillTemplates(%s): got back readRows_.entitiesByName=%s",
 			 sheet.getSheetName(),
@@ -1940,7 +1940,7 @@ function fillTemplates(sheet) {
   // TODO: this is a stub for when one day we know how to properly parse a captable.
   // for now we just make it all up
   templatedata.cap = parseCapTable_(sheet);
-  
+
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
   // and when that time comes we won't want to just send all the PDFs -- we'll need a more structured way to let the user decide which PDFs to send to echosign.
@@ -1977,7 +1977,7 @@ function fillTemplates(sheet) {
 
   templatedata.company = parties.company[0];
   templatedata._entitiesByName = readRows_.entitiesByName;
-  
+
   var docsetEmails_ = new docsetEmails(sheet, readRows_, parties, suitables);
 
   // you will see the same pattern in uploadAgreement.
@@ -1998,13 +1998,13 @@ function fillTemplates(sheet) {
 	}
 
 	// EXCEPTION SCENARIO -- party overrides
-	// 
+	//
 	// it is possible that in the Templates: line of the config section, one or more party overrides are defined.
 	//
 	// for instance, Template: | foobar | company | [promoter]
 	// means that when filling the foobar template, we should set data.parties.company = data.parties.promoter
 	// and, due to the special case, also set data.company = promoter[0].
-	// 
+	//
 	// Template: | foobar | thing | SomeValue Pte. Ltd.
 	// means that for the foobar template, data.parties.thing = the entity named SomeValue Pte. Ltd.
 	//
@@ -2025,7 +2025,7 @@ function fillTemplates(sheet) {
 		  // means we temporarily substitute promoter for company
 		  var to_import = asvar_(matches[1]);
 		  // TODO: sanity check so we don't do a reflexive assignment
-		  
+
 		  Logger.log("buildTemplate(%s):         substituting %s = %s", sourceTemplate.name, kk, to_import);
 		  if (! (templatedata.company.roles[to_import] && templatedata.company.roles[to_import].length)) {
 			Logger.log("buildTemplate(%s):         ERROR: substitute [%s] is useless to us", sourceTemplate.name, to_import);
@@ -2056,7 +2056,7 @@ function fillTemplates(sheet) {
 	newTemplate.rcpts_cc = rcpts[3];
 
 	Logger.log("buildTemplate: newTemplate.rcpts_to = %s", Object.keys(newTemplate.rcpts_to));
-	
+
 	fillTemplate_(newTemplate, sourceTemplate, filenameFor(sourceTemplate, entity), folder, config);
 
 	readmeDoc.getBody().appendParagraph(filenameFor(sourceTemplate, entity)).setHeading(DocumentApp.ParagraphHeading.HEADING2);
@@ -2096,13 +2096,13 @@ function fillTemplates(sheet) {
 	  }
 	}
   }
-  
+
   Logger.log("that's all folks!");
 }
 
 // ---------------------------------------------------------------------------------------------------------------- fillTemplate_
 // fill a single template -- inner-loop function for fillTemplates() above.
-// 
+//
 // it's possible that a template references another template.
 // the Google Docs HTMLTemplate engine is pretty basic and has no concept
 // of modular components.
@@ -2124,7 +2124,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
 	  + someText
 	  + '>\n';
   };
-  
+
   var filledHTML = newTemplate.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME).getContent();
   var xmlfile;
 
@@ -2226,7 +2226,7 @@ function createReadme_(folder, config, sheet) { // under the parent folder
   DriveApp.getRootFolder().removeFile(docfile);
 
   doc.getBody().appendParagraph("Hey there, Curious!").setHeading(DocumentApp.ParagraphHeading.TITLE);
-  
+
   doc.getBody().appendParagraph("This README was created by Legalese, so you can peek behind the scenes and understand what's going on.");
 
   var para = doc.getBody().appendParagraph("This folder was created when you clicked Add-Ons/Legalese/Generate PDFs, in the spreadsheet named ");
@@ -2240,12 +2240,12 @@ function createReadme_(folder, config, sheet) { // under the parent folder
   doc.getBody().appendParagraph("When you are satisfied, if you have EchoSign set up, go back to the spreadsheet and run Add-Ons / Legalese / Send to EchoSign.");
   doc.getBody().appendParagraph("Not everybody has EchoSign set up to work with Legalese. If that menu option doesn't appear for you, you will have to do it manually. In Google Drive, add the Add-On for EchoSign, or another e-signature service like DocuSign or HelloSign; right-click the PDF and send it for signature via your chosen e-signature service.");
   doc.getBody().appendParagraph("When it asks you who to send the document to, enter the email addresses, in the order shown below. Review the PDF before it goes out; you may need to position the signature fields on the page.");
-  
-  
+
+
   var logs_para = doc.getBody().appendParagraph("Output PDFs").setHeading(DocumentApp.ParagraphHeading.HEADING1);
 
   doc.getBody().appendParagraph("Each PDF, when sent for signature, has its own To: and CC: email addresses. They are shown below.");
-  
+
   Logger.log("run started");
   var uniq = uniqueKey(sheet);
   PropertiesService.getDocumentProperties().setProperty("legalese."+uniq+".readme.id", JSON.stringify(doc.getId()));
@@ -2312,7 +2312,7 @@ function allPDFs_(folder) {
 function showDocumentProperties_() {
   Logger.log("userProperties: %s", JSON.stringify(PropertiesService.getDocumentProperties().getProperties()));
   Logger.log("scriptProperties: %s", JSON.stringify(PropertiesService.getScriptProperties().getProperties()));
-}  
+}
 
 function email_to_cc(email) {
   var to = null;
@@ -2328,7 +2328,7 @@ function getOrdinalFor_ (intNum, includeNumber) {
   return (includeNumber ? intNum : "")
     + ([,"st","nd","rd"][((intNum = Math.abs(intNum % 100)) - 20) % 10] || [,"st","nd","rd"][intNum] || "th");
 }
-  
+
 
 // ---------------------------------------------------------------------------------------------------------------- localization
 // have started on this at https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052 under LINGUA
@@ -2368,19 +2368,19 @@ function asCurrency_(currency, amount, chop) {
   // currency can be either just "S$" or the full numberFormat specification string.
 
   // Logger.log("asCurrency_(%s, %s, %s)", currency, amount, chop);
-  
+
   var mycurrency = currency;
   Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
   var mymatch;
   if (mymatch = currency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
   if (currency.match(/#0$/))     { chop = 0 }
   Logger.log("asCurrency_() chop = %s", chop);
-  
+
   var matches;
   if (matches = currency.match(/\[\$(.*)\]/)) { // currency
     mycurrency = matches[0].substring(2,matches[0].length-1).replace(/ /g," "); // nbsp
   }
-  
+
   return mycurrency + digitCommas_(amount, chop);
 }
 
@@ -2406,7 +2406,7 @@ function digitCommas_(numstr, chop, formatstr) {
 
   var parts = asNum.split(/\./);
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  
+
   var asString = parts.join(".");
   // Logger.log("digitCommas_(%s,%s,%s): returning %s", numstr, chop, formatstr, asString);
   return asString;
@@ -2516,7 +2516,7 @@ function onEdit(e){
 	var sectionRange = sectionRangeNamed(sheet,"Entity Groups");
 	var myv = myVLookup_(sheet, range.getValue(), sectionRange[0], sectionRange[1], 2);
 	Logger.log("myVLookup returned " + myv);
-	setDataValidation(sheet, "D2", myv); 
+	setDataValidation(sheet, "D2", myv);
 
 	sheet.getRange("D2").setValue("");
 	sheet.getRange("D2").setFontStyle("normal");
@@ -2631,7 +2631,7 @@ function cloneSpreadsheet() {
   var insertions = 0;
   for (var i = 0; i < (insertions+activeRange.getValues().length); i++) {
 	Logger.log("cloneSpreadsheet: i = %s; activeRange.getValues().length = %s", i, activeRange.getValues().length);
-	
+
 	var myRow = mySheet.getRange(activeRange.getRow()+i, 1, 1, mySheet.getLastColumn());
 
 	// specification:
@@ -2640,10 +2640,10 @@ function cloneSpreadsheet() {
 	// column C: the new title of the spreadsheet
 	// column D, E, ...: the names of the sheets that should be copied. By default, only Entities will be cloned.
 	// then we reset column A and B to the the ssid and the sheetid
-	
+
 	Logger.log("you are interested in row " + myRow.getValues()[0]);
 	if (myRow.getValues()[0][0] != "clone") { Logger.log("not a cloneable row. skipping"); continue }
-	
+
 	var sourceSheet;
 	try { sourceSheet = hyperlink2sheet_(myRow.getFormulas()[0][1] || myRow.getValues()[0][1]) } catch (e) {
 	  Logger.log("couldn't open source spreadsheet ... probably on wrong row. %s", e);
@@ -2674,13 +2674,13 @@ function cloneSpreadsheet() {
 	  }
 	}
 	mySheet.getRange(myRow.getRowIndex(),4,1,myRow.getLastColumn()).clearContent();
-	
+
 	// which sheets are left?
 	sheets = copySS.getSheets();
 	Logger.log("copied spreadsheet now has %s agreement sheets: %s", sheets.length, sheets.map(function(s){return s.getSheetName()}));
 
 	var inner_insertions = 0;
-	
+
 	for (var j = 0; j < sheets.length; j++) {
 	  var sheet = sheets[j];
 	  var newRow;
@@ -2694,7 +2694,7 @@ function cloneSpreadsheet() {
 		  .getRange(myRow.getRowIndex()+inner_insertions+1,1,1,5);
 		inner_insertions++;
 	  }
-		
+
 	  newRow.getCell(1,1).setValue(copySS.getId());
 	  newRow.getCell(1,2).setValue(sheet.getSheetId());
 	  newRow.getCell(1,3).setValue("=HYPERLINK(\""
@@ -2716,10 +2716,10 @@ function BootcampTeamsImportRange () {
 	var myRow = mySheet.getRange(activeRange.getRow()+i, 1, 1, 10);
 	// we expect column B to contain the URL of the Entities sheet
 	// column A will become the importrange indicated by the current value
-	
+
 	Logger.log("you are interested in row " + myRow.getValues()[0]);
 	if (! myRow.getValues()[0][1].match(/http/)) { Logger.log("not an importable row. skipping"); continue }
-	
+
 	var sourceSheet;
 	try { sourceSheet = hyperlink2sheet_(myRow.getFormulas()[0][1] || myRow.getValues()[0][1]) } catch (e) {
 	  Logger.log("couldn't open source spreadsheet ... probably on wrong row. %s", e);
@@ -2758,7 +2758,7 @@ function parseCapTable_(sheet) {
 					},
 			  table : { sheet : sheet },
 			};
-  
+
   return cap;
 }
 
@@ -2814,10 +2814,10 @@ function LOOKUP2D(wanted, range, left_right_top_bottom) {
 //  ... // another round
 //  ... // another round
 //  round_name: { "TOTAL", ... }
-//    
+//
 function parseCaptable() {
   var captableRounds = {};
-  
+
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
   var rows = sheet.getDataRange();
@@ -2836,7 +2836,7 @@ function parseCaptable() {
     var row = values[i];
 
     if (row[0] == "CAP TABLE") { section = row[0]; continue }
-    
+
     if (section == "CAP TABLE") {
       // INITIALIZE A NEW ROUND
 	  // each major column is on a 3-column repeat.
@@ -2847,7 +2847,7 @@ function parseCaptable() {
                                                           j,        row[j]);
           majorByName[row[j]] =     j;
           majorByNum     [j]  = row[j];
-          
+
           captableRounds[row[j]] = { name: row[j], new_investors: {} }; // we haz a new round!
           Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
@@ -2860,7 +2860,7 @@ function parseCaptable() {
           if (! row[j]) { continue }
           Logger.log("captable/securitytype: looking at row[%s], which is %s",
                                                              j,        row[j]);
-  
+
           // if i'm in column j, what round am i in?
           var myRound = captableRounds[majorByNum[j]];
           myRound[row[0]] = row[j];
@@ -2886,7 +2886,7 @@ function parseCaptable() {
 
           minorByName[myRound.name + row[j]] =     j;
           minorByNum [j]  = { round: myRound, minor: row[j] };
-          
+
           Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
                                                                                                    j,                    myRound.name, minorByNum[j].minor);
         }
@@ -2935,7 +2935,7 @@ function parseCaptable() {
 
 /* This file is part of OWL Pluralization. http://www.oranlooney.com/js-plural/
 
-OWL Pluralization is free software: you can redistribute it and/or 
+OWL Pluralization is free software: you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public License
 as published by the Free Software Foundation, either version 3 of
 the License, or (at your option) any later version.
@@ -2945,8 +2945,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public 
-License along with OWL Pluralization.  If not, see 
+You should have received a copy of the GNU Lesser General Public
+License along with OWL Pluralization.  If not, see
 <http://www.gnu.org/licenses/>.
 */
 
@@ -3009,7 +3009,7 @@ owl.pluralize = (function() {
 
 		// latin plural in popular usage.
 		syllabus: 'syllabi',
-		alumnus: 'alumni', 
+		alumnus: 'alumni',
 		genus: 'genera',
 		viscus: 'viscera',
 		stigma: 'stigmata'
@@ -3031,7 +3031,7 @@ owl.pluralize = (function() {
 		[ /^(agend|addend|memorand|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi)um$/i, '$1a' ],
 		[ /^(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|\w+hedr)on$/i, '$1a' ],
 		[ /^(alumn|alg|vertebr)a$/i, '$1ae' ],
-		
+
 		// churches, classes, boxes, etc.
 		[ /([cs]h|ss|x)$/i, '$1es' ],
 
@@ -3056,7 +3056,7 @@ owl.pluralize = (function() {
 	// pluralizes the given singular noun.  There are three ways to call it:
 	//   pluralize(noun) -> pluralNoun
 	//     Returns the plural of the given noun.
-	//   Example: 
+	//   Example:
 	//     pluralize("person") -> "people"
 	//     pluralize("me") -> "us"
 	//
@@ -3102,7 +3102,7 @@ owl.pluralize = (function() {
 		if ( lowerWord in irregular ) {
 			return capitalizeSame(irregular[lowerWord], word);
 		}
-		
+
 		// try to pluralize the word depending on its suffix.
 		var suffixRulesLength = suffixRules.length;
 		for ( var i=0; i < suffixRulesLength; i++ ) {
@@ -3127,3 +3127,315 @@ owl.pluralize = (function() {
 // -----------------------
 
 var _loaded = true;
+
+
+// ----------------------- code by Arjun and Lauren
+
+
+
+function reset(){
+  var cap = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
+  SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(cap);
+  parseCaptable(cap);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet10");
+  sheet.clear();
+}
+
+function createCaptable(captableRounds){
+  reset();
+  var capTable = parseCaptable();
+
+//Find a blank sheet
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var sheet;
+  for (var i = 0; i < sheets.length ; i++ ) {
+//    Logger.log(sheets[i].getDataRange().getWidth());
+    if (sheets[i].getDataRange().isBlank()){
+      sheet = sheets[i]
+      break;
+    }
+  };
+
+  //If no blank sheet, create a new one
+  if (!sheet){
+    sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+  }
+
+  //create sheet title: CAP TABLE
+  var cell = sheet.getRange(1, 1);
+  cell.setValue("CAP TABLE");
+
+  //hardcode catagories
+  var catagories = ["round name",
+                    "security type",
+                    "approximate date",
+                    "break it down for me",
+                    "pre-money",
+                    "price per share",
+                    "discount",
+                    "amount raised",
+                    "shares, post",
+                    "post-money"];
+
+  var roundArray = getRoundArray(capTable);
+
+  for (var i = 2; i< catagories.length + 2; i++){
+    cell = sheet.getRange(i, 1);
+    cell.setValue(catagories[i-2]);
+    var roundNumber = 0;
+
+    Logger.log(roundArray);
+    var j = 2;
+    Logger.log("roundArray.length is " + roundArray.length)
+    while (roundNumber < roundArray.length){
+      var dataCell = sheet.getRange(i, j);
+      var category = cell.getValue();
+
+      if (category == "break it down for me"){
+        dataCell = sheet.getRange(i, j, 1, 3);
+        dataCell.setValues([['money', 'shares', 'percentage']]);
+      }
+      if (category == "round name"){
+        category = "name";
+      }
+      if (category == "amount raised"){
+        j += 3;
+        roundNumber++;
+        continue;
+      }
+
+      Logger.log("round number is " + roundNumber);
+      Logger.log("category is " + category);
+      var dataCellValue = getCategoryData(capTable, roundNumber, category);
+
+      if (!dataCellValue){}
+      else if (dataCellValue.constructor == Object){
+        var shares = getSharesValue(capTable, roundNumber, category) || "";
+        var money = getMoneyValue(capTable, roundNumber, category) || "";
+        var percentage = getPercentageValue(capTable, roundNumber, category) || "";
+        dataCell = sheet.getRange(i, j, 1, 3);
+        dataCell.setValues([[money, shares, percentage]]);
+      }
+      else{
+        Logger.log("dataCell Value is " + dataCellValue);
+        if (dataCellValue){
+          dataCell.setValue(dataCellValue);
+        }
+      }
+      j += 3;
+      roundNumber++;
+    }
+  }
+
+  //input new investors
+  var sheetResult = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet10");
+  var allInvestors = getNewInvestors(capTable, roundArray.length-1);
+  var pivotRow = findCategoryRow(sheetResult, "amount raised");
+
+  Logger.log("pivotRow is " + findCategoryRow(sheetResult, "amount raised"));
+  Logger.log("allInvestors array has length: " + allInvestors.length);
+
+
+  sheetResult.insertRowsBefore(pivotRow, allInvestors.length);
+  Logger.log("new row for amount raised is " + findCategoryRow(sheetResult, "amount raised"));
+  dataCell = sheet.getRange(pivotRow, 1, allInvestors.length);
+
+  for (var i = 0; i < allInvestors.length; i++){
+    var cell = sheetResult.getRange(i+pivotRow, 1);
+    cell.setValue(allInvestors[i]);
+    Logger.log("the current investor is " + allInvestors[i]);
+
+    roundNumber = 0;
+    j = 2;
+    while (roundNumber < roundArray.length){
+      //check if new investors in round, because of short-circuit we can ask for investor in new_investors without error (neato!)
+      if ("new_investors" in capTable[roundNumber] &&
+          allInvestors[i] in capTable[roundNumber]["new_investors"]) {
+
+        var shares = getNewInvestorMinorValue(capTable, roundNumber, allInvestors[i], "shares") || "";
+        Logger.log("Shares for investor: " + shares);
+        var money = getNewInvestorMinorValue(capTable, roundNumber, allInvestors[i], "money") || "";
+        Logger.log("Money for investor: " + money);
+        var percentage = getNewInvestorMinorValue(capTable, roundNumber, allInvestors[i], "percentage") || "";
+        Logger.log("Percentage for investor: " + percentage);
+
+        cell = sheetResult.getRange(i + pivotRow, j, 1, 3);//Note that we add 9 for proper offset, there should be a better way and not hardcode it. . .
+        cell.setValues([[money, shares, percentage]]);
+      }
+      j+=3;
+      roundNumber++;
+  }
+  }
+
+  //calculate total
+  var newAmountRaisedRow = findCategoryRow(sheetResult, "amount raised");
+  var lastColumn = sheet.getLastColumn();
+  Logger.log("THIS IS THE LAST COLUMN: " + lastColumn);
+  for (var i = 2; i <= lastColumn; i++){
+    if ((i%3 == 0) || (i%3 == 2)){
+
+      var range = newAmountRaisedRow - pivotRow;
+
+      Logger.log("RANGE: " + range + "COLUMN: " + i);
+      var cell = sheetResult.getRange(newAmountRaisedRow, i);
+      cell.setFormulaR1C1("=SUM(R[-" + range.toString() + "]C[0]:R[-1]C[0])");
+    }
+    else {
+      var cell1 = sheetResult.getRange(newAmountRaisedRow, i-1).getValues();
+      var cell2 = sheetResult.getRange(newAmountRaisedRow+1, i-1).getValues();
+      var cell3 = sheetResult.getRange(newAmountRaisedRow, i);
+      cell3.setValue(cell1/cell2);
+    }
+  };
+
+  var sharesPostRow = findCategoryRow(sheetResult, "shares, post");
+  for (var i = 3; i<= lastColumn - 1; i+=3){
+    var subTotalShares = sheetResult.getRange(sharesPostRow - 1, i).getValue();
+    if ((i == 3) || (i== (lastColumn - 1))){
+      var cell = sheetResult.getRange(sharesPostRow, i);
+      cell.setValue(subTotalShares);
+    }
+    else {
+      //var lastRoundShares = sheetResult.getRange(sharesPostRow, i-3);
+      var cell = sheetResult.getRange(sharesPostRow, i);
+      cell.setFormula("=ADD(R[0]C[-3], R[-1]C[0])");
+    }
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().setActiveSheet(sheetResult);
+
+
+};
+
+//upperRange = pivotRow
+//lowerRange = findCategoryRow(sheetResult, "amount raised");
+function getAmountRaised(sheet, upperRange, lowerRange, columnCell){
+  //sum of all investor for money and shares
+  Logger.log("dsfhsdkjfhdskjfhdsfdskjfhdsjkf");
+  var range = lowerRange - upperRange;
+
+  Logger.log("RANGE: " + range + "COLUMN: " + columnCell);
+  var cell = sheet.getRange(lowerRange, columnCell);
+  cell.setFormulaR1C1("=SUM(R[-" + range.toString() + "]C[0]:R[-1]C[0])");
+}
+
+
+function findCategoryRow(sheet, category) {
+  var key = category;
+  var dataRange = sheet.getDataRange();
+  var values = dataRange.getValues();
+
+
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][0] == key){
+      return i + 1;
+    };
+  }
+}
+
+
+//get functions for each catagory
+
+//returns an array, given round number, gives round name
+function getRoundArray(capTable){
+  var roundToNumber = []
+  //key starts at 0
+  for (key in capTable){
+    roundToNumber[key] = capTable[key]["name"];
+  }
+  return roundToNumber
+}
+
+//returns the round name, given round number
+function getRoundName(capTable, roundNumber){
+  var round = getRoundArray(capTable);
+  var roundName = round[roundNumber];
+  return roundName;
+}
+
+//returns a number, given round name, gives round number
+function getRoundNumber(capTable, roundName){
+  var round = getRoundArray(capTable);
+  var roundNumber = round.indexOf(roundName);
+  return roundNumber;
+}
+
+function getCategoryData(capTable, round, category){
+  var key = asvar_(category);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key];
+  }
+  else{
+    return capTable[round][key]
+  }
+}
+
+function getNewInvestors(capTable, round){
+  var key = asvar_("new investors");
+  if (typeof round == "string"){
+    round = getRoundNumber(capTable, round);
+  }
+  var newInvestors = []
+  var i = 0;
+  for (name in capTable[round][key]){
+    newInvestors[i] = name;
+    i++;
+  }
+  return newInvestors
+}
+
+function getNewInvestorMinorValue(capTable, round, investor, minor){
+  var key = asvar_("new investors");
+  //Logger.log("LLLLLLLLLL" + capTable[round][key][investor][minor]);
+  if (typeof round == "string"){
+    Logger.log("ITS THE FIRST ONE");
+    var roundNum = getRoundNumber(capTable, round);
+    if (minor in capTable[roundNum][key][investor]){
+      return capTable[roundNum][key][investor][minor];
+    }
+    else { return ""};
+  }
+  else{
+    Logger.log("ITS THE SECOND ONE");
+    Logger.log("percentage" in capTable[round][key][investor]);
+    if (minor in capTable[round][key][investor]){
+      Logger.log("Do I exist?" + capTable[round][key][investor]);
+      return capTable[round][key][investor][minor];
+    }
+    else { Logger.log("Do I exist?" + capTable[round][key][investor]); return ""};
+  }
+}
+
+function getMoneyValue(capTable, round, catagory){
+  var key = asvar_(catagory);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key]["money"];
+  }
+  else{
+    return capTable[round][key]["money"];
+  }
+}
+
+function getSharesValue(capTable, round, catagory){
+    var key = asvar_(catagory);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key]["shares"];
+  }
+  else{
+    return capTable[round][key]["shares"];
+  }
+}
+
+function getPercentageValue(capTable, round, catagory){
+    var key = asvar_(catagory);
+  if (typeof round == "string"){
+    var roundNum = getRoundNumber(capTable, round);
+    return capTable[roundNum][key]["percentage"];
+  }
+  else{
+    return capTable[round][key]["percentage"];
+  }
+}
