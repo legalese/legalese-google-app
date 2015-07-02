@@ -100,6 +100,21 @@ function onOpen(addOnMenu, legaleseSignature) {
   }
 };
 
+function getSheetByURL_(url){
+  var ss = SpreadsheetApp.openByUrl(url);
+  var id = url.match(/gid=(\d+)/);
+  // maybe there was a gid component.
+  if (id) { return getSheetById_(ss, id[1]) }
+  else {
+	// should we return the first sheet, or should we fail?
+	// i think we should fail.
+	// see http://www.jwz.org/doc/worse-is-better.html
+	Logger.log("getSheetByURL_(%s): doesn't specify a sheet id! dying. (expected a gid=NNN parameter in the URL)", url);
+	throw("getSheetByURL() doesn't specify a 'gid' sheet id in the url! "+url);
+  }
+}
+
+
 function getSheetById_(ss, id) {
   var sheets = ss.getSheets();
   for (var i=0; i<sheets.length; i++) {
@@ -877,8 +892,8 @@ function readRows(sheet, entitiesByName) {
 	  config.templates != undefined
 	 ) {
 	Logger.log("readRows: need to load default Available Templates from master spreadsheet.");
-	var rrAT = readRows(SpreadsheetApp.openByUrl(DEFAULT_AVAILABLE_TEMPLATES).getSheetByName("Available Templates"), entitiesByName);
-	toreturn.availableTemplates = rrAT.availableTemplates;
+	var rrAT = readRows(getSheetbyURL(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName);
+ 	toreturn.availableTemplates = rrAT.availableTemplates;
   }
   Logger.log("readRows: returning toreturn.availableTemplates with length %s", toreturn.availableTemplates.length);
 
