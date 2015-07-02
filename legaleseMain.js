@@ -48,6 +48,7 @@
 
 
 var DEFAULT_AVAILABLE_TEMPLATES = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052";
+var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052";
 
 // ---------------------------------------------------------------------------------------------------------------- onOpen
 /**
@@ -65,7 +66,9 @@ function onOpen(addOnMenu, legaleseSignature) {
 
   addOnMenu
 	.addItem("Create Form", "legaleseMain.setupForm")
-	.addItem("Generate PDFs", "legaleseMain.fillTemplates");
+	.addItem("Generate PDFs", "legaleseMain.fillTemplates")
+	.addItem("Add a new Investor or other Party", "legaleseMain.addEntity")
+	.addItem("Add a Round to the Cap Table", "legaleseMain.addRound");
 
   if (legaleseSignature && legaleseSignature._loaded) {
 	var echosignService = legaleseSignature.getEchoSignService();
