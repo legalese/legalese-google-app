@@ -2749,6 +2749,198 @@ function BootcampTeamsImportRange () {
 								"!"+myRow.getValues()[0][0]+"')");
   }
 }
+
+
+/*
+ * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
+ *
+ * <numbered_2_firstbold>Capitalization</numbered_2_firstbold>
+ *
+ * in future it will be something like data.capTable.getCurrentRound().by_security_type(...)
+ * and it will know what the currentRound is from the name of the ...getActiveSheet()
+ *
+ * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
+ * <numbered_3_para>The outstanding shares have been duly authorized and validly issued in compliance with applicable laws, and are fully paid and nonassessable.</numbered_3_para>
+ * <numbered_3_para>The Company's ESOP consists of a total of <?= data.parties.esop[0].num_shares ?> shares, of which <?= digitCommas_(data.parties.esop[0]._orig_num_shares - data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares) ?> have been issued and <?= digitCommas_(data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares)?> remain reserved.</numbered_3_para>
+ * 
+ * the above hardcodes the name of the round into the XML. this is clearly undesirable.
+ * we need a better way to relate the active round with the relevant terms spreadsheet.
+ * 
+ * How does this work?
+ * First we go off and parse the cap table into a data structure
+ * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
+ *
+ */
+
+function capTable_(sheet) {
+  sheet = sheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+  Logger.log("capTable_: running rounds() for sheet %s", sheet.getSheetName());
+  this.rounds = parseCaptable(sheet);
+
+  this.columnNames = function() {
+	for (var cn = 0; cn < this.rounds.length; cn++) {
+	  Logger.log("capTable.columnNames: column %s is named %s", cn, this.rounds[cn].name);
+	}
+  };
+
+  // for each major column we compute the pre/post, old/new investor values.
+  // we want to know:
+  // - who the existing shareholders are before the round:
+  //   old_investors: { investorName: { shares, money, percentage } }
+  // - how many total shares exist at the start of the round:
+  //   shares_pre
+  // - how many shares of different types exist at the start of the round:
+  //   by_security_type = { "Class F Shares" : { "Investor Name" : nnn, "TOTAL" : mmm }, ... }
+  //   
+  // - we keep a running total to carry forward from round to round
+  var totals = { shares_pre: 0,
+				 money_pre: 0,
+				 all_investors: {},
+				 by_security_type: {},
+			   };
+
+  for (var cn = 0; cn < this.rounds.length; cn++) {
+	var round = this.rounds[cn];
+	Logger.log("capTable.new(): embroidering column %s", round.name);
+
+	// if only we had some sort of native deepcopy method... oh well.
+	round.old_investors = {};
+	for (var ai in totals.all_investors) {
+	  round.old_investors[ai] = {};
+	  for (var attr in totals.all_investors[ai]) {
+		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
+	  }
+	}
+
+	totals.by_security_type[round.security_type] = totals.by_security_type[round.security_type] || {};
+	
+	round.shares_pre = totals.shares_pre;
+
+	var new_shares = 0, new_money = 0;
+	for (var ni in round.new_investors) {
+	  if (round.new_investors[ni].shares == undefined) continue;
+	  new_shares += round.new_investors[ni].shares;
+	  new_money  += round.new_investors[ni].money;
+	  totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
+	  totals.by_security_type[round.security_type][ni] += round.new_investors[ni].shares;
+	  for (var attr in round.new_investors[ni]) {
+		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
+		if (attr == "percentage") { continue } // percentages don't need to add
+		if (round.new_investors[ni][attr] == undefined) { continue } // money and shares do, but we don't always get new ones of those.
+		totals.all_investors[ni] = totals.all_investors[ni] || {};
+		totals.all_investors[ni][attr] = totals.all_investors[ni][attr] || 0;
+		totals.all_investors[ni][attr] += round.new_investors[ni][attr];
+	  }
+	}
+
+	round.by_security_type = {};
+	for (var bst in totals.by_security_type) {
+	  round.by_security_type[bst] = { TOTAL: 0};
+	  for (var inv in totals.by_security_type[bst]) {
+		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
+		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
+	  }
+	}
+	Logger.log("capTable: round.by_security_type = %s", JSON.stringify(round.by_security_type));
+
+	if (round.new_investors["ESOP"] != undefined && round.new_investors["ESOP"].shares) {
+	  Logger.log("capTable: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
+	  round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);
+	  Logger.log("capTable: establishing ESOP object for round %s", round.name);
+	  var seen_ESOP_investor = false;
+	  for (var oi in round.ordered_investors) {
+		var inv = round.ordered_investors[oi];
+		Logger.log("capTable: considering investor %s", inv);
+		if (inv == "ESOP") { seen_ESOP_investor = true;
+							 round.ESOP.createHolder(inv);
+							 round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+							 continue;
+						   }
+		else if ( seen_ESOP_investor ) {
+		  round.ESOP.createHolder(inv);
+		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+		}
+		else {
+		  Logger.log("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
+		}
+		// TODO: in future add a running total, similar to the rest of how we manage shares by type above.
+		// if we don't do this, then multiple columns which deal with ESOP will not do the right thing.
+	  }
+	  Logger.log("capTable: created an ESOP object for round %s: %s", round.name, JSON.stringify(round.ESOP.holders));
+	}
+
+	
+//	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
+//	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
+	// TODO: we should probably raise a stink if those values are not the same.
+//	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new money", round.name, new_money);
+//	Logger.log("capTable.new(): the sheet says that we should have %s new money", round.amount_raised.money);
+  }
+
+//  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
+
+  this.getRound = function(roundName) {
+	var toreturn;
+	for (var ri = 0; ri < this.rounds.length; ri++) {
+	  if (this.rounds[ri].name == roundName) {
+		toreturn = this.rounds[ri];
+		break;
+	  }
+	}
+	return toreturn;
+  };
+
+  this.byInvestorName = {}; // investorName to Investor object
+
+  // what does an Investor object look like?
+  // { name: someName,
+  //   rounds: [ { name: roundName,
+  //               price_per_share: whatever,
+  //               shares: whatever,
+  //               money: whatever,
+  //               percentage: whatever,
+  //             }, ...
+  //           ]
+  
+  // all the investors
+  this.allInvestors = function() {
+	var toreturn = []; // ordered list of investor objects
+
+	// walk through each round and add the investor to toreturn
+	for (var cn = 0; cn < this.rounds.length; cn++) {
+	  var round = this.rounds[cn];
+	  if (round.name == "TOTAL") { continue; }
+	  var new_investors = round.new_investors;
+
+	  for (var investorName in new_investors) {
+		var investorInRound = new_investors[investorName];
+		var investor;
+		if (this.byInvestorName[investorName] == undefined) {
+		  investor = this.byInvestorName[investorName] = { name: investorName };
+		  toreturn.push(investor);
+		} else {
+		  investor = this.byInvestorName[investorName];
+		}
+
+		if (investor.rounds == undefined) {
+		  investor.rounds = [];
+		}
+		investor.rounds.push({name:            round.name,
+							  price_per_share: round.price_per_share.shares,
+							  shares:          investorInRound.shares,
+							  money:           investorInRound.money,
+							  percentage:      investorInRound.percentage,
+							 });
+	  }
+	}
+	Logger.log("i have built allInvestors: %s", JSON.stringify(toreturn));
+	return toreturn;
+  };
+  
+}
+
+
 // parse a JFDI-style cap table
 function parseCapTable_(sheet) {
   var cap = { col : { num_shares : { pre : { esop : { total : 15000,
