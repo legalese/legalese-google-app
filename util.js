@@ -172,3 +172,29 @@ function getDocumentProperty(sheet, propertyname) {
 }
 
 
+// ---------------------------------------------------------------------------------------------------------------- newlinesToCommas
+// used inside <? ?> to convert a multiline address to a singleline address for party-section purposes
+function newlinesToCommas(str) {
+  if (str == undefined) { Logger.log("newlinesToCommas: undefined!"); return undefined }
+  return str.replace(/,?\s*\n\s*/g, ", ");
+}
+
+// ---------------------------------------------------------------------------------------------------------------- newlinesToCommas
+// used inside <? ?> to convert a multiline name to the first line for party-section purposes
+function firstline_(str) {
+  if (str == undefined) { Logger.log("firstline: undefined!"); return undefined }
+  return str.split(/,?\s*\n\s*/)[0];
+}
+
+
+
+function email_to_cc(email) {
+  var to = null;
+  var emails = email.split(/\s*[\n\r,]\s*/).filter(function(e){return e.length > 0});
+  if (emails.length > 0) {
+	to = [emails.shift()];
+  }
+  return [to, emails];
+}
+
+
