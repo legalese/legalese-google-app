@@ -142,3 +142,43 @@ function BootcampTeamsImportRange () {
 								"!"+myRow.getValues()[0][0]+"')");
   }
 }
+
+
+function allPDFs_(folder) {
+  var folders = folder.getFolders();
+  var files = folder.getFilesByType("application/pdf");
+  var pdfs = [];
+  while (  files.hasNext()) { pdfs= pdfs.concat(          files.next());  }
+  while (folders.hasNext()) { pdfs= pdfs.concat(allPDFs_(folders.next())); }
+  Logger.log("all PDFs under folder = %s", pdfs);
+  return pdfs;
+}
+
+
+
+// ---------------------------------------------------------------------------------------------------------------- resetStyles_
+function resetStyles_(doc) {
+  var body = doc.getBody();
+
+  var listitems = body.getListItems();
+  for (var p in listitems) {
+    var para = listitems[p];
+    var atts = para.getAttributes();
+    atts.INDENT_START = 36;
+    atts.INDENT_FIRST_LINE = 18;
+    para.setAttributes(atts);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------- showStyleAttributes_
+function showStyleAttributes_() {
+  var body = DocumentApp.getActiveDocument.getBody();
+  var listitems = body.getListItems();
+  for (var p in listitems) {
+    var para = listitems[p];
+    var atts = para.getAttributes();
+    for (i in atts) {
+      para.appendText("attribute " + i + " = " + atts[i]);
+    }
+  }
+}
