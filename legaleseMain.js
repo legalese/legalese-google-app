@@ -3438,8 +3438,7 @@ function createCaptable(captableRounds){
                     "price per share", 
                     "discount", 
                     "amount raised", 
-                    "shares, post", 
-                    "post-money"];
+                    "post"];
   
   var roundArray = getRoundArray(capTable);
   
