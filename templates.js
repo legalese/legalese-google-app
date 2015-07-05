@@ -408,7 +408,7 @@ function fillTemplates(sheet) {
 
   // TODO: this is a stub for when one day we know how to properly parse a captable.
   // for now we just make it all up
-  templatedata.capTable = new capTable_(sheet.getParent().getSheetByName("Cap Table"));
+  templatedata.capTable = new capTable_(sheet);
 
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
