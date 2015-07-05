@@ -1,3 +1,7 @@
+// this is the stub file which lives inside a bound container -- a spreadsheet that uses Legalese.
+// it loads up the legaleseMain library and passes a handful of key function calls over to that.
+// the bulk of the work happens inside the legaleseMain library. (and the legaleseSignature library).
+
 // most of the code for legalese lives inside libraries:
 // legaleseMain       M6YlbsVrWR18KeWvOMc3708UQWaHMB8in
 // legaleseSignature  M_Wuaitt08FDk5mzAwEoxpXYH5ITXFjPS
