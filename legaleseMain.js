@@ -2891,6 +2891,7 @@ function capTable_(sheet) {
 		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
 	  }
 	}
+	Logger.log("capTable.new(): %s.old_investors = %s", round.name, round.old_investors);
 
 	totals.by_security_type[round.security_type] = totals.by_security_type[round.security_type] || {};
 	
@@ -3141,8 +3142,7 @@ function parseCaptable(sheet) {
           row[0] == "price per share" ||
           row[0] == "discount" ||
           row[0] == "amount raised" ||
-          row[0] == "shares, post" ||
-          row[0] == "post-money"
+          row[0] == "post"
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
@@ -3170,6 +3170,8 @@ function parseCaptable(sheet) {
 			myRound.new_investors[row[0]] = {};
 		  }
           myRound.new_investors[row[0]][minorByNum[j].minor] = row[j];
+          myRound.new_investors[row[0]]["_orig_"+minorByNum[j].minor] = row[j];
+		  Logger.log("learned that %s.%s.%s = %s (%s)", myRound.name, row[0], minorByNum[j].minor, row[j], row[j].constructor.name);
         }
       }
     }
