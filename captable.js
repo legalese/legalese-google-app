@@ -1,6 +1,7 @@
 
-/*
- * this is an object representing a captable. it gets used by the AA-SG-SPA.xml:
+/**
+ * An object representing a captable.
+ * it gets used by the AA-SG-SPA.xml:
  *
  * <numbered_2_firstbold>Capitalization</numbered_2_firstbold>
  *
@@ -18,14 +19,32 @@
  * First we go off and parse the cap table into a data structure
  * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
  *
+ * @constructor
+ * @param {Sheet} termsheet - the currently active sheet which we're filling templates for
+ * @param {Sheet} [captablesheet=sheet named "Cap Table"] - the sheet containing a well-formed cap table
+ * @return {capTable}
  */
+function capTable_(termsheet, captablesheet) {
+  termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
 
-function capTable_(sheet) {
-  sheet = sheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  Logger.log("capTable_: parsing captablesheet %s, active round being %s",
+			 captablesheet.getSheetName(), termsheet.getSheetName());
 
-  Logger.log("capTable_: running rounds() for sheet %s", sheet.getSheetName());
-  this.rounds = parseCaptable(sheet);
+  /**
+	* @member {string}
+	*/
+  this.activeRound = termsheet.getSheetName();
 
+  /**
+	* @member
+	*/
+  this.rounds = parseCaptable(captablesheet);
+
+  /**
+	* @method
+	* @return {Array<string>} column names - all the major columns in the cap table
+	*/
   this.columnNames = function() {
 	for (var cn = 0; cn < this.rounds.length; cn++) {
 	  Logger.log("capTable.columnNames: column %s is named %s", cn, this.rounds[cn].name);
@@ -129,6 +148,19 @@ function capTable_(sheet) {
 
 //  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
 
+  /**
+	* @method
+	* @return {object} round - the round corresponding to the active spreadsheet
+	*/
+  this.getActiveRound = function() {
+	return this.getRound(this.activeRound);
+  };
+  
+  /**
+	* @method
+	* @param {string} roundName - the name of the round you're interested in
+	* @return {object} round - a round
+	*/
   this.getRound = function(roundName) {
 	var toreturn;
 	for (var ri = 0; ri < this.rounds.length; ri++) {
@@ -140,6 +172,9 @@ function capTable_(sheet) {
 	return toreturn;
   };
 
+  /**
+	* @member {object}
+	*/
   this.byInvestorName = {}; // investorName to Investor object
 
   // what does an Investor object look like?
@@ -152,9 +187,12 @@ function capTable_(sheet) {
   //             }, ...
   //           ]
   
-  // all the investors
+  /** all the investors
+	* @method
+	* @return {Array<object>} investors - ordered list of investor objects
+	*/
   this.allInvestors = function() {
-	var toreturn = []; // ordered list of investor objects
+	var toreturn = [];
 
 	// walk through each round and add the investor to toreturn
 	for (var cn = 0; cn < this.rounds.length; cn++) {
@@ -223,11 +261,10 @@ function capTable_(sheet) {
 //  { name: "TOTAL", ... }
 // ]   
 function parseCaptable(sheet) {
-  var captableRounds = [];
-
-  sheet = sheet || SpreadsheetApp.getActiveSheet();
-  
+  if (sheet == undefined) { throw "parseCaptable() called without a Cap Table sheet specified!" }
   Logger.log("parseCaptable: running on sheet %s", sheet.getSheetName());
+  
+  var captableRounds = [];
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
@@ -329,8 +366,8 @@ function parseCaptable(sheet) {
       else {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
-                     row[0],                           j,    minorByNum[j].minor,    row[j]);
+//          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+//                     row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  if (myRound.new_investors[row[0]] == undefined) {
@@ -339,7 +376,7 @@ function parseCaptable(sheet) {
 		  }
           myRound.new_investors[row[0]][minorByNum[j].minor] = row[j];
           myRound.new_investors[row[0]]["_orig_"+minorByNum[j].minor] = row[j];
-		  Logger.log("learned that %s.%s.%s = %s (%s)", myRound.name, row[0], minorByNum[j].minor, row[j], row[j].constructor.name);
+//		  Logger.log("learned that %s.%s.%s = %s (%s)", myRound.name, row[0], minorByNum[j].minor, row[j], row[j].constructor.name);
         }
       }
     }
