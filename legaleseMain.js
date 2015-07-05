@@ -1,13 +1,19 @@
 /* legaleseMain MANIFEST
  *
  * inside a legaleseMain project file you will find multiple scripts:
- * legaleseMain
+ * legaleseMain (as Code.gs)
  * svg
  * owl
  * esop
  * captable
+ * form
+ * format
+ * lingua
+ * unused
+ * templates
  *
  * the subsidiary scripts represent chunks of functionality that reside in separate files both in the source repo and in the production google app.
+ *
  * why? because that's better than having everything in one file, that's why.
  *
  * TODO
