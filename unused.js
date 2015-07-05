@@ -182,3 +182,72 @@ function showStyleAttributes_() {
     }
   }
 }
+
+// ---------------------------------------------------------------------------------------------------------------- getPartyCells
+// TODO: make this go away -- let's just log the mailing output in one place, rather than row by row.
+function getPartyCells(sheet, readrows, party) {
+  Logger.log("getPartyCells: looking to return a dict of entityfieldname to cell, for party %s", party.name);
+  Logger.log("getPartyCells: party %s comes from spreadsheet row %s", party.name, party._spreadsheet_row);
+  Logger.log("getPartyCells: the fieldname map looks like this: %s", readrows._entityfields);
+  Logger.log("getPartyCells: calling (getRange %s,%s,%s,%s)", party._spreadsheet_row, 1, 1, readrows._entityfields.length+1);
+  var range = sheet.getRange(party._spreadsheet_row, 1, 1, readrows._entityfields.length+1);
+  Logger.log("pulled range %s", JSON.stringify(range.getValues()));
+  var toreturn = {};
+  for (var f = 0; f < readrows._entityfields.length ; f++) {
+	Logger.log("toreturn[%s] = range.getCell(%s,%s)", readrows._entityfields[f], 0+1,f+1);
+	toreturn[readrows._entityfields[f]] = range.getCell(0+1,f+1);
+  }
+  return toreturn;
+}
+
+// ---------------------------------------------------------------------------------------------------------------- clauseroot / clausetext2num
+// this is a hints db which hasn't been implemented yet. For InDesign we indicate cross-references in the XML already.
+// but for the non-InDesign version we have to then number by hand.
+//
+var clauseroot = [];
+var clausetext2num = {};
+var hintclause2num = {};
+
+// ---------------------------------------------------------------------------------------------------------------- clausehint
+// xml2html musters a hint database of clause text to pathindex.
+// at the start of the .ghtml file all the hints are passed to the HTMLTemplate engine by calling
+// a whole bunch of clausehint_()s at the front of the file
+function clausehint_(clausetext, pathindex, uniqtext) {
+  hintclause2num[uniqtext || clausetext] = pathindex.join(".");
+}
+
+// ---------------------------------------------------------------------------------------------------------------- newclause
+function newclause_(level, clausetext, uniqtext, tag) {
+  var clause = clauseroot; // navigate to the desired clause depending on the level
+  var pathindex = [clause.length];
+  for (var i = 1; i < level; i++) {
+    clause = clause[clause.length-1][0];
+    pathindex.push(clause.length);
+  }
+  clause.push([[],clausetext]);
+
+  pathindex[pathindex.length-1]++;
+  clausetext2num[uniqtext || clausetext] = pathindex.join(".");
+  if (clausetext == undefined) { // bullet
+	var myid = pathindex.join("_");
+//	return "<style>#"+myid+":before { display:block; content: \"" + pathindex.join(".") + ". \" } </style>" + "<li id=\"" + myid + "\">";
+	return "<p class=\"ol_li level" + level+ "\">" + pathindex.join(".") + " ";
+  } else {
+      return "<h"+(level+0)+">"+pathindex.join(".") + ". " + clausetext + "</h"+(level+0)+">";
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------- clausenum
+// this is going to have to make use of a hinting facility.
+// the HTML template is filled in a single pass, so forward references from showclause_() to newclause_() will dangle.
+// fortunately the newclauses are populated by xml2html so we can muster a hint database.
+//
+function clausenum_(clausetext) {
+  return clausetext2num[clausetext] || hintclause2num[clausetext] || "<<CLAUSE XREF MISSING>>";
+}
+
+// ---------------------------------------------------------------------------------------------------------------- showclause
+function showclause_(clausetext) {
+    return clausenum + " (" + clausetext + ")";
+}
+

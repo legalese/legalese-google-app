@@ -634,3 +634,33 @@ function include(name, data, _include, _include2) {
   Logger.log("include(): unable to find template named %s", name);
   return;
 }
+
+
+// i suspect these aren't even used any more.
+// todo: rethink all this to work with both controller and native sheet mode. now that we save the sheetid into the uniq'ed
+
+function templateActiveSheetChanged_(sheet) {
+  var templateActiveSheetId = PropertiesService.getDocumentProperties().getProperty("legalese.templateActiveSheetId");
+  if (templateActiveSheetId == undefined)          { return false }
+  if (                sheet == undefined)          { return false }
+  Logger.log("templateActiveSheetChanged: comparing %s with %s, which is %s",
+			 templateActiveSheetId, sheet.getSheetId(),
+			 templateActiveSheetId == sheet.getSheetId()
+			);
+  return (templateActiveSheetId != sheet.getSheetId());
+}
+
+function muteTemplateActiveSheetWarnings_(setter) {
+  if (setter == undefined) { // getter
+	var myprop = PropertiesService.getDocumentProperties().getProperty("legalese.muteTemplateActiveSheetWarnings");
+	if (myprop != undefined) {
+	  return JSON.parse(myprop);
+	}
+	else {
+	  return false;
+	}
+  }
+  else {
+	PropertiesService.getDocumentProperties().setProperty("legalese.muteTemplateActiveSheetWarnings", JSON.stringify(setter));
+  }
+}
