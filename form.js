@@ -350,6 +350,7 @@ function muteFormActiveSheetWarnings_(setter) {
   }
 }
 
+// for the controller
 // ---------------------------------------------------------------------------------------------------------------- setupOtherForms_
 function setupOtherForms_() {
   var sheets = otherSheets();
