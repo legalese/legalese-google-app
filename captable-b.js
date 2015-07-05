@@ -50,17 +50,16 @@ function createCaptable(captableRounds){
   cell.setValue("CAP TABLE");
 
   //hardcode catagories
-  var catagories = ["round name",
-                    "security type",
-                    "approximate date",
-                    "break it down for me",
-                    "pre-money",
-                    "price per share",
-                    "discount",
-                    "amount raised",
-                    "shares, post",
-                    "post-money"];
-
+  var catagories = ["round name", 
+                    "security type", 
+                    "approximate date", 
+                    "break it down for me", 
+                    "pre-money", 
+                    "price per share", 
+                    "discount", 
+                    "amount raised", 
+                    "post"];
+  
   // meng suggests: make this a method within the capTable_() object.
   var roundArray = getRoundArray(capTable);
 
