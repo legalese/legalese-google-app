@@ -11,10 +11,10 @@
  * <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
  * <numbered_3_para>The outstanding shares have been duly authorized and validly issued in compliance with applicable laws, and are fully paid and nonassessable.</numbered_3_para>
  * <numbered_3_para>The Company's ESOP consists of a total of <?= data.parties.esop[0].num_shares ?> shares, of which <?= digitCommas_(data.parties.esop[0]._orig_num_shares - data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares) ?> have been issued and <?= digitCommas_(data.capTable.getRound("Bridge Round").old_investors["ESOP"].shares)?> remain reserved.</numbered_3_para>
- * 
+ *
  * the above hardcodes the name of the round into the XML. this is clearly undesirable.
  * we need a better way to relate the active round with the relevant terms spreadsheet.
- * 
+ *
  * How does this work?
  * First we go off and parse the cap table into a data structure
  * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
@@ -59,7 +59,7 @@ function capTable_(termsheet, captablesheet) {
   //   shares_pre
   // - how many shares of different types exist at the start of the round:
   //   by_security_type = { "Class F Shares" : { "Investor Name" : nnn, "TOTAL" : mmm }, ... }
-  //   
+  //
   // - we keep a running total to carry forward from round to round
   var totals = { shares_pre: 0,
 				 money_pre: 0,
@@ -82,7 +82,7 @@ function capTable_(termsheet, captablesheet) {
 	Logger.log("capTable.new(): %s.old_investors = %s", round.name, round.old_investors);
 
 	totals.by_security_type[round.security_type] = totals.by_security_type[round.security_type] || {};
-	
+
 	round.shares_pre = totals.shares_pre;
 
 	var new_shares = 0, new_money = 0;
@@ -138,7 +138,7 @@ function capTable_(termsheet, captablesheet) {
 	  Logger.log("capTable: created an ESOP object for round %s: %s", round.name, JSON.stringify(round.ESOP.holders));
 	}
 
-	
+
 //	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
 //	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
 	// TODO: we should probably raise a stink if those values are not the same.
@@ -155,7 +155,7 @@ function capTable_(termsheet, captablesheet) {
   this.getActiveRound = function() {
 	return this.getRound(this.activeRound);
   };
-  
+
   /**
 	* @method
 	* @param {string} roundName - the name of the round you're interested in
@@ -186,7 +186,7 @@ function capTable_(termsheet, captablesheet) {
   //               percentage: whatever,
   //             }, ...
   //           ]
-  
+
   /** all the investors
 	* @method
 	* @return {Array<object>} investors - ordered list of investor objects
@@ -224,7 +224,7 @@ function capTable_(termsheet, captablesheet) {
 	Logger.log("i have built allInvestors: %s", JSON.stringify(toreturn));
 	return toreturn;
   };
-  
+
 }
 
 // parseCaptable
@@ -259,11 +259,11 @@ function capTable_(termsheet, captablesheet) {
 //  ... // another round
 //  ... // another round
 //  { name: "TOTAL", ... }
-// ]   
+// ]
 function parseCaptable(sheet) {
   if (sheet == undefined) { throw "parseCaptable() called without a Cap Table sheet specified!" }
   Logger.log("parseCaptable: running on sheet %s", sheet.getSheetName());
-  
+
   var captableRounds = [];
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
@@ -297,7 +297,7 @@ function parseCaptable(sheet) {
           majorByName[row[j]] =     j;
           majorByNum     [j]  = row[j];
 		  majorToRound[row[j]]= captableRounds.length;
-          
+
           captableRounds.push( { name: row[j], new_investors: {}, ordered_investors: [] } ); // we haz a new round!
 //          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
@@ -334,10 +334,10 @@ function parseCaptable(sheet) {
           }
 
 		  var asvar = asvar_(row[j]);
-		  
+
           minorByName[myRound.name + asvar] =     j;
           minorByNum [j]  = { round: myRound, minor: asvar };
-          
+
 //          Logger.log("captable/breakdown: we have learned that if we encounter a thingy in column %s it belongs to round (%s) attribute (%s)",
 //                                                                                                   j,                    myRound.name, minorByNum[j].minor);
         }
@@ -393,7 +393,7 @@ function parseCaptable(sheet) {
 
 // meng suggests: how about we start with an empty cap table, with just a single round in it, for incorporation.
 // this could come from some Master tab in some existing spreadsheet, so we don't have to create the thing cell by cell.
-// 
+//
 // TODO: let's devise a Round Object that helps to represent what's in a round.
 // that round object could be created independent of a containing capTable.
 // sure, the capTable object will create a bunch of Round objects when parsing an existing capTable.
@@ -402,7 +402,7 @@ function parseCaptable(sheet) {
 // TODO: let's create an addRoundToCapTable method.
 //
 // TODO: let's create a createTabForRound method.
-// 
+//
 
 function reset(){
   // meng suggests: we don't actually do anything with the next 3 lines. delete.
@@ -413,11 +413,32 @@ function reset(){
   sheet.clear();
 }
 
+function importCapTableTemplate(ss_ToImportTo){
+  var capTableTemplate = getSheetByURL_(DEFAULT_CAPTABLE_TEMPLATE);
+  
+  var forImport_ss = ss_ToImportTo || SpreadsheetApp.getActiveSpreadsheet();//meh, standard check to make function more robust;
+
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.prompt('Creating New CapTable', 'What would you like to call it?', ui.ButtonSet.OK_CANCEL);
+
+  if(response.getSelectedButton() == ui.Button.OK){
+    Logger.log("Sweet, we got confirmation to proceed from the user");
+    var copiedSheet = capTableTemplate.copyTo(forImport_ss);
+    forImport_ss.setActiveSheet(copiedSheet);
+    copiedSheet.setName(response.getResponseText());
+    return forImport_ss;
+  } else {
+    Logger.log("I guess we weren't needed . . .");
+    //We should abort the operation. Not sure how to do that. . . return undefined instead
+    return undefined;
+  }
+}
+
 function createCaptable(captableRounds){
   reset();
   // meng suggests: grab a capTable_() object instead of just the parsed output.
   var capTable = parseCaptable();
-  
+
 //Find a blank sheet
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var sheet;
@@ -428,43 +449,43 @@ function createCaptable(captableRounds){
       break;
     }
   };
-  
+
   //If no blank sheet, create a new one
   if (!sheet){
     sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
   }
-  
+
   //create sheet title: CAP TABLE
   var cell = sheet.getRange(1, 1);
   cell.setValue("CAP TABLE");
-  
+
   //hardcode catagories
-  var catagories = ["round name", 
-                    "security type", 
-                    "approximate date", 
-                    "break it down for me", 
-                    "pre-money", 
-                    "price per share", 
-                    "discount", 
-                    "amount raised", 
+  var catagories = ["round name",
+                    "security type",
+                    "approximate date",
+                    "break it down for me",
+                    "pre-money",
+                    "price per share",
+                    "discount",
+                    "amount raised",
                     "post"];
-  
+
   // meng suggests: make this a method within the capTable_() object.
   var roundArray = getRoundArray(capTable);
-  
+
   for (var i = 2; i< catagories.length + 2; i++){
     cell = sheet.getRange(i, 1);
 	// meng suggests: set the formatting also.
     cell.setValue(catagories[i-2]);
     var roundNumber = 0;
-    
+
     Logger.log(roundArray);
     var j = 2;
     Logger.log("roundArray.length is " + roundArray.length)
     while (roundNumber < roundArray.length){
       var dataCell = sheet.getRange(i, j);
       var category = cell.getValue();
-      
+
       if (category == "break it down for me"){
         dataCell = sheet.getRange(i, j, 1, 3);
 		// meng suggests: set the formatting also.
@@ -482,7 +503,7 @@ function createCaptable(captableRounds){
       Logger.log("round number is " + roundNumber);
       Logger.log("category is " + category);
       var dataCellValue = getCategoryData(capTable, roundNumber, category);
-      
+
       if (!dataCellValue){}
       else if (dataCellValue.constructor == Object){
 		// meng suggests: make these getters methods of the capTable_() object.
@@ -737,6 +758,3 @@ function getPercentageValue(capTable, round, catagory){
     return capTable[round][key]["percentage"];
   }
 }
-
-
-
