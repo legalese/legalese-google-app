@@ -148,13 +148,6 @@ function setupForm(sheet) {
   return short_url;
 }
 
-function treeify_(root, arr) {
-  if      (arr.length == 2) { root[arr[0]] = arr[1] }
-  else if (arr.length == 1) { root[arr[0]] = null   }
-  else if (arr.length == 0) { return }
-  else                      { if (root[arr[0]] == undefined) root[arr[0]] = {};
-							  treeify_(root[arr[0]], arr.slice(1)) }
-}
 
 
 // {

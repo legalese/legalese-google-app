@@ -26,7 +26,7 @@ testing to see if commit works
  */
 function capTable_(termsheet, captablesheet) {
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
+  captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
 
   Logger.log("capTable_: parsing captablesheet %s, active round being %s",
 			 captablesheet.getSheetName(), termsheet.getSheetName());

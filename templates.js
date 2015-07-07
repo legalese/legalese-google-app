@@ -587,7 +587,8 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   clauseroot = [];
   clausetext2num = {};
   newTemplate.data.signature_comment = null;
-
+  newTemplate.data._templateName = sourceTemplate.name;
+  
   var xmlRootExtras = xmlRootExtras = config.save_indd ? ' saveIndd="true"' : '';
   newTemplate.data.xmlRoot = function(someText) {
 	if (someText == undefined) { someText = '' }
