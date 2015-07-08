@@ -745,3 +745,52 @@ function getPercentageValue(capTable, round, catagory){
   }
 }
 */
+
+function round_(name, security, investors, pricePerShare){
+    this.name = name;
+    this.securityType = asvar_(security);
+    //investors =
+
+    if (securityType == "equity of somesort"){
+	//price per share box becomes yellow"
+    };
+    
+    this.investors = investors; //investors[] contributed to this round
+    //investors[]
+    //investors = {name: {money: nn,
+    //                    shares: nn,
+    //                    percentage: %%}}
+
+    this.getInvestorByName = function(){
+	return investors[name];
+	//returns the hash of money, shares, percentage
+    };
+
+    this.pricePerShare = pricePerShare;
+
+    var AmountRaised = [money: 0, shares: 0, percentage: 0];
+
+    this.getAmountRaised = function(){
+	var sumMoney; var sumShares
+	for each investor in investors{
+	    sumMoney += investors[investor].money;
+	    sumShares += investors[investor].shares;
+	};
+	AmountRaised[0] = sumMoney;
+	AmountRaised[1] = sumShares;
+	//money = total of all investors money
+	//shares = total of all shares distributed
+	//percentage = shares raised this round/postShares. will be modified in capTable.
+	return AmountRaised
+    };	    
+}
+
+function insertNewRound(capTable){
+    //use ui to prompt for name, security type, investors
+    //pull out the appropriet template for the security type
+    var name;
+    var securityType;
+    var investors;
+    var pricePerShare;
+    
+    var round = new round_(name, securityType, investors, pricePerShare);
