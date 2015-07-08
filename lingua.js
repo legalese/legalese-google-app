@@ -2,6 +2,7 @@
 // have started on this at https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=981127052 under LINGUA
 function plural(num, singular, plural, locale) {
   if (locale == undefined) { locale = "en-US" }
+  if (num == undefined ) { return plural }
   if (num.constructor.name == "Array") { num = num.length }
   if (num.constructor.name == "String") { num = Number(num.replace(/[^0-9.]/, "")) }
   if (locale == "en-US") {

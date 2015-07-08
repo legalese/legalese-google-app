@@ -265,7 +265,12 @@ function formatify_(format, string, sheet, fieldname) {
 
 	var matches;
 	// currency: [$S$]#,##0.000
-    if (matches = format.match(/\[\$(.*)\]/)) {
+	// TODO: also handle "$"#,##0
+	//[15-07-09 02:10:38:840 HKT] learned that JFDI round.JFDI.2014 Pte. Ltd..money = S$25,000 (orig=25000.0) (format=[$S$]#,##0)
+	//[15-07-09 02:10:38:841 HKT] learned that TOTAL.JFDI.2014 Pte. Ltd..money = 25000 (orig=25000.0) (format="$"#,##0)
+
+	
+    if (matches = format.match(/\[\$(.*)\]|"\$\"#/)) {
 	  toreturn = asCurrency_(format, string);
     }
 	// percentage: 0%  0.0%  0.00%
@@ -367,6 +372,10 @@ function asCurrency_(currency, amount, chop) {
   // failing that, SheetConverter has a convertCell function that should do the job. https://sites.google.com/site/scriptsexamples/custom-methods/sheetconverter
   // but that doesn't work either. so we do it by hand.
 
+	// TODO: also handle "$"#,##0
+	//[15-07-09 02:10:38:840 HKT] learned that JFDI round.JFDI.2014 Pte. Ltd..money = S$25,000 (orig=25000.0) (format=[$S$]#,##0)
+	//[15-07-09 02:10:38:841 HKT] learned that TOTAL.JFDI.2014 Pte. Ltd..money = 25000 (orig=25000.0) (format="$"#,##0)
+  
   // currency can be either just "S$" or the full numberFormat specification string.
 
   // Logger.log("asCurrency_(%s, %s, %s)", currency, amount, chop);
@@ -381,6 +390,10 @@ function asCurrency_(currency, amount, chop) {
   var matches;
   if (matches = currency.match(/\[\$(.*)\]/)) { // currency
     mycurrency = matches[0].substring(2,matches[0].length-1).replace(/ /g," "); // nbsp
+  }
+
+  if (matches = currency.match(/"\$"/)) { // currency
+    mycurrency = "$";
   }
 
   return mycurrency + digitCommas_(amount, chop);
