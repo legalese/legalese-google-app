@@ -225,6 +225,9 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
 
+    this.updateRounds() = function(round){
+	
+    };
 
     this.getRoundbyName() = function(name){
     };
@@ -803,12 +806,21 @@ function round_(name, security, investors, pricePerShare){
     };	    
 }
 
-function insertNewRound(capTable){
-    //use ui to prompt for name, security type, investors
-    //pull out the appropriet template for the security type
-    var name;
-    var securityType;
-    var investors;
-    var pricePerShare;
-    
-    var round = new round_(name, securityType, investors, pricePerShare);
+var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
+
+function insertNewRound(capTableSheet){
+    var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
+    var spreadSheet = SpreadsheetApp.getActiveSpreadSheet();
+    var ui = SpreadsheetApp.getUi();
+    var roundName = ui.prompt("New Round Name: ", ui.ButtonSet.OK_CANCEL);
+
+    if (roundName.getSlectedButton() == ui.Button.OK){
+	var newTermSheet = termTemplate.copyTo(spreadSheet);
+	spreadSheet.setActiveSheet(newTermSheet);
+	newTernSheet.setName(roundName.getResponseText());
+    }
+
+    // var col_offset = 2, col_size = 3;
+	//    for (var major_col = 0; major_col < capTable.rounds().length; major_col++) {
+	//      var actual_col = major_col * col_size + col_offset;
+}
