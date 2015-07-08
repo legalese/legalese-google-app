@@ -377,7 +377,7 @@ function fillTemplates(sheet) {
   }
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var entitiesByName = {};
-  var readRows_ = readRows(sheet, entitiesByName);
+  var readRows_ = new readRows(sheet, entitiesByName);
   var templatedata   = readRows_.terms;
   var config         = readRows_.config;
   templatedata.clauses = {};
@@ -389,7 +389,7 @@ function fillTemplates(sheet) {
   // if the person is running this in Demo Mode, and there is no User entity defined, then we create one for them.
   // then we have to reload.
   if (createDemoUser_(sheet, readRows_, templatedata, config)) {
-	readRows_ = readRows(sheet, entitiesByName);
+	readRows_ = new readRows(sheet, entitiesByName);
 	templatedata   = readRows_.terms;
 	config         = readRows_.config;
 	templatedata._config = config;

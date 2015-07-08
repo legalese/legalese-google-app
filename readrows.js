@@ -17,20 +17,19 @@ function readRows(sheet, entitiesByName) {
   var formulas = rows.getFormulas();
   var formats  = rows.getNumberFormats();
 
-  var toreturn =   { terms            : {},
-					 config           : {},
-					 entitiesByName   : entitiesByName,
-					 _origentityfields: [],
-					 _entityfields    : [],
-					 _last_entity_row : null,
-					 // principal gets filled in later.
-					 availableTemplates: [],
-				   };
-
-  var terms = toreturn.terms;
-  var config = toreturn.config;
-  var origentityfields = toreturn._origentityfields; // used by the form
-  var entityfields = toreturn._entityfields;
+  this.terms            = {};
+  this.config           = {};
+  this.entitiesByName   = entitiesByName;
+  this._origentityfields= [];
+  this._entityfields    = [];
+  this._last_entity_row = null;
+  // principal gets filled in later.
+  this.availableTemplates= [];
+  
+  var terms = this.terms;
+  var config = this.config;
+  var origentityfields = this._origentityfields; // used by the form
+  var entityfields = this._entityfields;
   var principal, roles = {};
 
   var section = "prologue";
@@ -92,7 +91,7 @@ function readRows(sheet, entitiesByName) {
 		// TODO: overwrite existing templates, don't just concatenate.
 		Logger.log("readRows(%s): back from INCLUDE %s; absorbing %s new templates",
 				   sheet.getSheetName(), row[1], includedReadRows.availableTemplates.length);
-		toreturn.availableTemplates = toreturn.availableTemplates.concat(includedReadRows.availableTemplates);
+		this.availableTemplates = this.availableTemplates.concat(includedReadRows.availableTemplates);
 	  }
 	  if (principal == undefined) { principal = includedReadRows.principal }
 
@@ -195,6 +194,8 @@ function readRows(sheet, entitiesByName) {
 
 	  roles[relation] = roles[relation] || [];
 
+	  // TODO: attach the roles
+	  
 	  var matches; // there is similar code elsewhere in buildTemplate()
 	  if (matches = entityname.match(/^\[(.*)\]$/)) {
 		// Shareholder: [Founder]
@@ -288,7 +289,7 @@ function readRows(sheet, entitiesByName) {
 		default: template[k] = v;
 		}
 	  }
-	  toreturn.availableTemplates.push(template);
+	  this.availableTemplates.push(template);
 	}
     else if (section == "ENTITIES") {
       var entity = { _origin_spreadsheet_id:sheet.getParent().getId(),
@@ -302,7 +303,7 @@ function readRows(sheet, entitiesByName) {
 	  if (coreRelation == undefined || ! coreRelation.length) { continue }
 	  if (coreRelation.toLowerCase() == "ignore") { Logger.log("ignoring %s line %s", coreRelation, row[1]); continue }
 
-	  toreturn._last_entity_row = i;
+	  this._last_entity_row = i;
 
       for (var ki in entityfields) {
         if (ki < 1) { continue }
@@ -401,48 +402,51 @@ function readRows(sheet, entitiesByName) {
 
   // if we've read the entire spreadsheet, and it doesn't have an AVAILABLE TEMPLATES section, then we load the default AVAILABLE TEMPLATES from the demo master.
   if (principal != undefined &&
-	  toreturn.availableTemplates.length == 0 &&
+	  this.availableTemplates.length == 0 &&
 	  config.templates != undefined
 	 ) {
 	Logger.log("readRows: need to load default Available Templates from master spreadsheet.");
 	var rrAT = readRows(getSheetByURL_(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName);
- 	toreturn.availableTemplates = rrAT.availableTemplates;
+ 	this.availableTemplates = rrAT.availableTemplates;
   }
-  Logger.log("readRows: returning toreturn.availableTemplates with length %s", toreturn.availableTemplates.length);
+  Logger.log("readRows: returning this.availableTemplates with length %s", this.availableTemplates.length);
 
   // an Available Templates sheet has no ENTITIES.
   if (principal == undefined) { Logger.log("readRows: principal is undefined ... we must be in an Available Templates sheet.");
-								return toreturn; }
+								return this; }
 
-  toreturn.principal = principal;
-  Logger.log("readRows(%s): setting toreturn.principal = %s", sheet.getSheetName(), principal.name);
+  this.principal = principal;
+  Logger.log("readRows(%s): setting this.principal = %s", sheet.getSheetName(), principal.name);
 
-  toreturn.principal.roles = toreturn.principal.roles || {};
+  this.principal.roles = this.principal.roles || {};
 
   // set up the principal's .roles property.
   // also configure the vassals' _role property, though nothing uses this at the moment.
   for (var k in roles) {
-	toreturn.principal.roles[k] = roles[k];
-	Logger.log("readRows(%s): principal %s now has %s %s roles", sheet.getSheetName(), toreturn.principal.name, roles[k].length, k);
+	this.principal.roles[k] = roles[k];
+	Logger.log("readRows(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, roles[k].length, k);
 	for (var pi in roles[k]) {
 	  var entity = entitiesByName[roles[k][pi]];
 	  if (entity == undefined) { throw(k + " role " + pi + ' "' + roles[k][pi] + "\" refers to an entity that is not defined!") }
 	  entity._role = entity._role || {};
-	  entity._role[toreturn.principal.name] = entity._role[toreturn.principal.name] || [];
-	  entity._role[toreturn.principal.name].push(k);
+	  entity._role[this.principal.name] = entity._role[this.principal.name] || [];
+	  entity._role[this.principal.name].push(k);
 	  Logger.log("readRows(%s): VASSAL: entity %s knows that it is a %s to %s",
 				 sheet.getSheetName(),
 				 entity.name,
 				 k,
-				 toreturn.principal.name);
+				 this.principal.name);
 	}
   }
   var entityNames = []; for (var eN in entitiesByName) { entityNames.push(eN) }
   Logger.log("readRows(%s): have contributed to entitiesByName = %s", sheet.getSheetName(), entityNames);
-  var entityNames = []; for (var eN in toreturn.entitiesByName) { entityNames.push(eN) }
-  Logger.log("readRows(%s): toreturn's entitiesByName = %s", sheet.getSheetName(), entityNames);
+
+  // TODO: waitaminute. aren't these the same object? this.entitiesByName = entitiesByName, no? anyway, this doesn't seem to have any effect really.
+  
+  var entityNames = []; for (var eN in this.entitiesByName) { entityNames.push(eN) }
+  Logger.log("readRows(%s): this's entitiesByName = %s", sheet.getSheetName(), entityNames);
 //  Logger.log("readRows: config = %s\n", JSON.stringify(config,null,"  "));
-  return toreturn;
+  return this;
 }
 
 function treeify_(root, arr) {
