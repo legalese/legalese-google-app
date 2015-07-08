@@ -589,7 +589,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   newTemplate.data.signature_comment = null;
   newTemplate.data._templateName = sourceTemplate.name;
   
-  var xmlRootExtras = xmlRootExtras = config.save_indd ? ' saveIndd="true"' : '';
+  var xmlRootExtras = config.save_indd ? ' saveIndd="true"' : '';
   newTemplate.data.xmlRoot = function(someText) {
 	if (someText == undefined) { someText = '' }
 	else if (! someText.match(/^ /)) { someText = ' ' + someText }
