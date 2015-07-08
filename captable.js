@@ -224,6 +224,24 @@ function capTable_(termsheet, captablesheet) {
 	Logger.log("i have built allInvestors: %s", JSON.stringify(toreturn));
 	return toreturn;
   };
+
+
+    this.getRoundbyName() = function(name){
+    };
+
+    this.getRoundbyNumber() = function(num){
+    };
+
+    this.getPre() = function(){
+    }
+
+    this.updateInvestorPercentage() = function(round){
+    }
+
+    this.getPost() = function(round){
+    }
+
+    
   
 }
 
@@ -761,8 +779,8 @@ function round_(name, security, investors, pricePerShare){
     //                    shares: nn,
     //                    percentage: %%}}
 
-    this.getInvestorByName = function(){
-	return investors[name];
+    this.getInvestorByName = function(InvestorName){
+	return investors[InvestorName];
 	//returns the hash of money, shares, percentage
     };
 
