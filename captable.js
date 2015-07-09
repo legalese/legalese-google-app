@@ -267,9 +267,11 @@ function capTable_(termsheet, captablesheet) {
 	// all the new investors are given "new_investor" roles.
 
 	var toreturn = [];
+	if (! round) { return toreturn }
 
 	for (var ni in round.new_investors) {
-	  if (round.new_investors[ni].money  == undefined &&
+	  if (ni == "ESOP" || // special case
+		  round.new_investors[ni].money  == undefined &&
 		  round.new_investors[ni].shares == undefined
 		 ) continue;
 	  var newRole = { relation:"new_investor", entityname:ni };
