@@ -806,6 +806,15 @@ function round_(name, security, investors, pricePerShare){
     };	    
 }
 
+function capTableSheet(captablesheet){
+    this.addMajorColumn(roundName) = function(){
+    };
+    this.addMinorColumn() = function(){
+    };
+    this.findCategoryRow() = function(){
+    };
+};
+
 var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
 
 function insertNewRound(capTableSheet){
@@ -817,8 +826,14 @@ function insertNewRound(capTableSheet){
     if (roundName.getSlectedButton() == ui.Button.OK){
 	var newTermSheet = termTemplate.copyTo(spreadSheet);
 	spreadSheet.setActiveSheet(newTermSheet);
-	newTernSheet.setName(roundName.getResponseText());
-    }
+	newTermSheet.setName(roundName.getResponseText());
+    };
+
+    capTableSheet.addMajorColumn(roundName.getResponseText());
+
+    //adjust total column
+
+    
 
     // var col_offset = 2, col_size = 3;
 	//    for (var major_col = 0; major_col < capTable.rounds().length; major_col++) {
