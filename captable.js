@@ -422,18 +422,27 @@ function importCapTableTemplate(ss_ToImportTo){
   }
 }
 
-function addMajorColumn(round){
-  var CapSheet = SpreadsheetApp.getActiveSheet();
+function addMajorColumn(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
+  var CapSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var range = CapSheet.getDataRange();
   var data = range.getValues();
-  var roundNames = data[1];//HARD CODE OH NO!
+  var roundNames = data[1];
+  //Hard code? I am assuming that the round names are on the second row, perhaps I should check for "round name" and then move left?
 
-  //technically speaking, the Total should be roundNames[roundNames.length - 1] right?
-  if(roundNames[roundNames.length - 1] == "TOTAL"){
-    //now we gucci
-    //here we need to insert 3 new columns to the LEFT of TOTAL column
-    //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn in order to maintain formatting
-    //Look into the copyTo functions in Range for reference
+  Logger.log("The sheet that you are using is: " + CapSheet.getName() );
+  Logger.log("what we are looking at is: " + roundNames);
+
+  //right now, the assumption is that the last column is TOTAL and is written the leftmost minor column of a major column
+  if(roundNames[roundNames.length - 3] == "TOTAL"){
+    Logger.log("got gucci real fast");
+
+    CapSheet.insertColumnsBefore((roundNames.length - 3) + 1, 3);//columns start at 1, so +1
+
+    var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
+    var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
+    prevMajorColumn.copyTo(destination);
+    //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
+    //Look into the copyTo functions in Range reference
   }
   else{
     Logger.log("Error: Make sure that your active sheet is the Cap Table");
