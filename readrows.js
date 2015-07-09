@@ -2,11 +2,68 @@
 
 // ---------------------------------------------------------------------------------------------------------------- readRows
 /**
- * represents the sheet, but is agnostic as to the specific data.parties that are needed by each template.
+ * represents the term sheet, but is agnostic as to the specific data.parties that are needed by each template.
  * the data.parties get filled in by the template matcher, because different templates involve different parties.
  *
- * the ENTITIES go into entitiesByName
+ * the ENTITIES go into a global entitiesByName singleton.
  * the TERMS go into data.* directly.
+ * 
+ * A given term sheet, represented by one readRows object, may INCLUDE another term sheet, represented by another readRows object.
+ * This is a DAG situation.
+ * 
+ * There are three ways to treat entities.
+ * First, there are ENTITIES, which have attributes. Every entity has a Name. The party_type attribute is either company or person.
+ * Second, there are ROLES, which associate a given Entity to a special Entity called a Principal. The Principal, at time of writing, is a Company.
+ * Third, there are PARTIES, which, at the root level, makes sense of all the included Entities and Roles, and presents a resolved resultant to the consuming template(s).
+ * 
+ * A word on INCLUDE logic and the idea of a Principal. There are a number of possible cases.
+ * 
+ * Simple: In the simplest case, a term sheet has its own Entities and, optionally, a Roles section. There is no include.
+ * 
+ * Entities: In a typical case, a term sheet INCLUDEs an Entities sheet. That Entities sheet may itself INCLUDE another sheet, and so on.
+ * The primary term sheet may have its own ENTITIES and ROLES; it definitely has its own TERMS.
+ * The included sheets may also have ENTITIES and ROLES. All of those items are read. But which are used?
+ * 
+ * Include-Terms: Sometimes, a term sheet may INCLUDE another term sheet, which INCLUDEs another Entities sheet.
+ * Usually, in this case, it is desirable to import the ENTITIES but not the ROLES or KEY TERMS defined by the included term sheet.
+ * 
+ * Given all this complexity, what do we want to happen?
+ * 
+ * We introduce the ideal of a Principal. If a given sheet has a Company entity defined natively, then its Principal is that Company entity.
+ * 
+ * A given sheet may not have a Principal. If it does not, then it adopts as a Principal the Principal of the first included sheet that has one.
+ * 
+ * What about ROLES? Roles are relative to a given Principal. One Entities sheet with principal CompanyA may include another with principal CompanyB.
+ * In that case, the ROLES definitions in CompanyB should not contaminate CompanyA.
+ * 
+ * EXAMPLE 1
+ * Parent Term Sheet only defines TERMS but no ENTITIES
+ *   Parent   INCLUDEs CompanyA which has ENTITIES. Adopts CompanyA as principal.
+ *   CompanyA INCLUDEs CompanyB which has ENTITIES. CompanyA's sheet already has a principal and therefore does not adopt CompanyB.
+ * 
+ * EXAMPLE 2
+ * Parent Term Sheet defines both TERMS and ENTITIES
+ *   Parent   INCLUDEs CompanyA which has ENTITIES. Parent Term Seet already has a principal and therefore does not adopt CompanyA.
+ *   CompanyA INCLUDEs CompanyB which has ENTITIES. CompanyA's sheet already has a principal and therefore does not adopt CompanyB.
+ * 
+ * Special Case: TERMS include
+ *  If the INCLUDE statement identifies "TERMS" in the include line, in column C, then the caller adopts the included TERMS as well as its Entities.
+ *  
+ * Special Case: auto-inclusion of Available Templates
+ *  If the included sheet has an availableTemplates, then we absorb that section into the caller.
+ *  
+ * Interaction: Some ROLES are synthesized from a reading of the Cap Table sheet.
+ *  Sometimes, a Cap Table will impute certain roles.
+ *    Nonblank investor cells impute the "new_investor" role to the named entities.
+ *       Blank investor cells impute the "shareholder"  role to the named entities.
+ *  And, of course, the reading of ENTITIES and ROLES involves role association as well.
+ *  Since the association of role to entity may happen in multiple places at different times, we wrap that functionality into two methods:
+ *  - handleNewRoles() relates a new entity to the principal. it may be called from anywhere. Principal has-a Entity Relation.
+ *  - rebuildRoles() informs all the related entities of their relation to the principal. Entity has-a Principal Relation.
+ *  
+ * Duplicates. It is possible that a role will be accidentally related to a principal more than once. Idempotent operation is required.
+ *  
+ * @constructor
  */
 function readRows(sheet, entitiesByName) {
   Logger.log("readRows: will use sheet " + sheet.getName());
@@ -19,7 +76,7 @@ function readRows(sheet, entitiesByName) {
   this.sheet            = sheet;
   this.terms            = {};
   this.config           = {};
-  this.entitiesByName   = entitiesByName;
+  this.entitiesByName   = entitiesByName; // singleton across all readRows() invocations. maybe make this a global later.
   this._origentityfields= [];
   this._entityfields    = [];
   this._last_entity_row = null;
@@ -49,7 +106,7 @@ function readRows(sheet, entitiesByName) {
   //   below, while parsing a ROLES section;
   //   from outside, after the parsing is done, but when a capTable wishes to impute new roles.
   this.handleNewRoles = function(newRoles) {
-	Logger.log("handling new Roles: %s", newRoles);
+	Logger.log("readRows(%s).handleNewRoles: handling new Roles: %s", this.sheet.getSheetName(), newRoles);
 
 	for (var ri = 0; ri < newRoles.length; ri++) {
 	  var newRole = newRoles[ri];
@@ -58,7 +115,7 @@ function readRows(sheet, entitiesByName) {
 	  var attrs      = newRole.attrs;
 
 	  if (config.skip_party && (relation in config.skip_party.tree)) {
-		Logger.log("handleNewRows: skipping party role definition for %s", relation);
+		Logger.log("handleNewRoles: skipping party role definition for %s", relation);
 		continue;
 	  }
 	  
@@ -66,7 +123,8 @@ function readRows(sheet, entitiesByName) {
 
 	  var matches; // there is similar code elsewhere in buildTemplate()
 	  if (matches = entityname.match(/^\[(.*)\]$/)) {
-		// Shareholder: [Founder]
+		// special syntax:
+		//   Shareholder: [Founder]
 		// means all founders are also shareholders and we should populate the Shareholder parties accordinlgy
 
 		var to_import = asvar_(matches[1]);
@@ -82,7 +140,7 @@ function readRows(sheet, entitiesByName) {
 		  // TODO: note that the import is incomplete because you don't get _format_ and _orig_.
 		  // in the future we should get this all cleaned up with a properly OOPy sheet management system.
 		  if (this.principal.roles[to_import] && this.principal.roles[to_import].length) {
-			Logger.log("readRows(%s):         HANDLED: found it in this.principal.roles", sheet.getSheetName());
+			Logger.log("readRows(%s):         HANDLED: found merge target in this.principal.roles", sheet.getSheetName());
 			if (Object.keys(attrs).length) {
 			  Logger.log("readRows(%s):         applying attributes to %s %s parties", sheet.getSheetName(), this.principal.roles[to_import].length, to_import);
 			  for (var ti = 0; ti<this.principal.roles[to_import].length; ti++) {
@@ -97,20 +155,27 @@ function readRows(sheet, entitiesByName) {
 		}
 		else { // TODO: should be able to condense this together with the preceding block.
 		  if (Object.keys(attrs).length) {
-			Logger.log("readRows(%s):         applying attributes for plain assignment", sheet.getSheetName());
+			Logger.log("readRows(%s):         applying attributes for local merge: %s", sheet.getSheetName(), attrs);
 			for (var ti = 0; ti<this.roles[to_import].length; ti++) {
 			  for (var k in attrs) { entitiesByName[this.roles[to_import][ti]][k] = attrs[k] }
 			}
 		  }
-		  Logger.log("readRows(%s):         ROLES: before, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
+		  Logger.log("readRows(%s):         ROLES: before local merge, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
 		  this.roles[relation] = this.roles[relation].concat(this.roles[to_import]);
-		  Logger.log("readRows(%s):         ROLES: after, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
+		  Logger.log("readRows(%s):         ROLES: after  local merge, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
 		}
 	  }
 	  else { // plain role assignment, e.g. Director = Smoochy The Frog
 		var entity = entitiesByName[entityname];
-		if (! (relation == "Company")) { // sometimes we have ROLES Company
+		if (! (relation == "Company") // sometimes we have ROLES Company. We just learn the attributes but don't add an association.
+			&&
+			this.roles[relation].filter(function(ename){return ename == entityname}) == 0 // not already present in the array
+		   ) {
 		  this.roles[relation].push(entityname);
+		  Logger.log("readRows(%s):         ROLES: party %s is new to the role %s", sheet.getSheetName(), entityname, relation);
+		}
+		else {
+		  Logger.log("readRows(%s):         ROLES: party %s already has role %s", sheet.getSheetName(), entityname, relation);
 		}
 		Logger.log("readRows(%s):         ROLES: learning party role %s = %s", sheet.getSheetName(), relation, entityname);
 		Logger.log("readRows(%s):         ROLES: this.roles[%s]=%s", sheet.getSheetName(), relation, this.roles[relation]);
@@ -127,17 +192,17 @@ function readRows(sheet, entitiesByName) {
   this.rebuildRoles = function() {
 	if (this.principal == undefined) { Logger.log("rebuildRoles(): principal is null, doing nothing."); return }
 	
-	Logger.log("rebuildRoles(%s): setting this.principal = %s", sheet.getSheetName(), this.principal.name);
+	Logger.log("rebuildRoles(%s): given this.principal = %s", sheet.getSheetName(), this.principal.name);
 
 	this.principal.roles = this.principal.roles || {};
 
 	// set up the principal's .roles property.
 	// also configure the vassals' _role property, though nothing uses this at the moment.
 	for (var k in this.roles) {
-	  Logger.log("rebuildRoles(): k=%s, roles[k]=%s, principal.roles[k]=%s", k, this.roles[k], this.principal.roles[k]);
+	  Logger.log("rebuildRoles(%s): k=%s, roles[k]=%s, principal.roles[k]=%s", sheet.getSheetName(), k, this.roles[k], this.principal.roles[k]);
 	  if (this.principal.roles[k] == undefined ||
 		  this.roles[k] && this.roles[k].length > this.principal.roles[k]) { this.principal.roles[k] = this.roles[k]; } // TODO: this is probably buggy; the logic is unclear and needs to be thought through.
-	  Logger.log("readRows(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, this.roles[k].length, k);
+	  Logger.log("rebuildRoles(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, this.roles[k].length, k);
 	  for (var pi in this.roles[k]) {
 		var entity = entitiesByName[this.roles[k][pi]];
 		if (entity == undefined) { throw(k + " role " + pi + ' "' + this.roles[k][pi] + "\" refers to an entity that is not defined!") }
@@ -145,8 +210,8 @@ function readRows(sheet, entitiesByName) {
 		entity._role[this.principal.name] = entity._role[this.principal.name] || [];
 		if (entity._role[this.principal.name].filter(function(el){return el == k}).length == 0) {
 		  entity._role[this.principal.name].push(k);
-//		  Logger.log("readRows(%s): VASSAL: entity %s knows that it is a %s to %s",
-//					 sheet.getSheetName(), entity.name, k, this.principal.name);
+		  Logger.log("rebuildRoles(%s): VASSAL: entity %s knows that it is a %s to %s",
+					 sheet.getSheetName(), entity.name, k, this.principal.name);
 		}
 	  }
 	}
@@ -156,7 +221,7 @@ function readRows(sheet, entitiesByName) {
 	// TODO: waitaminute. aren't these the same object? this.entitiesByName = entitiesByName, no? anyway, this doesn't seem to have any effect really.
   
 	var entityNames = []; for (var eN in this.entitiesByName) { entityNames.push(eN) }
-	Logger.log("readRows(%s): this's entitiesByName = %s", sheet.getSheetName(), entityNames);
+	Logger.log("readRows(%s): this's this.entitiesByName = %s", sheet.getSheetName(), entityNames);
 	//  Logger.log("readRows: config = %s\n", JSON.stringify(config,null,"  "));
   };
   
@@ -210,7 +275,9 @@ function readRows(sheet, entitiesByName) {
 				   sheet.getSheetName(), row[1], includedReadRows.availableTemplates.length);
 		this.availableTemplates = this.availableTemplates.concat(includedReadRows.availableTemplates);
 	  }
-	  if (this.principal == undefined) { this.principal = includedReadRows.principal }
+	  if (this.principal == undefined) { this.principal = includedReadRows.principal;
+										 Logger.log("readRows(%s): i have no principal, so adopting from %s", sheet.getSheetName(), include_sheet.getSheetName());
+									   }
 
 	  if (row[2] != undefined && row[2].length) {
 		// if row[2] says "TERMS" then we include the TERMS as well.
@@ -370,7 +437,14 @@ function readRows(sheet, entitiesByName) {
       }
 
 	  // all coreRelation relations in the ENTITIES section are defined relative to the principal, which is hardcoded as the first Company to appear
-	  if (coreRelation == "company" && this.principal == undefined) { this.principal = entity }
+	  if (coreRelation == "company" && this.principal == undefined) {
+		this.principal = entity;
+		Logger.log("readRows(%s): wiring this.principal.roles (%s) = this.roles (%s)",
+				   this.sheet.getSheetName(),
+				   this.principal.name,
+				   this.roles);
+		this.principal.roles = this.roles;
+	  }
 
   // connect up the parties based on the relations learned from the ROLES section.
   // this establishes PRINCIPAL.roles.RELATION_NAME = [ party1, party2, ..., partyN ]
@@ -479,7 +553,7 @@ function treeify_(root, arr) {
 
 
 
-
+// TODO: turn this into a method
 // map
 function roles2parties(readRows_) {
   var parties = {};
@@ -490,15 +564,20 @@ function roles2parties(readRows_) {
 	  if (readRows_.entitiesByName[partyName]) {
 		parties[role] = parties[role] || [];
 		parties[role].push(readRows_.entitiesByName[partyName]);
-		Logger.log("populated parties[%s] = %s (type=%s)",
+		Logger.log("%s.roles2parties: populated parties[%s] = %s (type=%s)",
+				   readRows_.sheet.getSheetName(),
 		partyName, readRows_.entitiesByName[partyName].email, readRows_.entitiesByName[partyName].party_type);
 	  }
 	  else {
-		Logger.log("WARNING: the Roles section defines a party %s which is not defined in an Entities section, so omitting from the data.parties list.", partyName);
+		Logger.log("WARNING: the Roles section defines a party %s which is not defined in any Entities section, so omitting from the data.parties list.", partyName);
 	  }
 	}
   }
-  if (parties["company"] == undefined) { parties["company"] = [readRows_.principal]; }
+  if (parties["company"] == undefined) { parties["company"] = [readRows_.principal];
+										 Logger.log("%s.roles2parties: adopting principal %s as my Company party",
+													readRows_.sheet.getSheetName(),
+													readRows_.principal.name);
+									   }
   return parties;
 }
 
@@ -512,7 +591,8 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
   Logger.log("createDemoUser_: INFO: entering Demo Mode.");
 
   var parties = roles2parties(readRows_);
-
+  Logger.log("createDemoUser_: parties = %s", parties);
+  
   if (parties[asvar_(config.default_party_role.value)]) {
 	Logger.log("createDemoUser_: INFO: %s is defined: %s", config.default_party_role.value, parties[asvar_(config.default_party_role.value)].name);
 
