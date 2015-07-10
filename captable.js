@@ -225,7 +225,6 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
 
-<<<<<<< HEAD
     this.updateRounds() = function(round){
 	
     };
@@ -243,12 +242,8 @@ function capTable_(termsheet, captablesheet) {
     }
 
     this.getPost() = function(round){
-    }
+    }    
 
-    
-  
-=======
->>>>>>> 855fb2ffac32342fec405905783f01899a370d27
 }
 
 // parseCaptable
@@ -837,7 +832,6 @@ function round_(name, security, investors, pricePerShare){
     };
 }
 
-<<<<<<< HEAD
 function capTableSheet(captablesheet){
     this.addMajorColumn(roundName) = function(){
     };
@@ -871,14 +865,5 @@ function insertNewRound(capTableSheet){
 	//    for (var major_col = 0; major_col < capTable.rounds().length; major_col++) {
 	//      var actual_col = major_col * col_size + col_offset;
 }
-=======
-function insertNewRound(capTable){
-    //use ui to prompt for name, security type, investors
-    //pull out the appropriet template for the security type
-    var name;
-    var securityType;
-    var investors;
-    var pricePerShare;
 
-    var round = new round_(name, securityType, investors, pricePerShare);
->>>>>>> 855fb2ffac32342fec405905783f01899a370d27
+
