@@ -225,7 +225,6 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
 
-<<<<<<< HEAD
     this.updateRounds() = function(round){
 	
     };
@@ -247,8 +246,6 @@ function capTable_(termsheet, captablesheet) {
 
     
   
-=======
->>>>>>> 855fb2ffac32342fec405905783f01899a370d27
 }
 
 // parseCaptable
@@ -407,7 +404,8 @@ function parseCaptable(sheet) {
   }
 //  Logger.log("we have learned about the cap table rounds: %s", captableRounds);
   return captableRounds;
-}//more comments!hgfhgfhgf
+}
+//more comments!hgfhgfhgf
 
 
 // meng suggests: how about we start with an empty cap table, with just a single round in it, for incorporation.
@@ -423,7 +421,6 @@ function parseCaptable(sheet) {
 // TODO: let's create a createTabForRound method.
 //
 var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=827871932";
-
 
 function importCapTableTemplate(ss_ToImportTo){
   var capTableTemplate = getSheetByURL_(DEFAULT_CAPTABLE_TEMPLATE);
@@ -446,33 +443,7 @@ function importCapTableTemplate(ss_ToImportTo){
   }
 }
 
-function addMajorColumn(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
-  var CapSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var range = CapSheet.getDataRange();
-  var data = range.getValues();
-  var roundNames = data[1];
-  //Hard code? I am assuming that the round names are on the second row, perhaps I should check for "round name" and then move left?
 
-  Logger.log("The sheet that you are using is: " + CapSheet.getName() );
-  Logger.log("what we are looking at is: " + roundNames);
-
-  //right now, the assumption is that the last column is TOTAL and is written the leftmost minor column of a major column
-  if(roundNames[roundNames.length - 3] == "TOTAL"){
-    Logger.log("got gucci real fast");
-
-    CapSheet.insertColumnsBefore((roundNames.length - 3) + 1, 3);//columns start at 1, so +1
-
-    var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
-    var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
-    prevMajorColumn.copyTo(destination);
-    //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
-    //Look into the copyTo functions in Range reference
-  }
-  else{
-    Logger.log("Error: Make sure that your active sheet is the Cap Table");
-  }
-
-}
 
 function CapTableTester(){
   var SpreadSheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -480,6 +451,7 @@ function CapTableTester(){
   var termsheet = SpreadSheet.getSheetByName("Creation of Class F");
   var cap = new capTable_(termsheet, captableSheet);
   createCaptable(cap);
+  
 }
 
 function createCaptable(capTable){
@@ -488,9 +460,11 @@ function createCaptable(capTable){
   var activeSpreadSheet = SpreadsheetApp.getActiveSpreadsheet();
 
   var captablesheetName = ui.prompt("Enter New Sheet Name: ", ui.ButtonSet.OK_CANCEL);
-  if(captablesheetName.getSelectedButton() == ui.Button.OK){
+  if (captablesheetName.getSelectedButton() == ui.Button.OK){
     captable = activeSpreadSheet.getSheetByName(captablesheetName) || activeSpreadSheet.insertSheet(captablesheetName);
-  }
+    var CapSheet = new capTableSheet_(captable); //creating the capsheettable object
+  };
+  
 
 }
 
@@ -798,87 +772,186 @@ function getPercentageValue(capTable, round, catagory){
 }
 */
 
-function round_(name, security, investors, pricePerShare){
-    this.name = name;
-    this.securityType = asvar_(security);
-    //investors =
+//function round_(name, security, investors, pricePerShare){
+//    this.name = name;
+//    this.securityType = asvar_(security);
+//    //investors =
+//
+//    if (securityType == "equity of somesort"){
+//	//price per share box becomes yellow"
+//    };
+//
+//    this.investors = investors; //investors[] contributed to this round
+//    //investors[]
+//    //investors = {name: {money: nn,
+//    //                    shares: nn,
+//    //                    percentage: %%}}
+//
+//    this.getInvestorByName = function(InvestorName){
+//	return investors[InvestorName];
+//	//returns the hash of money, shares, percentage
+//    };
+//
+//    this.pricePerShare = pricePerShare;
+//
+//    //var AmountRaised = [money: 0, shares: 0, percentage: 0];
+//
+//    this.getAmountRaised = function(){
+//	var sumMoney; var sumShares
+//	for (investor in investors){
+//	    sumMoney += investors[investor].money;
+//	    sumShares += investors[investor].shares;
+//	};
+//	AmountRaised[0] = sumMoney;
+//	AmountRaised[1] = sumShares;
+//	//money = total of all investors money
+//	//shares = total of all shares distributed
+//	//percentage = shares raised this round/postShares. will be modified in capTable.
+//	return AmountRaised
+//    };
+//}
 
-    if (securityType == "equity of somesort"){
-	//price per share box becomes yellow"
+function termSheetToCaptable(category){
+  //"Pre-Money Valuation:" == "pre-money"
+  //"Security Type:" == "security type"
+  //"Amount Raising:" == new investor raised money (calculated from CapTable from inputing all investors under ROLES section)
+};
+
+var termToCap = {"Pre-Money Valuation:" : "pre-money",
+                 "Security Type:" : "security type",
+                }
+var capToTerm = {"amount raised" : "Amount Raising:",
+                 "price per share": "Price Per Share"
+                }
+
+function capTableSheet_(captablesheet){
+  this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+  this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
+  this.addMajorColumn = function(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
+    var CapSheet = captablesheet;
+    var range = CapSheet.getDataRange();
+    var data = range.getValues();
+    var roundNames = data[1];
+    //Hard code? I am assuming that the round names are on the second row, perhaps I should check for "round name" and then move left?
+
+    Logger.log("The sheet that you are using is: " + CapSheet.getName() );
+    Logger.log("what we are looking at is: " + roundNames);
+
+    //right now, the assumption is that the last column is TOTAL and is written the leftmost minor column of a major column
+    if(roundNames[roundNames.length - 3] == "TOTAL"){
+      Logger.log("got gucci real fast");
+
+      CapSheet.insertColumnsBefore((roundNames.length - 3) + 1, 3);//columns start at 1, so +1
+
+      var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
+      var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
+      prevMajorColumn.copyTo(destination);
+      //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
+      //Look into the copyTo functions in Range reference
+      
+      var cell = Capsheet.getRange(2, roundNames.length - 2);
+      cell.setValue(name);
+    }
+    else{
+      Logger.log("Error: Make sure that your active sheet is the Cap Table");
     };
 
-    this.investors = investors; //investors[] contributed to this round
-    //investors[]
-    //investors = {name: {money: nn,
-    //                    shares: nn,
-    //                    percentage: %%}}
+  };
+  
+    this.getCategoryRowCaptable = function(category) {
+      var sheet = captablesheet;
+      var key = category;
+      var dataRange = sheet.getDataRange();
+      var values = dataRange.getValues();
 
-    this.getInvestorByName = function(InvestorName){
-	return investors[InvestorName];
-	//returns the hash of money, shares, percentage
+      for (var i = 0; i < values.length; i++) {
+        if (values[i][0] == key){
+          return i + 1;
+        };
+      }
     };
-
-    this.pricePerShare = pricePerShare;
-
-    var AmountRaised = [money: 0, shares: 0, percentage: 0];
-
-    this.getAmountRaised = function(){
-	var sumMoney; var sumShares
-	for each investor in investors{
-	    sumMoney += investors[investor].money;
-	    sumShares += investors[investor].shares;
-	};
-	AmountRaised[0] = sumMoney;
-	AmountRaised[1] = sumShares;
-	//money = total of all investors money
-	//shares = total of all shares distributed
-	//percentage = shares raised this round/postShares. will be modified in capTable.
-	return AmountRaised
-    };
-}
-
-<<<<<<< HEAD
-function capTableSheet(captablesheet){
-    this.addMajorColumn(roundName) = function(){
-    };
-    this.addMinorColumn() = function(){
-    };
-    this.findCategoryRow() = function(){
-    };
+  
+  this.getCategoryRowTermSheet = function(round, category){
+    //returns the corresponding catetory row in term sheet
+    var termsheet = spreadSheet.getSheetByName(round);
+    var lastRow = termsheet.getLastRow();
+    var cell;
+    for (var row; row <= lastRow; row++){
+      cell = termsheet.getRange(row, 2);
+      if (cell == capToTerm[category]){
+        return row;
+      }
+    }
+  };
+  
+  this.getRoundColumnByName = function(round){
+    //returns the corresponding major column given the round name
+    //still needs to be tested
+    var sheet = captablesheet;
+    var numCol = sheet.getlastColumn();
+    for (var column; column <= numCol; column++){
+      var cell = sheet.getRange(1, column);
+      var value = cell.getValue();
+      if (value == round){
+        return column;
+      }
+      else{
+        Logger.log("Round does not exist");
+      }
+    }
+    
+  };
+  
+  this.setReference = function(round, category){
+    var termrow = getCategoryRowTermSheet(category);
+    var caprow = getCategoryRowCaptable(category);
+    var capcol = getRoundColumnByName(round);
+    
+    Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
+    var cell = captablesheet.getRange(caprow, capcol);
+    Logger.log("this is the fomula being set: " + "= '" + round + "' !B" + termrow);
+    cell.setFormula("= '" + round + "' !B" + termrow);
+    
+    
+    //if (category == ){}
+  };
+  
+  this.updateTotal = function(){
+    //if total column doesn't exist, set it up. If it does, update!
+    var totalCol = getRoundColumnByName("TOTAL");
+    
+    
+  }
 };
 
 var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
 
-function insertNewRound(capTableSheet){
-    var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
-    var spreadSheet = SpreadsheetApp.getActiveSpreadSheet();
-    var ui = SpreadsheetApp.getUi();
-    var roundName = ui.prompt("New Round Name: ", ui.ButtonSet.OK_CANCEL);
+function insertNewRound(capsheet){
+  
+  var capSheet = new capTableSheet_(capsheet);
+  
+  var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
+  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var roundName = ui.prompt("New Round Name: ", ui.ButtonSet.OK_CANCEL);
 
-    if (roundName.getSlectedButton() == ui.Button.OK){
+  if (roundName.getSelectedButton() == ui.Button.OK){
 	var newTermSheet = termTemplate.copyTo(spreadSheet);
 	spreadSheet.setActiveSheet(newTermSheet);
 	newTermSheet.setName(roundName.getResponseText());
-    };
+  };
 
-    capTableSheet.addMajorColumn(roundName.getResponseText());
-
-    //adjust total column
-
-    
-
-    // var col_offset = 2, col_size = 3;
-	//    for (var major_col = 0; major_col < capTable.rounds().length; major_col++) {
-	//      var actual_col = major_col * col_size + col_offset;
+  capSheet.addMajorColumn(roundName.getResponseText());
+  
+  //set correct security type:
+  
+  //set references
+  //references include: pre-money, money invested by each investor
+  
+  //set formulas: 
+  //pre-money shares, percentages, amount raised, post
+  
+  //add to roles and entities
+  
+  //adjust TOTAL
 }
-=======
-function insertNewRound(capTable){
-    //use ui to prompt for name, security type, investors
-    //pull out the appropriet template for the security type
-    var name;
-    var securityType;
-    var investors;
-    var pricePerShare;
-
-    var round = new round_(name, securityType, investors, pricePerShare);
->>>>>>> 855fb2ffac32342fec405905783f01899a370d27
