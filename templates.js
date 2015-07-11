@@ -593,8 +593,9 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   clausetext2num = {};
   newTemplate.data.signature_comment = null;
   newTemplate.data._templateName = sourceTemplate.name;
-  
-  var xmlRootExtras = config.save_indd ? ' saveIndd="true"' : '';
+
+  // make this handle templatespec etc correctly. see inc_plain_letterhead.
+  var xmlRootExtras = (config.save_indd && config.save_indd.value) ? ' saveIndd="true"' : '';
   newTemplate.data.xmlRoot = function(someText) {
 	if (someText == undefined) { someText = '' }
 	else if (! someText.match(/^ /)) { someText = ' ' + someText }
