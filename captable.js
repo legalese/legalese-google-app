@@ -438,6 +438,7 @@ function parseCaptable(sheet) {
       }
 	  // WE MUST BE DEALING WITH AN INVESTOR!
       else {
+		if (row[0] == "") { continue }
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
 //          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
