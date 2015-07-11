@@ -86,8 +86,9 @@ function onOpen(addOnMenu, legaleseSignature) {
   addOnMenu
 	.addItem("Create Form", "legaleseMain.setupForm")
 	.addItem("Generate PDFs", "legaleseMain.fillTemplates")
-	.addItem("Add a new Investor or other Party", "legaleseMain.addEntity")
-	.addItem("Add a Round to the Cap Table", "legaleseMain.addRound");
+  //	.addItem("Add a new Investor or other Party", "legaleseMain.addEntity")
+  //	.addItem("Add a Round to the Cap Table", "legaleseMain.addRound")
+  ;
 
   if (legaleseSignature && legaleseSignature._loaded) {
 	var echosignService = legaleseSignature.getEchoSignService();
