@@ -419,7 +419,7 @@ function readRows(sheet, entitiesByName) {
       var entity_formats = sheet.getRange(i+1,1,1,row.length).getNumberFormats();
 
       var coreRelation = asvar_(row[0]);
-	  if (coreRelation == undefined || ! coreRelation.length) { continue }
+	  if (coreRelation == undefined || ! coreRelation.length || coreRelation == "") { continue }
 	  if (coreRelation.toLowerCase() == "ignore") { Logger.log("ignoring %s line %s", coreRelation, row[1]); continue }
 
 	  this._last_entity_row = i;
@@ -564,9 +564,9 @@ function roles2parties(readRows_) {
 	  if (readRows_.entitiesByName[partyName]) {
 		parties[role] = parties[role] || [];
 		parties[role].push(readRows_.entitiesByName[partyName]);
-		Logger.log("%s.roles2parties: populated parties[%s] = %s (type=%s)",
+		Logger.log("%s.roles2parties: populated parties[%s] << %s (type=%s)",
 				   readRows_.sheet.getSheetName(),
-		partyName, readRows_.entitiesByName[partyName].email, readRows_.entitiesByName[partyName].party_type);
+				   role, partyName, readRows_.entitiesByName[partyName].party_type);
 	  }
 	  else {
 		Logger.log("WARNING: the Roles section defines a party %s which is not defined in any Entities section, so omitting from the data.parties list.", partyName);
