@@ -24,6 +24,10 @@ testing to see if commit works
  * @param {Sheet} [captablesheet=sheet named "Cap Table"] - the sheet containing a well-formed cap table
  * @return {capTable}
  */
+var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
+var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=827871932";
+
+
 function capTable_(termsheet, captablesheet) {
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
@@ -420,7 +424,6 @@ function parseCaptable(sheet) {
 //
 // TODO: let's create a createTabForRound method.
 //
-var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=827871932";
 
 function importCapTableTemplate(ss_ToImportTo){
   var capTableTemplate = getSheetByURL_(DEFAULT_CAPTABLE_TEMPLATE);
@@ -811,17 +814,10 @@ function getPercentageValue(capTable, round, catagory){
 //    };
 //}
 
-function termSheetToCaptable(category){
-  //"Pre-Money Valuation:" == "pre-money"
-  //"Security Type:" == "security type"
-  //"Amount Raising:" == new investor raised money (calculated from CapTable from inputing all investors under ROLES section)
-};
-
-var termToCap = {"Pre-Money Valuation:" : "pre-money",
-                 "Security Type:" : "security type",
-                }
 var capToTerm = {"amount raised" : "Amount Raising:",
-                 "price per share": "Price Per Share"
+                 "price per share": "Price Per Share",
+                 "pre-money" : "Pre-Money Valuation",
+                 "security type" : "Security Type",
                 }
 
 function capTableSheet_(captablesheet){
@@ -874,7 +870,7 @@ function capTableSheet_(captablesheet){
   
   this.getCategoryRowTermSheet = function(round, category){
     //returns the corresponding catetory row in term sheet
-    var termCategory = titleCase(category);
+    var termCategory = capToTerm[category] || titleCase(category);
     var termsheet = spreadSheet.getSheetByName(round);
     var lastRow = termsheet.getLastRow();
     var cell;
@@ -950,19 +946,17 @@ function capTableSheet_(captablesheet){
   }
 };
 
-var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
-
 function insertNewRound(capsheet){
   
   var capSheet = new capTableSheet_(capsheet);
   
-  newTermSheet("Round Name: ");
+  var round = newTermSheet("Round Name: ");
   
   capSheet.addMajorColumn(roundName.getResponseText());
   
-  capSheet.setReference(round, "security type");
+  capSheet.setReference(round, round, "security type");
   
-  capSheet.setReference(round, "investor");
+  capSheet.setReference('Cap Table', round, "pre-money");
   
   //set correct security type:
   
@@ -993,15 +987,6 @@ function newTermSheet(prompt){
 	spreadSheet.setActiveSheet(newTermSheet);
 	newTermSheet.setName(roundName.getResponseText());
   };
+  
+  return round;
 };
-
-/*function insertNewRound(capTable){
-    //use ui to prompt for name, security type, investors
-    //pull out the appropriet template for the security type
-    var name;
-    var securityType;
-    var investors;
-    var pricePerShare;
-
-    var round = new round_(name, securityType, investors, pricePerShare);
-    */
