@@ -874,12 +874,13 @@ function capTableSheet_(captablesheet){
   
   this.getCategoryRowTermSheet = function(round, category){
     //returns the corresponding catetory row in term sheet
+    var termCategory = titleCase(category);
     var termsheet = spreadSheet.getSheetByName(round);
     var lastRow = termsheet.getLastRow();
     var cell;
     for (var row; row <= lastRow; row++){
       cell = termsheet.getRange(row, 2);
-      if (cell == capToTerm[category]){
+      if (cell == capToTerm[termCategory]){
         return row;
       }
     }
@@ -930,7 +931,7 @@ function capTableSheet_(captablesheet){
     }
     else{
       sheetModified = captablesheet;
-      categoryRow = getCategoryRowTermSheet(category)
+      categoryRow = getCategoryRowTermSheet(category);
       var capRow = getCategoryRowCaptable(category);
       roundCol = getRoundColumnByName(round)
       
