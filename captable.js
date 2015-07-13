@@ -902,10 +902,15 @@ function capTableSheet_(captablesheet){
     
   };
   
-  this.setReference = function(round, category){
-    var termrow = getCategoryRowTermSheet(category);
-    var caprow = getCategoryRowCaptable(category);
+  //for each security figure out which categories are important, but also category row
+  //{security_type: {category: row#, 
+  //                 category: row#}}
+  
+  this.setReference = function(round, securityType){
+    var refCategories = [];
     var capcol = getRoundColumnByName(round);
+    
+    //for (var row; row <= lastRow
     
     Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
     var cell = captablesheet.getRange(caprow, capcol);
@@ -930,18 +935,13 @@ function insertNewRound(capsheet){
   
   var capSheet = new capTableSheet_(capsheet);
   
-  var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
-  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-  var ui = SpreadsheetApp.getUi();
-  var roundName = ui.prompt("New Round Name: ", ui.ButtonSet.OK_CANCEL);
-
-  if (roundName.getSelectedButton() == ui.Button.OK){
-	var newTermSheet = termTemplate.copyTo(spreadSheet);
-	spreadSheet.setActiveSheet(newTermSheet);
-	newTermSheet.setName(roundName.getResponseText());
-  };
-
+  newTermSheet("Round Name: ");
+  
   capSheet.addMajorColumn(roundName.getResponseText());
+  
+  capSheet.setReference(round, "security type");
+  
+  capSheet.setReference(round, "investor");
   
   //set correct security type:
   
@@ -955,3 +955,34 @@ function insertNewRound(capsheet){
   
   //adjust TOTAL
 }
+
+//regenerate term sheet from CAP Table
+function regenerateTermSheet(round, captable){
+  newTermSheet("regenerate round: ")
+};
+
+function newTermSheet(prompt){
+  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  var roundName = ui.prompt(prompt, ui.ButtonSet.OK_CANCEL);
+  var round = roundName.getResponseText();
+
+  if (roundName.getSelectedButton() == ui.Button.OK){
+	var newTermSheet = termTemplate.copyTo(spreadSheet);
+	spreadSheet.setActiveSheet(newTermSheet);
+	newTermSheet.setName(roundName.getResponseText());
+  };
+};
+
+/*function insertNewRound(capTable){
+    //use ui to prompt for name, security type, investors
+    //pull out the appropriet template for the security type
+    var name;
+    var securityType;
+    var investors;
+    var pricePerShare;
+
+    var round = new round_(name, securityType, investors, pricePerShare);
+*/
+
+
