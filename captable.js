@@ -827,6 +827,7 @@ var capToTerm = {"amount raised" : "Amount Raising:",
 function capTableSheet_(captablesheet){
   this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
+  
   this.addMajorColumn = function(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
     var CapSheet = captablesheet;
     var range = CapSheet.getDataRange();
@@ -906,20 +907,39 @@ function capTableSheet_(captablesheet){
   //{security_type: {category: row#, 
   //                 category: row#}}
   
-  this.setReference = function(round, securityType){
-    var refCategories = [];
-    var capcol = getRoundColumnByName(round);
-    
-    //for (var row; row <= lastRow
-    
-    Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
-    var cell = captablesheet.getRange(caprow, capcol);
-    Logger.log("this is the fomula being set: " + "= '" + round + "' !B" + termrow);
-    cell.setFormula("= '" + round + "' !B" + termrow);
-    
-    
-    //if (category == ){}
-  };
+  
+  //origin: sheet name (referencing cell from Cap Table versus term sheet)
+  //round: round name
+  //category: category name
+  this.setReference = function(origin, round, category){
+    var sheetModified;
+    var categoryRow;
+    var roundCol;
+    if (origin == "Cap Table"){
+      sheetModified = spreadSheet.getSheetByName(round);
+      categoryRow = getCategoryRowCaptable(category);
+      roundCol = getRoundColumnByName(round);
+      var termrow = getCategoryRowTermSheet(category);
+      
+      var originCell = captablesheet.getRange(categoryRow, roundCol);
+      var A1Notation = originCell.getA1Notation();
+      var cell = spreadSheet.getSheetByName(round).getRange(' "B' + termrow + ' " ');
+      cell.setFormula("= '" + round + "' !" + A1Notation);
+      
+      
+    }
+    else{
+      sheetModified = captablesheet;
+      categoryRow = getCategoryRowTermSheet(category)
+      var capRow = getCategoryRowCaptable(category);
+      roundCol = getRoundColumnByName(round)
+      
+      Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
+      var cell = captablesheet.getRange(capRow, roundCol);
+      Logger.log("this is the fomula being set: " + "= '" + round + "' !B" + categoryRow);
+      cell.setFormula("= '" + round + "' !B" + categoryRow);
+    }
+  }
   
   this.updateTotal = function(){
     //if total column doesn't exist, set it up. If it does, update!
@@ -983,6 +1003,4 @@ function newTermSheet(prompt){
     var pricePerShare;
 
     var round = new round_(name, securityType, investors, pricePerShare);
-*/
-
-
+    */
