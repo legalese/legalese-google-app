@@ -934,7 +934,7 @@ function capTableSheet_(captablesheet){
     }
     else{
       sheetModified = this.captablesheet;
-      categoryRow = this.getCategoryRowTermSheet(category);
+      categoryRow = this.getCategoryRowTermSheet(round, category);
       var capRow = this.getCategoryRowCaptable(category);
       roundCol = this.getRoundColumnByName(round)
       
