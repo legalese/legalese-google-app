@@ -229,7 +229,7 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
 
-    this.updateRounds() = function(round){
+    /*this.updateRounds() = function(round){
 	
     };
 
@@ -247,7 +247,7 @@ function capTable_(termsheet, captablesheet) {
 
     this.getPost() = function(round){
     }
-
+*/
     
   
 }
@@ -452,9 +452,12 @@ function CapTableTester(){
   var SpreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   var captableSheet = SpreadSheet.getSheetByName("Cap Table");
   var termsheet = SpreadSheet.getSheetByName("Creation of Class F");
-  var cap = new capTable_(termsheet, captableSheet);
-  createCaptable(cap);
-  
+  //var cap = new capTable_(termsheet, captableSheet);
+  var capSheet = new capTableSheet_(captableSheet);
+  //Logger.log(capSheet.getCategoryRowTermSheet("Bridge Round", "price per share"));
+  //createCaptable(cap);
+  capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
+  Logger.log("the deed is done");
 }
 
 function createCaptable(capTable){
@@ -815,9 +818,8 @@ function getPercentageValue(capTable, round, catagory){
 //}
 
 var capToTerm = {"amount raised" : "Amount Raising:",
-                 "price per share": "Price Per Share",
-                 "pre-money" : "Pre-Money Valuation",
-                 "security type" : "Security Type",
+                 "pre-money" : "Pre-Money Valuation:",
+                 "security type" : "Security Type:",
                 }
 
 function capTableSheet_(captablesheet){
@@ -856,7 +858,7 @@ function capTableSheet_(captablesheet){
   };
   
     this.getCategoryRowCaptable = function(category) {
-      var sheet = captablesheet;
+      var sheet = this.captablesheet;
       var key = category;
       var dataRange = sheet.getDataRange();
       var values = dataRange.getValues();
@@ -870,13 +872,17 @@ function capTableSheet_(captablesheet){
   
   this.getCategoryRowTermSheet = function(round, category){
     //returns the corresponding catetory row in term sheet
-    var termCategory = capToTerm[category] || titleCase(category);
-    var termsheet = spreadSheet.getSheetByName(round);
+    //Logger.log("It is suppose to print for category " + capToTerm[category])
+    var termCategory = capToTerm[category] || titleCase(category) + ":";
+    var termsheet = this.spreadSheet.getSheetByName(round);
     var lastRow = termsheet.getLastRow();
+    Logger.log("the last row in this spreadsheet is " + lastRow);
     var cell;
-    for (var row; row <= lastRow; row++){
-      cell = termsheet.getRange(row, 2);
-      if (cell == capToTerm[termCategory]){
+    for (var row = 1; row <= lastRow; row++){
+      cell = termsheet.getRange(row, 1);
+      Logger.log("the cell value is " + cell.getValue());
+      if (cell.getValue() == termCategory){
+        Logger.log("HURRAY FOUND IT, and it is row " + row);
         return row;
       }
     }
@@ -885,18 +891,18 @@ function capTableSheet_(captablesheet){
   this.getRoundColumnByName = function(round){
     //returns the corresponding major column given the round name
     //still needs to be tested
-    var sheet = captablesheet;
-    var numCol = sheet.getlastColumn();
-    for (var column; column <= numCol; column++){
-      var cell = sheet.getRange(1, column);
+    Logger.log("I have entered the function");
+    var sheet = this.captablesheet;
+    var numCol = sheet.getLastColumn();
+    for (var column = 1; column <= numCol; column++){
+      Logger.log("I am checking column " + column);
+      var cell = sheet.getRange(2, column);
       var value = cell.getValue();
       if (value == round){
         return column;
       }
-      else{
-        Logger.log("Round does not exist");
-      }
     }
+    Logger.log("Round does not exist");
     
   };
   
@@ -913,26 +919,27 @@ function capTableSheet_(captablesheet){
     var categoryRow;
     var roundCol;
     if (origin == "Cap Table"){
-      sheetModified = spreadSheet.getSheetByName(round);
-      categoryRow = getCategoryRowCaptable(category);
-      roundCol = getRoundColumnByName(round);
-      var termrow = getCategoryRowTermSheet(category);
+      Logger.log("We are sending info from Cap Table");
+      sheetModified = this.spreadSheet.getSheetByName(round);
+      categoryRow = this.getCategoryRowCaptable(category);
+      roundCol = this.getRoundColumnByName(round);
+      var termrow = this.getCategoryRowTermSheet(round, category);
       
-      var originCell = captablesheet.getRange(categoryRow, roundCol);
+      var originCell = this.captablesheet.getRange(categoryRow, roundCol);
       var A1Notation = originCell.getA1Notation();
-      var cell = spreadSheet.getSheetByName(round).getRange(' "B' + termrow + ' " ');
-      cell.setFormula("= '" + round + "' !" + A1Notation);
+      var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
+      cell.setFormula("= 'Cap Table'!" + A1Notation);
       
       
     }
     else{
-      sheetModified = captablesheet;
-      categoryRow = getCategoryRowTermSheet(category);
-      var capRow = getCategoryRowCaptable(category);
-      roundCol = getRoundColumnByName(round)
+      sheetModified = this.captablesheet;
+      categoryRow = this.getCategoryRowTermSheet(category);
+      var capRow = this.getCategoryRowCaptable(category);
+      roundCol = this.getRoundColumnByName(round)
       
       Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
-      var cell = captablesheet.getRange(capRow, roundCol);
+      var cell = this.captablesheet.getRange(capRow, roundCol);
       Logger.log("this is the fomula being set: " + "= '" + round + "' !B" + categoryRow);
       cell.setFormula("= '" + round + "' !B" + categoryRow);
     }
@@ -940,7 +947,7 @@ function capTableSheet_(captablesheet){
   
   this.updateTotal = function(){
     //if total column doesn't exist, set it up. If it does, update!
-    var totalCol = getRoundColumnByName("TOTAL");
+    var totalCol = this.getRoundColumnByName("TOTAL");
     
     
   }
