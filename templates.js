@@ -410,10 +410,12 @@ function fillTemplates(sheet) {
   }
 
   templatedata.capTable = new capTable_(sheet);
+  // if there is no Cap Table sheet then templatedata.capTable.isValid == false
 
   // the cap table may impute new_investor and shareholder roles to the current sheet that has previously been read by readRows.
   // so, advise the readRows_ object that it should do with these newly imputed roles whatever it would have done had it originally encountered them in a ROLES section.
-  readRows_.handleNewRoles(templatedata.capTable.newRoles());
+  if (templatedata.capTable.isValid)
+	readRows_.handleNewRoles(templatedata.capTable.newRoles());
   
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.

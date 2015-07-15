@@ -30,6 +30,13 @@ function capTable_(termsheet, captablesheet) {
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
 
+  if (captablesheet == undefined) {
+	Logger.log("capTable: there is no Cap Table sheet!");
+	this.isValid = false;
+	return;
+  }
+  this.isValid = true;
+  
   Logger.log("capTable_: parsing captablesheet %s, active round being %s",
 			 captablesheet.getSheetName(), termsheet.getSheetName());
 
