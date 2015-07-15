@@ -948,8 +948,14 @@ function capTableSheet_(captablesheet){
   this.updateTotal = function(){
     //if total column doesn't exist, set it up. If it does, update!
     var totalCol = this.getRoundColumnByName("TOTAL");
+  }
     
-    
+  this.getNumRowCapSheet() = function(){
+    return this.captablesheet.getLastRow();
+  }
+  
+  this.getNumRowTermSheet() = function(round){
+    return this.spreadsheet.getSheetByName(round).getLastRow();
   }
 };
 
@@ -964,6 +970,22 @@ function insertNewRound(capsheet){
   capSheet.setReference(round, round, "security type");
   
   capSheet.setReference('Cap Table', round, "pre-money");
+  
+  var numRow = capSheet.getNumRowTermSheet(round);
+  var termSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(round)
+  
+  var termCategories;
+  for (var tRow = 1; tRow <= termSheet.getLastRow(); tRow++){
+    termCategories.push(termSheet.getRange(tRow, 1).getValue());
+  };
+  
+  for (var row = 1; row <= numRow; row++){
+    var cell = capsheet.getRange(row, 1).getValue();
+    if ((cell in capToTerm) || (titleCase(cell) in termCategories)) {
+      setReference('Cap Table', round, cell);
+    }
+  }
+  
   
   //set correct security type:
   
