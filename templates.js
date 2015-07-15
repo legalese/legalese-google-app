@@ -238,6 +238,9 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 			   sourceTemplate.name, to_list, sourceTemplate.explode);
 	if (to_list.length == 0 && sourceTemplate.explode=="" && ! nullIsOK) {
 	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties?");
+	  // TODO: sometimes the template does define to and cc, but the Entities/Roles neglect to define such.
+	  // this error is misleading in those cases.
+	  // test for those cases and throw a different, more instructive error.
 	}
 	else {
 	  Logger.log("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
@@ -377,7 +380,7 @@ function fillTemplates(sheet) {
   }
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var entitiesByName = {};
-  var readRows_ = readRows(sheet, entitiesByName);
+  var readRows_ = new readRows(sheet, entitiesByName);
   var templatedata   = readRows_.terms;
   var config         = readRows_.config;
   templatedata.clauses = {};
@@ -389,7 +392,7 @@ function fillTemplates(sheet) {
   // if the person is running this in Demo Mode, and there is no User entity defined, then we create one for them.
   // then we have to reload.
   if (createDemoUser_(sheet, readRows_, templatedata, config)) {
-	readRows_ = readRows(sheet, entitiesByName);
+	readRows_ = new readRows(sheet, entitiesByName);
 	templatedata   = readRows_.terms;
 	config         = readRows_.config;
 	templatedata._config = config;
@@ -406,10 +409,14 @@ function fillTemplates(sheet) {
 	return;
   }
 
-  // TODO: this is a stub for when one day we know how to properly parse a captable.
-  // for now we just make it all up
   templatedata.capTable = new capTable_(sheet);
+  // if there is no Cap Table sheet then templatedata.capTable.isValid == false
 
+  // the cap table may impute new_investor and shareholder roles to the current sheet that has previously been read by readRows.
+  // so, advise the readRows_ object that it should do with these newly imputed roles whatever it would have done had it originally encountered them in a ROLES section.
+  if (templatedata.capTable.isValid)
+	readRows_.handleNewRoles(templatedata.capTable.newRoles());
+  
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
   // and when that time comes we won't want to just send all the PDFs -- we'll need a more structured way to let the user decide which PDFs to send to echosign.
@@ -588,8 +595,9 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   clausetext2num = {};
   newTemplate.data.signature_comment = null;
   newTemplate.data._templateName = sourceTemplate.name;
-  
-  var xmlRootExtras = xmlRootExtras = config.save_indd ? ' saveIndd="true"' : '';
+
+  // make this handle templatespec etc correctly. see inc_plain_letterhead.
+  var xmlRootExtras = (config.save_indd && config.save_indd.value) ? ' saveIndd="true"' : '';
   newTemplate.data.xmlRoot = function(someText) {
 	if (someText == undefined) { someText = '' }
 	else if (! someText.match(/^ /)) { someText = ' ' + someText }

@@ -19,6 +19,8 @@ testing to see if commit works
  * First we go off and parse the cap table into a data structure
  * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
  *
+ * Maybe in future the argument to the constructor should be a readRows_ object, not a sheet.
+ *
  * @constructor
  * @param {Sheet} termsheet - the currently active sheet which we're filling templates for
  * @param {Sheet} [captablesheet=sheet named "Cap Table"] - the sheet containing a well-formed cap table
@@ -32,6 +34,13 @@ function capTable_(termsheet, captablesheet) {
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
 
+  if (captablesheet == undefined) {
+	Logger.log("capTable: there is no Cap Table sheet!");
+	this.isValid = false;
+	return;
+  }
+  this.isValid = true;
+  
   Logger.log("capTable_: parsing captablesheet %s, active round being %s",
 			 captablesheet.getSheetName(), termsheet.getSheetName());
 
@@ -47,6 +56,34 @@ function capTable_(termsheet, captablesheet) {
 
   /**
 	* @method
+	* @param {string} roundName - the name of the round you're interested in
+	* @return {object} round - a round
+	*/
+  this.getRound = function(roundName) {
+	var toreturn;
+	for (var ri = 0; ri < this.rounds.length; ri++) {
+	  if (this.rounds[ri].name == roundName) {
+		toreturn = this.rounds[ri];
+		break;
+	  }
+	}
+	return toreturn;
+  };
+
+  /**
+	* @method
+	* @return {object} round - the round corresponding to the active spreadsheet
+	*/
+  this.getActiveRound = function() {
+	return this.getRound(this.activeRound);
+  };
+  
+  if (! this.getActiveRound()) {
+	// throw "cap table has no column named " + termsheet.getSheetName();
+  }
+  
+  /**
+	* @method
 	* @return {Array<string>} column names - all the major columns in the cap table
 	*/
   this.columnNames = function() {
@@ -55,6 +92,7 @@ function capTable_(termsheet, captablesheet) {
 	}
   };
 
+  
   // for each major column we compute the pre/post, old/new investor values.
   // we want to know:
   // - who the existing shareholders are before the round:
@@ -79,8 +117,15 @@ function capTable_(termsheet, captablesheet) {
 	round.old_investors = {};
 	for (var ai in totals.all_investors) {
 	  round.old_investors[ai] = {};
+
+	  // handle the _orig_ first, then formatify to produce the actual attribute
 	  for (var attr in totals.all_investors[ai]) {
+		if (! attr.match(/^_orig_/)) continue;
 		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
+	  }
+	  for (var attr in totals.all_investors[ai]) {
+		if (attr.match(/^_orig_/)) continue;
+		round.old_investors[ai][attr] = formatify_(totals.all_investors[ai]["_format_" + attr], totals.all_investors[ai]["_orig_" + attr], termsheet, attr);
 	  }
 	}
 	Logger.log("capTable.new(): %s.old_investors = %s", round.name, round.old_investors);
@@ -92,17 +137,22 @@ function capTable_(termsheet, captablesheet) {
 	var new_shares = 0, new_money = 0;
 	for (var ni in round.new_investors) {
 	  if (round.new_investors[ni].shares == undefined) continue;
-	  new_shares += round.new_investors[ni].shares;
-	  new_money  += round.new_investors[ni].money;
+	  // handle the _orig_ first, then formatify to produce the actual attribute
+	  new_shares += round.new_investors[ni]._orig_shares;
+	  new_money  += round.new_investors[ni]._orig_money;
 	  totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
-	  totals.by_security_type[round.security_type][ni] += round.new_investors[ni].shares;
+	  totals.by_security_type[round.security_type][ni] += round.new_investors[ni]._orig_shares;
 	  for (var attr in round.new_investors[ni]) {
 		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
 		if (attr == "percentage") { continue } // percentages don't need to add
 		if (round.new_investors[ni][attr] == undefined) { continue } // money and shares do, but we don't always get new ones of those.
 		totals.all_investors[ni] = totals.all_investors[ni] || {};
 		totals.all_investors[ni][attr] = totals.all_investors[ni][attr] || 0;
-		totals.all_investors[ni][attr] += round.new_investors[ni][attr];
+		if (attr.match(/^_orig_/)) {
+		  totals.all_investors[ni][attr] += round.new_investors[ni][attr];
+		} else {
+		  totals.all_investors[ni][attr] = round.new_investors[ni][attr];
+		}
 	  }
 	}
 
@@ -126,7 +176,7 @@ function capTable_(termsheet, captablesheet) {
 		Logger.log("capTable: considering investor %s", inv);
 		if (inv == "ESOP") { seen_ESOP_investor = true;
 							 round.ESOP.createHolder(inv);
-							 round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+							 round.ESOP.holderGains(inv, round.new_investors[inv]._orig_shares);
 							 continue;
 						   }
 		else if ( seen_ESOP_investor ) {
@@ -249,6 +299,54 @@ function capTable_(termsheet, captablesheet) {
     }
 */
     
+  /**
+	* @method
+	* @return {String} holdings - "3 Ordinary Shares and 200 Class F Shares"
+	*/
+  this.investorHoldingsInRound = function(investorName) {
+	var round = this.getActiveRound();
+	var pre = [];
+	for (var bst in round.by_security_type) {
+	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName], bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]) }
+	}
+	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0]) + "&#8232;" + plural(bst_count[0], bst_count[1])}));
+  };
+
+  
+  /** return new roles for imputation by readRows_.handleNewRoles()
+	* @method
+	*/
+  this.newRoles = function() {
+	var round = this.getActiveRound();
+	// all the old investors are given "shareholder" roles
+	// all the new investors are given "new_investor" roles.
+
+	var toreturn = [];
+	if (! round) { return toreturn }
+
+	for (var ni in round.new_investors) {
+	  if (ni == "ESOP" || // special case
+		  round.new_investors[ni].money  == undefined &&
+		  round.new_investors[ni].shares == undefined
+		 ) continue;
+	  var newRole = { relation:"new_investor", entityname:ni };
+	  newRole.attrs = { new_commitment:       round.new_investors[ni].money,             num_new_shares: round.new_investors[ni].shares,
+				        _orig_new_commitment: round.new_investors[ni]._orig_money,  orig_num_new_shares: round.new_investors[ni]._orig_shares };
+	  toreturn.push(newRole);
+	}
+
+	for (var oi in round.old_investors) {
+	  if (oi == "ESOP" || // special case
+		  round.old_investors[oi].money  == undefined &&
+		  round.old_investors[oi].shares == undefined
+		 ) continue;
+	  var newRole = { relation:"shareholder", entityname:oi, attrs:{} };
+	  toreturn.push(newRole);
+	}
+
+	Logger.log("capTable.newRoles(): imputing %s roles", toreturn.length);
+	return toreturn;
+  };
   
 }
 
@@ -384,11 +482,18 @@ function parseCaptable(sheet) {
           var myRound = minorByNum[j].round;
 		  myRound[asvar0] = myRound[asvar0] || {};
 		  // for rows "price per share" and "discount" we save it one layer deeper than we actually need to -- so when you pull it out, dereference the minor col.
-          myRound[asvar0][minorByNum[j].minor] = row[j];
+          myRound[asvar0][             minorByNum[j].minor] = formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor);
+          myRound[asvar0]["_orig_"   + minorByNum[j].minor] = row[j];
+          myRound[asvar0]["_format_" + minorByNum[j].minor] = formats[i][j];
+		  Logger.log("learned column attribute %s.%s.%s = %s (orig=%s) (format=%s)",
+					 myRound.name, row[0], minorByNum[j].minor, myRound[asvar0][minorByNum[j].minor], row[j],
+					 formats[i][j]
+					);
         }
       }
 	  // WE MUST BE DEALING WITH AN INVESTOR!
       else {
+		if (row[0] == "") { continue }
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
 //          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
@@ -399,9 +504,13 @@ function parseCaptable(sheet) {
 			myRound.ordered_investors.push(row[0]);
 			myRound.new_investors[row[0]] = {};
 		  }
-          myRound.new_investors[row[0]][minorByNum[j].minor] = row[j];
+          myRound.new_investors[row[0]][minorByNum[j].minor] = formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor);
           myRound.new_investors[row[0]]["_orig_"+minorByNum[j].minor] = row[j];
-//		  Logger.log("learned that %s.%s.%s = %s (%s)", myRound.name, row[0], minorByNum[j].minor, row[j], row[j].constructor.name);
+          myRound.new_investors[row[0]]["_format_"+minorByNum[j].minor] = formats[i][j];
+		  Logger.log("learned investor %s.%s.%s = %s (orig=%s) (format=%s)",
+					 myRound.name, row[0], minorByNum[j].minor, myRound.new_investors[row[0]][minorByNum[j].minor], row[j],
+					 formats[i][j]
+					);
         }
       }
     }

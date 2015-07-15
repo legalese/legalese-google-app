@@ -80,16 +80,20 @@ function folderIsComplete(folder) {
   var files = folder.getFiles();
   var xmls = {};
   var pdfs = {};
-  var anyLacking = 1; // if there are no XMLs, there's a problem.
+  var anyLacking = 1; // if there are no XMLs or PDFs, there's a problem.
   while (files.hasNext()) {
     var file = files.next();
     var re;
     re = file.getName().match(/(.+)\.xml$/); if (re) { xmls[re[1]] = file.getId(); anyLacking = 0; }
-    re = file.getName().match(/(.+)\.pdf$/); if (re) { pdfs[re[1]] = file.getId(); }
+    re = file.getName().match(/(.+)\.pdf$/); if (re) { pdfs[re[1]] = file.getId(); anyLacking = 0; }
   }
+  // a folder with one PDF for every XML should be considered complete.
+  // we sometimes delete the xml files after generating the PDFs.
+  // a folder with at least one PDFs, and with no XMLs, should be considered complete.
+  
   Logger.log("found xml files: %s", xmls);
   Logger.log("found pdf files: %s", pdfs);
-  if (anyLacking) { Logger.log("%s lacks XMLs, so not Complete.", folder.getName());
+  if (anyLacking) { Logger.log("%s lacks XMLs/PDFs, so not Complete.", folder.getName());
                    return false; }
     
   for (var filename in xmls) {

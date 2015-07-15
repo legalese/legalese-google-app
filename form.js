@@ -18,9 +18,9 @@ function setupForm(sheet) {
 
   var ss = sheet.getParent();
   var entitiesByName = {};
-  var readRows_ = readRows(sheet, entitiesByName);
+  var readRows_ = new readRows(sheet, entitiesByName);
 
-  Logger.log("setupForm: readRows complete: %s", readRows);
+//  Logger.log("setupForm: readRows complete: %s", readRows_);
 
   if (readRows_.principal
 	  && readRows_.principal._origin_sheet_id
@@ -28,7 +28,7 @@ function setupForm(sheet) {
 	Logger.log("setupForm: switching target of the form to the %s sheet.", sheet.getSheetName());
 	sheet = getSheetById_(ss, readRows_.principal._origin_sheet_id);
 	entitiesByName = {};
-	readRows_ = readRows(sheet, entitiesByName);
+	readRows_ = new readRows(sheet, entitiesByName);
   }
   
   var data   = readRows_.terms;
@@ -227,7 +227,7 @@ function onFormSubmit(e, legaleseSignature) {
 
   var sheet = getSheetById_(SpreadsheetApp.getActiveSpreadsheet(), sheetId);
   var entitiesByName = {}
-  var readRows_ = readRows(sheet, entitiesByName);
+  var readRows_ = new readRows(sheet, entitiesByName);
   var data   = readRows_.terms;
   var config = readRows_.config;
 
@@ -245,7 +245,7 @@ function onFormSubmit(e, legaleseSignature) {
 	  SpreadsheetApp.flush();
 	
 	// reread.
-	  readRows_ = readRows(sheet, entitiesByName);
+	  readRows_ = new readRows(sheet, entitiesByName);
 	  data   = readRows_.terms;
 	  config = readRows_.config;
 	}

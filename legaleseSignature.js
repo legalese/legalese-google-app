@@ -158,7 +158,7 @@ function fauxMegaSign(sheet) {
   var sheetPassedIn = ! (sheet == undefined);
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var entitiesByName = {};
-  var readRows = legaleseMain.readRows(sheet, entitiesByName);
+  var readRows = new legaleseMain.readRows(sheet, entitiesByName);
   var terms    = readRows.terms;
   var config   = readRows.config;
 
@@ -277,7 +277,7 @@ function uploadAgreement(sheet, interactive) {
 
   var ss = sheet.getParent();
   var entitiesByName = {};
-  var readRows = legaleseMain.readRows(sheet, entitiesByName);
+  var readRows = new legaleseMain.readRows(sheet, entitiesByName);
   var terms    = readRows.terms;
   var config   = readRows.config;
 
