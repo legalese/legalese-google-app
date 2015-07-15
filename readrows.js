@@ -439,6 +439,9 @@ function readRows(sheet, entitiesByName) {
 	  // all coreRelation relations in the ENTITIES section are defined relative to the principal, which is hardcoded as the first Company to appear
 	  if (coreRelation == "company" && this.principal == undefined) {
 		this.principal = entity;
+		Logger.log("readRows(%s): wiring this.principal = %s",
+				   this.sheet.getSheetName(),
+				   entity.name);
 		Logger.log("readRows(%s): wiring this.principal.roles (%s) = this.roles (%s)",
 				   this.sheet.getSheetName(),
 				   this.principal.name,
