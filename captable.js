@@ -941,7 +941,7 @@ function capTableSheet_(captablesheet){
   this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
   
   this.addMajorColumn = function(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
-    var CapSheet = captablesheet;
+    var CapSheet = this.captablesheet;
     var range = CapSheet.getDataRange();
     var data = range.getValues();
     var roundNames = data[1];
