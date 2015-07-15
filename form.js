@@ -20,7 +20,7 @@ function setupForm(sheet) {
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName);
 
-  Logger.log("setupForm: readRows complete: %s", readRows);
+//  Logger.log("setupForm: readRows complete: %s", readRows_);
 
   if (readRows_.principal
 	  && readRows_.principal._origin_sheet_id
