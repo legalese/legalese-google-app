@@ -458,7 +458,7 @@ function CapTableTester(){
   //Logger.log(capSheet.getCategoryRowTermSheet("Bridge Round", "price per share"));
   captableSheet = createCaptable();
   var capSheet = new capTableSheet_(captableSheet);
-  Logger.log("I have made it into a capTableSheet Object")
+  Logger.log("I have made it into a capTableSheet Object");
   insertNewRound(capSheet);
   Logger.log("I have inserted a new round yay");
   capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
@@ -505,7 +505,7 @@ function createCaptable(capTable){
 
     Logger.log(roundArray);
     var j = 2;
-    Logger.log("roundArray.length is " + roundArray.length)
+    Logger.log("roundArray.length is " + roundArray.length);
     while (roundNumber < roundArray.length){
       var dataCell = sheet.getRange(i, j);
       var category = cell.getValue();
@@ -877,7 +877,7 @@ function capTableSheet_(captablesheet){
   
   this.getCategoryRowTermSheet = function(round, category){
     //returns the corresponding catetory row in term sheet
-    //Logger.log("It is suppose to print for category " + capToTerm[category])
+    //Logger.log("It is suppose to print for category " + capToTerm[category]);
     var termCategory = capToTerm[category] || titleCase(category) + ":";
     var termsheet = this.spreadSheet.getSheetByName(round);
     var lastRow = termsheet.getLastRow();
@@ -933,7 +933,7 @@ function capTableSheet_(captablesheet){
       sheetModified = this.captablesheet;
       categoryRow = this.getCategoryRowTermSheet(round, category);
       var capRow = this.getCategoryRowCaptable(category);
-      roundCol = this.getRoundColumnByName(round)
+      roundCol = this.getRoundColumnByName(round);
       
       Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
       var cell = this.captablesheet.getRange(capRow, roundCol);
@@ -969,7 +969,7 @@ function insertNewRound(capsheet){
   capSheet.setReference('Cap Table', round, "pre-money");
   /*
   var numRow = capSheet.getNumRowTermSheet(round);
-  var termSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(round)
+  var termSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(round);
   
   var termCategories;
   for (var tRow = 1; tRow <= termSheet.getLastRow(); tRow++){
@@ -999,7 +999,7 @@ function insertNewRound(capsheet){
 
 //regenerate term sheet from CAP Table
 function regenerateTermSheet(round, captable){
-  newTermSheet("regenerate round: ")
+  newTermSheet("regenerate round: ");
 };
 
 function newTermSheet(prompt){
