@@ -505,7 +505,7 @@ function createCaptable(capTable){
 
     Logger.log(roundArray);
     var j = 2;
-    Logger.log("roundArray.length is " + roundArray.length)
+    Logger.log("roundArray.length is " + roundArray.length);
     while (roundNumber < roundArray.length){
       var dataCell = sheet.getRange(i, j);
       var category = cell.getValue();
@@ -877,7 +877,7 @@ function capTableSheet_(captablesheet){
   
   this.getCategoryRowTermSheet = function(round, category){
     //returns the corresponding catetory row in term sheet
-    //Logger.log("It is suppose to print for category " + capToTerm[category])
+    //Logger.log("It is suppose to print for category " + capToTerm[category]);
     var termCategory = capToTerm[category] || titleCase(category) + ":";
     var termsheet = this.spreadSheet.getSheetByName(round);
     var lastRow = termsheet.getLastRow();
