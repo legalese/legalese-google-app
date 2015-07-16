@@ -557,6 +557,15 @@ function readRows(sheet, entitiesByName) {
   if (this.principal == undefined) { Logger.log("readRows: principal is undefined ... we must be in an Available Templates sheet.");
 									 return; }
 
+  this.capTable = new capTable_(sheet);
+  // if there is no Cap Table sheet then templatedata.capTable.isValid == false
+
+  // the cap table may impute new_investor and shareholder roles to the current sheet that has previously been read by readRows.
+  // so, advise the readRows_ object that it should do with these newly imputed roles whatever it would have done had it originally encountered them in a ROLES section.
+  if (this.capTable.isValid)
+	this.handleNewRoles(this.capTable.newRoles());
+
+  this.terms.capTable = this.capTable; // make it accessible from within templates
 }
 
 function treeify_(root, arr) {

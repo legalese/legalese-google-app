@@ -407,14 +407,6 @@ function fillTemplates(sheet) {
 	return;
   }
 
-  templatedata.capTable = new capTable_(sheet);
-  // if there is no Cap Table sheet then templatedata.capTable.isValid == false
-
-  // the cap table may impute new_investor and shareholder roles to the current sheet that has previously been read by readRows.
-  // so, advise the readRows_ object that it should do with these newly imputed roles whatever it would have done had it originally encountered them in a ROLES section.
-  if (templatedata.capTable.isValid)
-	readRows_.handleNewRoles(templatedata.capTable.newRoles());
-  
   var uniq = uniqueKey(sheet);
   // in the future we will probably need several subfolders, one for each template family.
   // and when that time comes we won't want to just send all the PDFs -- we'll need a more structured way to let the user decide which PDFs to send to echosign.
