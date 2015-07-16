@@ -200,12 +200,25 @@ function readRows(sheet, entitiesByName) {
 	// also configure the vassals' _role property, though nothing uses this at the moment.
 	for (var k in this.roles) {
 	  Logger.log("rebuildRoles(%s): k=%s, roles[k]=%s, principal.roles[k]=%s", sheet.getSheetName(), k, this.roles[k], this.principal.roles[k]);
-	  if (this.principal.roles[k] == undefined ||
-		  this.roles[k] && this.roles[k].length > this.principal.roles[k]) { this.principal.roles[k] = this.roles[k]; } // TODO: this is probably buggy; the logic is unclear and needs to be thought through.
-	  Logger.log("rebuildRoles(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, this.roles[k].length, k);
+
+	  // TODO: this is probably buggy; the logic is unclear and needs to be thought through.
+	  if (this.principal.roles[k] == undefined) {
+		this.principal.roles[k] = [];
+		Logger.log("rebuildRoles(%s): principal.roles[%s] did not exist; initializing", sheet.getSheetName(), k);
+	  }
+	  Logger.log("rebuildRoles(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, this.principal.roles[k].length, k);
+	  Logger.log("rebuildRoles(%s): but this.roles %s has %s %s roles", sheet.getSheetName(), this.principal.name, this.roles[k].length, k);
+
 	  for (var pi in this.roles[k]) {
 		var entity = entitiesByName[this.roles[k][pi]];
 		if (entity == undefined) { throw(k + " role " + pi + ' "' + this.roles[k][pi] + "\" refers to an entity that is not defined!") }
+		if (this.principal.roles[k].filter(function(el){return el == entity.name}).length == 1) {
+		  Logger.log("rebuildRoles(%s): principal.roles[%s] has %s.", sheet.getSheetName(), k, entity.name);
+		} else {
+		  Logger.log("rebuildRoles(%s): principal.roles[%s] lacks %s; adding.", sheet.getSheetName(), k, entity.name);
+		  this.principal.roles[k].push(entity.name);
+		}
+		  
 		entity._role = entity._role || {};
 		entity._role[this.principal.name] = entity._role[this.principal.name] || [];
 		if (entity._role[this.principal.name].filter(function(el){return el == k}).length == 0) {
