@@ -124,8 +124,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
   this.esNumForTemplate = { };
 
-  Logger.log("docsetEmails(%s): now I will figure out who gets which PDFs.",
-			 sheet.getSheetName());
+//  Logger.log("docsetEmails(%s): now I will figure out who gets which PDFs.", sheet.getSheetName());
 
 //  Logger.log("docsetEmails(%s): incoming readRows has entitiesByName = %s",
 //			 sheet.getSheetName(),
@@ -152,15 +151,15 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  for (var mti in sourceTemplate.parties[mailtype]) { // to | cc
 		var partytype = sourceTemplate.parties[mailtype][mti]; // company, director, shareholder, etc
 		if (partytype == "") {
-		  Logger.log("docsetEmails:   %s mailtype %s has blank partytypes. skipping.", sourceTemplate.name, mailtype);
+//		  Logger.log("docsetEmails:   %s mailtype %s has blank partytypes. skipping.", sourceTemplate.name, mailtype);
 		  continue;
 		}
 		if (partytype.toLowerCase() == "null") {
-		  Logger.log("docsetEmails:   %s mailtype %s has deliberately blank partytypes. skipping.", sourceTemplate.name, mailtype);
+//		  Logger.log("docsetEmails:   %s mailtype %s has deliberately blank partytypes. skipping.", sourceTemplate.name, mailtype);
 		  nullIsOK = true;
 		  continue;
 		}
-		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
+//		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
 		var mailindex = null;
 
 		// sometimes partytype is "director"
@@ -172,29 +171,28 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 											Logger.log("docsetEmails: simplified partytype to %s", partytype);
 										  }
 
-		if (mailtype == "to") { Logger.log("docsetEmails: initializing to_parties[%s] as array",
-										   partytype);
+		if (mailtype == "to") { // Logger.log("docsetEmails: initializing to_parties[%s] as array", partytype);
 								to_parties[partytype] = [];
 							  }
 		else                  cc_parties[partytype] = [];
 
 		if (readRows.principal.roles[partytype] == undefined) {
-		  Logger.log("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
+//		  Logger.log("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
 		  continue;
 		}
 		for (var j in parties[partytype]) {
 		  var entity = parties[partytype][j];
 		  if (mailindex != undefined) {
 			if (j == mailindex) {
-			  Logger.log("docsetEmails:   matched mailindex %s == %s, chosen %s", mailindex, j, entity.name);
+//			  Logger.log("docsetEmails:   matched mailindex %s == %s, chosen %s", mailindex, j, entity.name);
 			}
 			else {
-			  Logger.log("docsetEmails:   matched mailindex %s != %s, skipping %s", mailindex, j, entity.name);
+//			  Logger.log("docsetEmails:   matched mailindex %s != %s, skipping %s", mailindex, j, entity.name);
 			  continue;
 			}
 		  }
 
-		  Logger.log("docsetEmails:     what to do with %s entity %s?", partytype, entity.name);
+//		  Logger.log("docsetEmails:     what to do with %s entity %s?", partytype, entity.name);
 		  if (mailtype == "to") {
 			to_list.push(entity.name);
 			to_parties[partytype].push(entity);
@@ -208,11 +206,11 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	if (sourceTemplate.explode == "") {
 	  this._rcpts  .normals[sourceTemplate.title]={to:to_list,    cc:cc_list};
 	  this._parties.normals[sourceTemplate.title]={to:to_parties, cc:cc_parties};
-	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].to=%s",sourceTemplate.title, to_list);
-	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
-	  Logger.log("docsetEmails: defining this._parties.normals[%s].to=%s",sourceTemplate.title,Object.keys(to_parties));
+//	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].to=%s",sourceTemplate.title, to_list);
+//	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
+//	  Logger.log("docsetEmails: defining this._parties.normals[%s].to=%s",sourceTemplate.title,Object.keys(to_parties));
 	} else { // explode first and then set this._rcpts.exploders
-	  Logger.log("docsetEmails(): will explode %s", sourceTemplate.explode);
+//	  Logger.log("docsetEmails(): will explode %s", sourceTemplate.explode);
 	  var primary_to_list    = to_list; // probably unnecessary
       for (var j in this.parties[sourceTemplate.explode]) {
 		var entity = parties[sourceTemplate.explode][j];
@@ -220,7 +218,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		// we set the singular as we step through.
 		ex_parties[sourceTemplate.explode] = entity;
 		var mytitle = filenameFor(sourceTemplate, entity);
-		Logger.log("docsetEmails(): preparing %s exploded %s", sourceTemplate.explode, mytitle);
+//		Logger.log("docsetEmails(): preparing %s exploded %s", sourceTemplate.explode, mytitle);
 		var exploder_to_list    = primary_to_list.concat([entity.name]);
 		// TODO: if the exploder's email is multiline there needs to be a way for it to append to the cc_list.
 		var exploder_to_parties = {};
@@ -229,13 +227,13 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
 		this._rcpts  .exploders[mytitle] = {to:exploder_to_list,   cc:cc_list};
 		this._parties.exploders[mytitle] = {to:exploder_to_parties,cc:cc_parties};
-		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
-		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
-		Logger.log("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
+//		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
+//		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
+//		Logger.log("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
 	  }
 	}
-	Logger.log("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
-			   sourceTemplate.name, to_list, sourceTemplate.explode);
+//	Logger.log("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
+//			   sourceTemplate.name, to_list, sourceTemplate.explode);
 	if (to_list.length == 0 && sourceTemplate.explode=="" && ! nullIsOK) {
 	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties?");
 	  // TODO: sometimes the template does define to and cc, but the Entities/Roles neglect to define such.
@@ -243,8 +241,8 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  // test for those cases and throw a different, more instructive error.
 	}
 	else {
-	  Logger.log("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
-				 sourceTemplate.name, to_list, sourceTemplate.explode);
+//	  Logger.log("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
+//				 sourceTemplate.name, to_list, sourceTemplate.explode);
 	}
   }
 
@@ -298,7 +296,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  else {
 		var email_to_cc_ = email_to_cc(entity.email);
 		entity._to_email = email_to_cc_[0];
-		Logger.log("DEBUG: given entity %s, entity.email is %s and _to_email is %s", entityName, entity.email, entity._to_email);
+//		Logger.log("DEBUG: given entity %s, entity.email is %s and _to_email is %s", entityName, entity.email, entity._to_email);
 		cc_emails = cc_emails.concat(email_to_cc_[1]);
 	  }
 	  if (entity._to_email) {
@@ -470,11 +468,11 @@ function fillTemplates(sheet) {
 	if (templatedata._origparties == undefined) {
 	  templatedata._origparties = {};
 	  for (var p in parties) { templatedata._origparties[p] = parties[p] }
-	  Logger.log("buildTemplate(%s): preserving original parties", sourceTemplate.name);
+//	  Logger.log("buildTemplate(%s): preserving original parties", sourceTemplate.name);
 	}
 	else {
 	  for (var p in templatedata._origparties) { templatedata.parties[p] = templatedata._origparties[p] }
-	  Logger.log("buildTemplate(%s): restoring original parties", sourceTemplate.name);
+//	  Logger.log("buildTemplate(%s): restoring original parties", sourceTemplate.name);
 	}
 
 	// EXCEPTION SCENARIO -- party overrides
@@ -623,7 +621,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
 // ---------------------------------------------------------------------------------------------------------------- include
 // used inside <?= ?> and <? ?>
 function include(name, data, _include, _include2) {
-  Logger.log("include(%s) running", name);
+//  Logger.log("include(%s) running", name);
 //  Logger.log("include(%s) _include=%s, _include2=%s", name, _include, _include2);
   var origInclude = data._include;
   var origInclude2 = data._include2;
@@ -635,7 +633,7 @@ function include(name, data, _include, _include2) {
 	childTemplate.data._include = _include || {};
 	childTemplate.data._include2 = _include2 || {};
 	var filledHTML = childTemplate.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME).getContent();
-	Logger.log("include(%s) complete", name);
+//	Logger.log("include(%s) complete", name);
 	data._include = origInclude;
 	data._include2 = origInclude2;
 	return filledHTML;

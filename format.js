@@ -381,11 +381,11 @@ function asCurrency_(currency, amount, chop) {
   // Logger.log("asCurrency_(%s, %s, %s)", currency, amount, chop);
 
   var mycurrency = currency;
-  Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
+//  Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
   var mymatch;
   if (mymatch = currency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
   if (currency.match(/#0$/))     { chop = 0 }
-  Logger.log("asCurrency_() chop = %s", chop);
+//  Logger.log("asCurrency_() chop = %s", chop);
 
   var matches;
   if (matches = currency.match(/\[\$(.*)\]/)) { // currency
