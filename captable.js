@@ -939,13 +939,12 @@ function capTableSheet_(captablesheet){
       
       //WE NEED TO TOTALLY CLEAN ALL OF THIS UP TO LOOK PRETTY
       CapSheet = CapSheet.insertColumnsBefore((roundNames.length - 3) + 1, 3);//columns start at 1, so +1
-      //For whatever reason the CapSheet loses its reference after performing this action
+      //For whatever reason, CapSheet loses its reference after performing this action
       
       var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
       var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
       prevMajorColumn.copyTo(destination);
       //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
-      //Look into the copyTo functions in Range reference
       
       Logger.log("finished the copy and paste");
       var cell = CapSheet.getRange(2, roundNames.length - 2);
