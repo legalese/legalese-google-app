@@ -437,6 +437,10 @@ function readRows(sheet, entitiesByName) {
 
 	  this._last_entity_row = i;
 
+	  if (row[1] == "") { continue } // skip blank lines
+	  if (row[1].length == 0) { continue } // skip blank lines
+	  if (row[1].replace(/\s+/g,"") == "") { continue } // skip blank lines
+	  
       for (var ki in entityfields) {
         if (ki < 1) { continue }
         var k = entityfields[ki];
