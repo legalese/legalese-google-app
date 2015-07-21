@@ -962,6 +962,12 @@ function capTableSheet_(captablesheet){
 
   };
   
+  //checks all? functions in the cap table to make sure they are pointing in the right place
+  //or should we just pass in a round to be rewired? It may the case that TOTAL and most recent column need to be change, nothing else
+  this.rewireColumns = function(){
+  
+  }
+  
     this.getCategoryRowCaptable = function(category) {
       var sheet = this.captablesheet;
       var key = category;
@@ -1120,10 +1126,14 @@ function newTermSheet(prompt){
   return round;
 };
 
+
+//----------------------------------------STILL WORKING ON THIS SHIT-----------------------------------//
 function addColumn(captablesheet){
   var ss_forAdd = new capTableSheet_(captablesheet);
   ss_forAdd.addMajorColumn();
+  //ss_forAdd.rewireColumn() <--- Write the Function
 }
+//----------------------------------        ***************        ------------------------------------//
 
 function CapTableTester(){
   Logger.log("starting tester");
