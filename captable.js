@@ -923,6 +923,7 @@ function capTableSheet_(captablesheet){
   this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
   
   this.addMajorColumn = function(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
+    name = name || "Blank Round";
     var CapSheet = this.captablesheet;
     var data = CapSheet.getDataRange().getValues();
     
@@ -1119,6 +1120,10 @@ function newTermSheet(prompt){
   return round;
 };
 
+function addColumn(captablesheet){
+  var ss_forAdd = new capTableSheet_(captablesheet);
+  ss_forAdd.addMajorColumn();
+}
 
 function CapTableTester(){
   Logger.log("starting tester");
