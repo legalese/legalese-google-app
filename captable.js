@@ -962,6 +962,35 @@ function capTableSheet_(captablesheet){
 
   };
   
+  this.setTotal = function(){
+    Logger.log("setting total")
+    var sheet = this.captablesheet;
+    var TotalColumn = this.getRoundColumnByName("TOTAL");
+    
+    var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
+    var investorEndRow = this.getCategoryRowCaptable("amount raised") -1;
+    Logger.log("investors exist beween rows " + investorBeginRow + "and" + investorEndRow);
+    
+    for (var row = investorBeginRow; row <= investorEndRow; row ++){
+      var sumMoney = "=";
+      var sumShares = "=";
+      for (var mcol = 2; mcol < TotalColumn; mcol += 3){
+        var mrange = sheet.getRange(row, mcol);
+        sumMoney = sumMoney + "+" + mrange.getA1Notation();
+        Logger.log("sumMoney looks like this: " + sumMoney);
+        
+        var srange = sheet.getRange(row, mcol + 1);
+        sumShares = sumShares + "+" + srange.getA1Notation();
+        Logger.log("sumShares looks like this: " + sumShares);
+      }
+      var mcell = sheet.getRange(row, TotalColumn);
+      mcell.setFormula(sumMoney);
+      
+      var scell = sheet.getRange(row, TotalColumn + 1);
+      scell.setFormula(sumShares);
+    }
+  }
+  
   //checks all? functions in the cap table to make sure they are pointing in the right place
   //or should we just pass in a round to be rewired? It may the case that TOTAL and most recent column need to be change, nothing else
   this.rewireColumns = function(){
@@ -1170,7 +1199,8 @@ function newTermSheet(prompt){
 //----------------------------------------STILL WORKING ON THIS SHIT-----------------------------------//
 function addColumn(captablesheet){
   var ss_forAdd = new capTableSheet_(captablesheet);
-  ss_forAdd.addMajorColumn();
+    ss_forAdd.addMajorColumn();
+   // ss_forAdd.setTotal();
   //ss_forAdd.rewireColumn() <--- Write the Function
 }
 //----------------------------------        ***************        ------------------------------------//
@@ -1185,7 +1215,8 @@ function CapTableTester(){
   //Logger.log(capSheet.getCategoryRowTermSheet("Bridge Round", "price per share"));
  // captableSheet = createCaptable();
   var capSheet = new capTableSheet_(captableSheet);
-  capSheet.rewireColumns();
+  capSheet.setTotal();
+  //capSheet.rewireColumns();
   //Logger.log("I have made it into a capTableSheet Object");
   //capSheet.addMajorColumn("wut wut wut");
   //capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
