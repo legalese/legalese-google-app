@@ -966,6 +966,7 @@ function capTableSheet_(captablesheet){
   //or should we just pass in a round to be rewired? It may the case that TOTAL and most recent column need to be change, nothing else
   this.rewireColumns = function(){
       //We now need to find the column number with the word TOTAL
+    var TotalColumn = this.getRoundColumnByName("TOTAL"); //not quite sure why we need this....
       //You can copy the code from addMajorColumn that finds the row and column of TOTAL
       var sheet = this.captablesheet;
       var data = sheet.getDataRange().getValues();
@@ -973,18 +974,38 @@ function capTableSheet_(captablesheet){
       var roundNameRow = this.getCategoryRowCaptable("round name");
       var roundNames = data[roundNameRow - 1];//array starts at 0, actual rows start at 1
       //copied from addMajorColumn
+    //Logger.log(roundNames);
+    
+    
+    var amountRaisedRow = this.getCategoryRowCaptable("amount raised");
+    var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
+    
+    for each (var round in roundNames){
+      if (round == "round name"){
+        continue;
+      }
+      var col = this.getRoundColumnByName(round);
       
-      Logger.log("The row we are looking at is: %s \nand it looks like this: %s", roundNameRow, roundNames);
+      //for the money category
+      var cell = sheet.getRange(amountRaisedRow, col);
+      cell.setFormula("=SUM(INDIRECT(ADDRESS(" + investorBeginRow + ",COLUMN())&" + '":"' + "&ADDRESS(ROW()-1,COLUMN())))");
+      
+      //for the shares category
+      cell = sheet.getRange(amountRaisedRow, col+1);
+      cell.setFormula("=SUM(INDIRECT(ADDRESS(" + investorBeginRow + ",COLUMN())&" + '":"' + "&ADDRESS(ROW()-1,COLUMN())))");
+    }
+      
+      //Logger.log("The row we are looking at is: %s \nand it looks like this: %s", roundNameRow, roundNames);
 
       //The apparent way to do this would be a for loop, since the money column is already set
-      var totalRows = sheet.getLastRow();//something like this
-      for(var i_setFunction = 0; i_setFunction < totalRows; i_setFunction++){//The for-loop may no necessarily begin at 0. . .
+      //var totalRows = sheet.getLastRow();//something like this
+      //for(var i_setFunction = 0; i_setFunction < totalRows; i_setFunction++){//The for-loop may no necessarily begin at 0. . .
 	  //I insist that we call the index counter something other than 'i' for readability's sake, you can change it if you want
 	  //The coordinate of the current cell we should be looking at should be something along the lines of (i_setFunction, roundNames.length - 3)
 	  //I think for setting formulas, R1C1 notation would be better
 	  //You have two choices, of adding each cell directly or using the SUMIF operation, albeit a little bit more complicated
 	  //I think Meng prefers direct addition
-      }
+      //}
   }
   
     this.getCategoryRowCaptable = function(category) {
@@ -1157,15 +1178,16 @@ function addColumn(captablesheet){
 function CapTableTester(){
   Logger.log("starting tester");
   var SpreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-  var captableSheet = SpreadSheet.getSheetByName("Cap Table");
+  var captableSheet = SpreadSheet.getSheetByName("Copy of Cap Table");
   //var termsheet = SpreadSheet.getSheetByName("Creation of Class F");
   //var cap = new capTable_(termsheet, captableSheet);
   
   //Logger.log(capSheet.getCategoryRowTermSheet("Bridge Round", "price per share"));
-  captableSheet = createCaptable();
+ // captableSheet = createCaptable();
   var capSheet = new capTableSheet_(captableSheet);
-  Logger.log("I have made it into a capTableSheet Object");
-  capSheet.addMajorColumn("wut wut wut");
-  capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
-  Logger.log("the deed is done");
+  capSheet.rewireColumns();
+  //Logger.log("I have made it into a capTableSheet Object");
+  //capSheet.addMajorColumn("wut wut wut");
+  //capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
+  //Logger.log("the deed is done");
 }
