@@ -965,7 +965,26 @@ function capTableSheet_(captablesheet){
   //checks all? functions in the cap table to make sure they are pointing in the right place
   //or should we just pass in a round to be rewired? It may the case that TOTAL and most recent column need to be change, nothing else
   this.rewireColumns = function(){
-  
+      //We now need to find the column number with the word TOTAL
+      //You can copy the code from addMajorColumn that finds the row and column of TOTAL
+      var sheet = this.captablesheet;
+      var data = sheet.getDataRange().getValues();
+    
+      var roundNameRow = this.getCategoryRowCaptable("round name");
+      var roundNames = data[roundNameRow - 1];//array starts at 0, actual rows start at 1
+      //copied from addMajorColumn
+      
+      Logger.log("The row we are looking at is: %s \nand it looks like this: %s", roundNameRow, roundNames);
+
+      //The apparent way to do this would be a for loop, since the money column is already set
+      var totalRows = sheet.getLastRow();//something like this
+      for(var i_setFunction = 0; i_setFunction < totalRows; i_setFunction++){//The for-loop may no necessarily begin at 0. . .
+	  //I insist that we call the index counter something other than 'i' for readability's sake, you can change it if you want
+	  //The coordinate of the current cell we should be looking at should be something along the lines of (i_setFunction, roundNames.length - 3)
+	  //I think for setting formulas, R1C1 notation would be better
+	  //You have two choices, of adding each cell directly or using the SUMIF operation, albeit a little bit more complicated
+	  //I think Meng prefers direct addition
+      }
   }
   
     this.getCategoryRowCaptable = function(category) {
