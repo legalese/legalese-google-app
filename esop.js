@@ -31,7 +31,7 @@ function ESOP_(security_type, initial_num_shares) {
   this.issued    = function() {
 	var toreturn = 0;
 	for (var hk in this.holders) {
-	  if (hk != "ESOP") toreturn += this.holders[hk];
+	  if (hk != "ESOP") toreturn += this.holders[hk].shares; // TODO: fix this. comes up as NaN when you don't define the data.esop_issued hardcoding workaround.
 	}
 	return toreturn;
   };
