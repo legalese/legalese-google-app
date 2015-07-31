@@ -989,6 +989,27 @@ function capTableSheet_(captablesheet){
       var scell = sheet.getRange(row, TotalColumn + 1);
       scell.setFormula(sumShares);
     }
+    
+    //update post, post should match
+    var post = this.getCategoryRowCaptable("post"); 
+    var postCell = sheet.getRange(post, TotalColumn);
+    var postMoney = "=";
+    var postShares = "=";
+    
+    for (var pcol = 2; pcol < TotalColumn; pcol += 3){
+      var prange = sheet.getRange(post - 1, pcol);
+      postMoney = postMoney + "+" + prange.getA1Notation();
+      Logger.log("sumMoney looks like this: " + postMoney);
+      
+      var srange = sheet.getRange(row, pcol + 1);
+      postShares = postShares + "+" + srange.getA1Notation();
+      Logger.log("sumShares looks like this: " + postShares);
+    }
+    
+    postCell.setFormula(postMoney);
+    postCell = sheet.getRange(post, TotalColumn + 1);
+    postCell.setFormula(postShares);
+    
   }
   
   //checks all? functions in the cap table to make sure they are pointing in the right place
@@ -1117,10 +1138,6 @@ function capTableSheet_(captablesheet){
     }
   }
   
-  this.updateTotal = function(){
-    //if total column doesn't exist, set it up. If it does, update!
-    var totalCol = this.getRoundColumnByName("TOTAL");
-  }
     
   //this.getNumRowCapSheet() = function(){
  //   return this.captablesheet.getLastRow();
@@ -1200,10 +1217,15 @@ function newTermSheet(prompt){
 function addColumn(captablesheet){
   var ss_forAdd = new capTableSheet_(captablesheet);
     ss_forAdd.addMajorColumn();
-   // ss_forAdd.setTotal();
-  //ss_forAdd.rewireColumn() <--- Write the Function
+    ss_forAdd.setTotal();
+    ss_forAdd.rewireColumns() //<--- Write the Function
 }
 //----------------------------------        ***************        ------------------------------------//
+
+function updateTotal(captablesheet){
+  var ss_forTot = new capTableSheet_(captablesheet);
+  ss_forTot.setTotal();
+}
 
 function CapTableTester(){
   Logger.log("starting tester");
