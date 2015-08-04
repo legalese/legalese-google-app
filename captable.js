@@ -431,8 +431,8 @@ function parseCaptable(sheet) {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-//          Logger.log("captable/securitytype: looking at row[%s], which is %s",
-//                                                             j,        row[j]);
+          Logger.log("captable/securitytype: looking at row[%s], which is %s",
+                                                             j,        row[j]);
           // if i'm in column j, what round am i in?
           var myRound = captableRounds[majorToRound[majorByNum[j]]];
           myRound[asvar_(row[0])] = row[j];
@@ -451,8 +451,8 @@ function parseCaptable(sheet) {
 
           for (var k = 0; k < j; k++) {
             if (! captableRounds[majorToRound[majorByNum[j-k]]]) { continue }
+            Logger.log("captable/breakdown: looking for major column for %s", row[j]);
             myRound = captableRounds[majorToRound[majorByNum[j-k]]];
-//            Logger.log("captable/breakdown: found major column for %s: it is %s", row[j], myRound.name);
             break;
           }
 
