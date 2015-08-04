@@ -966,6 +966,8 @@ function capTableSheet_(captablesheet){
     Logger.log("setting total")
     var sheet = this.captablesheet;
     var TotalColumn = this.getRoundColumnByName("TOTAL");
+	Logger.log("setTotal: TotalColumn = %s", TotalColumn);
+	if (TotalColumn == undefined) { throw("are byou on a Cap Table tab?"); }
 
 	// in future it might be possible to have a class to represent the TOTAL column,
 	// and subsume this complexity into methods of that class,
@@ -995,8 +997,19 @@ function capTableSheet_(captablesheet){
     }
     
     //update post, post should match
-    var post = this.getCategoryRowCaptable("post"); 
-    var postCell = sheet.getRange(post, TotalColumn);
+	var post;
+	try {
+      post = this.getCategoryRowCaptable("post");
+	} catch (e) {
+	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
+	};
+	var postCell;
+	try {
+      postCell = sheet.getRange(post, TotalColumn);
+	} catch (e) {
+	  throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
+	};
+	
     var postMoney = "=";
     var postShares = "=";
     
