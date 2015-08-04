@@ -350,6 +350,79 @@ function capTable_(termsheet, captablesheet) {
   
 }
 
+/**
+ * a Round object
+ * @class
+ * @param {string} Round.name - the name of the round
+ * @param {object} Round.new_investors - dictionary of new investors who are participating in the round
+ * @param {Array} Round.ordered_investors - new investors, listed in order shown in the spreadsheet
+ * @param {sheet} Round.sheet - the google activeSheet()
+ * @return {captable} captable - the captable object that contains this round
+ */
+
+function Round (params) {
+  this.name = params.name;
+  this.new_investors = params.new_investors;
+  this.ordered_investors = params.ordered_investors;
+  this.sheet = params.sheet;
+  this.captable = params.captable;
+};
+
+/**
+ * @method
+ * @return {sheet} the sheet corresponding to the round -- the tab with the same name
+ */
+Round.prototype.getTermSheet = function() {
+  Logger.log("round.getTermSheet: returning %s", this.sheet);
+  return this.sheet;
+};
+
+// this is our "DOM":
+// a captable object contains an array of Round objects
+// a Round object contains an array of Shareholders and an array of NewInvestor objects
+// Shareholder and NewInvestors belong to the same class, "Investor"
+// an Investor object contains a dictionary of share class names to money/shares
+// or whatever ...
+
+/**
+ * getNewInvestors
+ * @method
+ * @return {Array} array of Investor objects (who participate in this round)
+ */
+
+/**
+ * getShareholders
+ * @method
+ * @return {Array} array of Investor objects (who existed prior to this round)
+ */
+
+/**
+ * getPreMoney
+ * @method
+ * @return {Object} pre-money object of money/shares
+ */
+
+/**
+ * getPostShares
+ * @method
+ * @return {Number} post-money number of shares
+ */
+
+/**
+ * getPostMoney
+ * @method
+ * @return {Number} post-money valuation
+ */
+
+/**
+ * getPostMoney
+ * @method
+ * @return {Number} post-money valuation
+ */
+
+
+
+
 // parseCaptable
 // previously known as "Show Me The Money!"
 
@@ -421,7 +494,14 @@ function parseCaptable(sheet) {
           majorByNum     [j]  = row[j];
 		  majorToRound[row[j]]= captableRounds.length;
 
-          captableRounds.push( { name: row[j], new_investors: {}, ordered_investors: [] } ); // we haz a new round!
+		  // a Round object is now its own thing, not a generic Object
+          captableRounds.push(
+			new Round(
+			  { name: row[j], new_investors: {}, ordered_investors: [],
+				sheet: sheet, captable: this
+			  }
+			)
+		  ); // we haz a new round!
 //          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
       }
@@ -1047,7 +1127,7 @@ function capTableSheet_(captablesheet){
     var amountRaisedRow = this.getCategoryRowCaptable("amount raised");
     var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
     
-    for each (var round in roundNames){
+    for (var round in roundNames){
       if (round == "round name"){
         continue;
       }
@@ -1137,7 +1217,9 @@ function capTableSheet_(captablesheet){
       
       var originCell = this.captablesheet.getRange(categoryRow, roundCol);
       var A1Notation = originCell.getA1Notation();
-      var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
+
+	  var cell =                   round.getTermSheet().getRange("B" + termrow);
+//    var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
       cell.setFormula("= 'Cap Table'!" + A1Notation);
       
       
@@ -1149,7 +1231,8 @@ function capTableSheet_(captablesheet){
       roundCol = this.getRoundColumnByName(round);
       
       Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
-      var cell = this.captablesheet.getRange(capRow, roundCol);
+	  var cell = round.getTermSheet().getRange(capRow, roundCol);
+//    var cell = this.captablesheet.getRange(capRow, roundCol);
       Logger.log("this is the fomula being set: " + "= '" + round + "' !B" + categoryRow);
       cell.setFormula("= '" + round + "' !B" + categoryRow);
     }
