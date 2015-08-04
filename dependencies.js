@@ -32,6 +32,39 @@ var DepNode = exports.DepNode = function DepNode(params) {
   this.templates = params.templates;
   
   nodeNamed[this.name] = this;
+
+};
+
+DepNode.prototype.isDesired = function() {
+  return (this.desired == undefined || this.desired);
+};
+
+var DepGroup = exports.DepGroup = function DepGroup(nodes) {
+  this.nodes = nodes;
+};
+
+DepGroup.prototype.resolve = function() {
+  // return the first desired node, or null
+};
+
+var DepGraph = exports.DepGraph = require ("../dependency-graph/lib/dep_graph.js").DepGraph;
+
+DepGraph.prototype.addDep = function(lhs, rhs) {
+  // if rhs is an array, then use DepGroup logic -- the first desired node is promoted to represent the entire group.
+
+  if (rhs.constructor.name == 'Array') {
+	console.log(lhs + ' requires a depGroup!');
+	var depGroup = new DepGroup(rhs);
+	rhs = depGroup.resolve();
+	if (rhs == undefined) { return }
+  }
+  // if rhs's .desired property is false, don't add
+
+  if (rhs.isDesired()) {
+	this.addDependency(lhs, rhs);
+  } else {
+	console.log(rhs + " is not desired, so not adding dependency");
+  }
 };
 
 

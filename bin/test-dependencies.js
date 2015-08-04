@@ -1,8 +1,5 @@
 #!/usr/local/bin/node
 
-var DepGraph = require ("../../dependency-graph/lib/dep_graph.js").DepGraph;
-var graph = new DepGraph();
-
 var djs = require ("../dependencies.js");
 var DepNode = djs.DepNode;
 
@@ -20,6 +17,18 @@ var myNodes = [
 	}
   },
   { name: 'directorsWantToIssueF',	descEnglish: "directors resolve that they wish to issue F shares to the employee",	templates: ["dr_egm_notice_issue_shares"],
+	satisfied: function(givens) {
+	  console.log("satisfied?("+this.name + ")");
+	  return true;
+	}
+  },
+  { name: 'directorsProposeIssueF',	descEnglish: "directors resolve to ask members for permission to issue shares",	templates: ["dr_fundraising"],
+	satisfied: function(givens) {
+	  console.log("satisfied?("+this.name + ")");
+	  return true;
+	}
+  },
+  { name: 'membersApproveIssueF',	descEnglish: "members resolve that the directors may issue shares",	templates: ["mr_issue_shares"],
 	satisfied: function(givens) {
 	  console.log("satisfied?("+this.name + ")");
 	  return true;
@@ -97,6 +106,10 @@ var myNodes = [
   },
 ];
 
+djs.nodeNamed.employeeIsPaid.desired = true;
+djs.nodeNamed.employeeIsUnpaid.desired = false;
+
+var graph = new djs.DepGraph();
 for (var myNodes_i in myNodes) {
   graph.addNode(new DepNode(myNodes[myNodes_i]).name);
 }
@@ -108,25 +121,41 @@ for (var myNodes_i in myNodes) {
 // which first tests if a condition is satisfied
 // and also knows how to do multiple OR dependencies
 
-graph.addDependency('newEmployee', 'employeeLegal');
-graph.addDependency('newEmployee', 'employeeESOP'); // for now we assume that all employees will participate in the ESOP
-graph.addDependency('newEmployee', 'employeeAssignments');
+graph.addDep('newEmployee', 'employeeLegal');
+graph.addDep('newEmployee', 'employeeESOP'); // for now we assume that all employees will participate in the ESOP
+graph.addDep('newEmployee', 'employeeAssignments');
 
 // todo: 'employeeAssignments': [ 'employeeIsUnpaid', 'employeeIsPaid' ] // this is an OR condition
 
-graph.addDependency('employeeESOP', 'directorsIssueF');
-graph.addDependency('directorsIssueF', 'directorsWantToIssueF');
+graph.addDep('employeeAssignments': [ 'employeeIsUnpaid', 'employeeIsPaid' ]);
 
-graph.addDependency('directorsIssueF', 'articlesDefineClassF');
-graph.addDependency('articlesDefineClassF', 'membersApproveClassF');
-graph.addDependency('membersApproveClassF', 'directorsGiveNoticeClassF');
+graph.addDep('employeeESOP', 'directorsIssueF');
+graph.addDep(                'directorsIssueF', 'directorsWantToIssueF');
+graph.addDep(                'directorsIssueF', 'articlesDefineClassF');
+graph.addDep(                                   'articlesDefineClassF', 'membersApproveClassF');
+graph.addDep(                                                           'membersApproveClassF', 'directorsGiveNoticeClassF');
 
-graph.addDependency('employeeESOP', 'companyHasESOP');
-graph.addDependency('companyHasESOP', 'articlesDefineClassF');
-graph.addDependency('companyHasESOP', 'membersApproveESOP');
-graph.addDependency('membersApproveESOP', 'directorsGiveNoticeESOP');
+// 161.—(1)  Notwithstanding anything in a company’s memorandum or articles, the directors shall not, without the prior approval of the company in general meeting, exercise any power of the company to issue shares.
 
+// (2)  Approval for the purposes of this section may be confined to a particular exercise of that power or may apply to the exercise of that power generally; and any such approval may be unconditional or subject to conditions.
 
+graph.addDep(                'directorsIssueF', 'memberApprovalExists');
+
+graph.addDep(                                   'memberApprovalExists', [ 'memberApprovalInCurrentPeriod',
+																		  'lastingMemberApprovalExists' ]);
+
+// (3)  Any approval for the purposes of this section shall continue in force until —
+// (a) the conclusion of the annual general meeting commencing next after the date on which the approval was given; or
+// (b) the expiration of the period within which the next annual general meeting after that date is required by law to be held,
+graph.addDep(                                                             'memberApprovalInCurrentPeriod', 'directorsProposeIssueF');
+
+// (4)  The directors may issue shares notwithstanding that an approval for the purposes of this section has ceased to be in force if the shares are issued in pursuance of an offer, agreement or option made or granted by them while the approval was in force and they were authorised by the approval to make or grant an offer, agreement or option which would or might require shares to be issued after the expiration of the approval.
+graph.addDep(                                                             'lastingMemberApprovalExists',   'membersApproveESOP');
+
+graph.addDep('employeeESOP', 'companyHasESOP');
+graph.addDep(                'companyHasESOP',  'articlesDefineClassF');
+graph.addDep(                'companyHasESOP',  'membersApproveESOP');
+graph.addDep(                                   'membersApproveESOP', 'directorsGiveNoticeESOP');
 
 
 var todo = graph.dependenciesOf('newEmployee');
@@ -134,6 +163,10 @@ for (var todo_i in todo) {
   var dep = todo[todo_i];
   var depnode = djs.nodeNamed[dep];
   console.log("to achieve newEmployee: " + dep + " = " + depnode.descEnglish + " (" + depnode.templates.join(",") + ")");
+
+  // if the depnode is a leaf, then is the depnode satisfied?
+  // if yes, no action is needed.
+  // if not, do something to satisfy the leaf.
+  // a parent node may have actions of its own.
+  // for a node to be satisfied, all its children must be satisfied, and it must be satisfied in itself also
 }
-
-
