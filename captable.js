@@ -43,6 +43,15 @@ function capTable_(termsheet, captablesheet) {
   
   Logger.log("capTable_: parsing captablesheet %s, active round being %s",
 			 captablesheet.getSheetName(), termsheet.getSheetName());
+  
+  /**
+  * @method
+  * @return {object} captablesheet
+  */
+  this.getSheet() = function(){
+    var activatedCapSheet = new capTableSheet_(captablesheet);
+    return activatedCapSheet;
+  };
 
   /**
 	* @member {string}
@@ -53,6 +62,10 @@ function capTable_(termsheet, captablesheet) {
 	* @member
 	*/
   this.rounds = parseCaptable(captablesheet);
+  
+  this.getAllRounds = function(){
+    return this.rounds
+  };
 
   /**
 	* @method
@@ -225,6 +238,17 @@ function capTable_(termsheet, captablesheet) {
 	}
 	return toreturn;
   };
+  
+  /**
+  * @method
+  * @return {undefined}
+  */
+  this.rewireAllRounds = function(){
+    for (var cn = 0; cn < this.rounds.length; cn++) {
+      var round = this.rounds[cn];
+      round.rewire();
+    }
+  };
 
   /**
 	* @member {object}
@@ -279,25 +303,6 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
 
-    /*this.updateRounds() = function(round){
-	
-    };
-
-    this.getRoundbyName() = function(name){
-    };
-
-    this.getRoundbyNumber() = function(num){
-    };
-
-    this.getPre() = function(){
-    }
-
-    this.updateInvestorPercentage() = function(round){
-    }
-
-    this.getPost() = function(round){
-    }
-*/
     
   /**
 	* @method
@@ -348,7 +353,7 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
   
-}
+};
 
 /**
  * a Round object
@@ -360,12 +365,21 @@ function capTable_(termsheet, captablesheet) {
  * @return {captable} captable - the captable object that contains this round
  */
 
-function Round (params) {
+function Round(params) {
   this.name = params.name;
   this.new_investors = params.new_investors;
   this.ordered_investors = params.ordered_investors;
   this.sheet = params.sheet;
-  this.captable = params.captable;
+  this.captable = params.captable; //assume already a capTable_ object
+  this.captablesheet = this.captable.getSheet(this.sheet);
+};
+
+/**
+ * @method
+ * @return {string} name - round name
+ */
+Round.prototype.getName() = function(){
+  return this.name
 };
 
 /**
@@ -375,6 +389,110 @@ function Round (params) {
 Round.prototype.getTermSheet = function() {
   Logger.log("round.getTermSheet: returning %s", this.sheet);
   return this.sheet;
+};
+
+/**
+ * @method
+ * @param {string} category
+ * @return {Array} Cell - [moneyCell, sharesCell, percentageCell]
+ */
+Round.prototype.getCategoryCellRange() = function(category){
+  var roundColumn = this.captablesheet.getRoundColumnByName(this.name);
+  var categoryRow;
+	try {
+      categoryRow = this.captablesheet.getCategoryRowCaptable(category);
+	} catch (e) {
+	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
+	};
+	var categoryCell;
+	try {
+      categoryCell = [this.captablesheet.getCapsheet().getRange(categoryRow, roundColumn), this.captablesheet.getCapsheet().getRange(categoryRow, roundColumn+1), this.captablesheet.getCapsheet().getRange(categoryRow, roundColumn+2)];
+	} catch (e) {
+	  throw("unable to getRange(" + categoryRow + ", " + roundColumn + ") -- " + e);
+	};
+};
+
+/**
+ * @method
+ * @param {string} category
+ * @return {Array} reference -- A1 Notation for each cell [moneyA1, sharesA1, percentageA1]
+ */
+Round.prototype.getCategoryCellA1Notation()() = function(category){
+  var range = this.getCategoryCellRange(category);
+  var reference = []
+  for (var i; i < range.length; i++){
+    reference[i] = range[i].getA1Notation();
+  }
+  return reference;
+};
+
+/**
+ * @method
+ * @param {string} category
+ * @return {Array} value - [moneyValue, sharesValue, percentageValue]
+ */
+Round.prototype.getCategoryCellValue() = function(category){
+  var range = this.getCategoryCellRange(category);
+  var value = []
+  for (var i; i < range.length; i++){
+    reference[i] = range[i].getValue();
+  }
+  return value;
+};
+
+
+/**
+ * @method
+ * @return {object} toreturn - previous round
+ */
+Round.prototype.getPreviousRound() = function(){
+  var roundList = captable.getAllRounds();
+  var toreturn;
+  for (var ri = 0; ri < roundList.length; ri++) {
+    if (this.rounds[ri].name == roundName) {
+      toreturn = this.rounds[ri - 1];
+      break;
+    }
+  }
+  return toreturn;
+};
+
+
+/**
+ * @method
+ * @return {undefinied} resets pre/post money/shares
+ */
+Round.prototype.rewire = function(){
+  if (this.getPreviousRound() == "undefined"){
+    
+    postRange[0].setFormula("=" + this.getAmountRaisedCell()[0]);
+    postRange[1].setFormula("=" + this.getAmountRaisedCell()[1]);
+    postRange[2].setValue("");
+    //percentage should be an empty cell
+    
+    //set all premoney cells to empty cell
+    
+    premoneyRange[0].setValue("");
+    premoneyRange[1].setValue("");
+    premoneyRange[2].setValue("");
+    
+  }
+  else{
+    postA1Notation = this.getCategoryCellA1Notation("post");
+    prevRoundPostA1Notation = this.getPreviousRound().getCategoryCellA1Notation("post");
+    premoneyA1Notation = this.getCategoryCellA1Notation("pre-money");
+    amountraisedA1Notation = this.getCategoryCellA1Notation("amount raised");
+    
+    postRange[0].setFormula("=" + amountraisedA1Notation[0] + "+" + prevRoundPostA1Notation[0]);
+    postRange[1].setFormula("=" + amountraisedA1Notation[1] + "+" + prevRoundPostA1Notation[1]);
+    //percentage should be an empty cell
+    //postRange[2].setFormula("=" + this.getAmountRaisedCell()[2] + "+" + this.previousRound().getpostRange()[2]);
+    
+    premoneyRange[0].setFormula("=" + prevRoundPostA1Notation[0]);
+    premoneyRange[1].setFormula("=" + prevRoundPostA1Notation[1]);
+    premoneyRange[2].setValue("");
+  }
+  
 };
 
 // this is our "DOM":
@@ -954,44 +1072,6 @@ function getPercentageValue(capTable, round, catagory){
 }
 */
 
-//function round_(name, security, investors, pricePerShare){
-//    this.name = name;
-//    this.securityType = asvar_(security);
-//    //investors =
-//
-//    if (securityType == "equity of somesort"){
-//	//price per share box becomes yellow"
-//    };
-//
-//    this.investors = investors; //investors[] contributed to this round
-//    //investors[]
-//    //investors = {name: {money: nn,
-//    //                    shares: nn,
-//    //                    percentage: %%}}
-//
-//    this.getInvestorByName = function(InvestorName){
-//	return investors[InvestorName];
-//	//returns the hash of money, shares, percentage
-//    };
-//
-//    this.pricePerShare = pricePerShare;
-//
-//    //var AmountRaised = [money: 0, shares: 0, percentage: 0];
-//
-//    this.getAmountRaised = function(){
-//	var sumMoney; var sumShares
-//	for (investor in investors){
-//	    sumMoney += investors[investor].money;
-//	    sumShares += investors[investor].shares;
-//	};
-//	AmountRaised[0] = sumMoney;
-//	AmountRaised[1] = sumShares;
-//	//money = total of all investors money
-//	//shares = total of all shares distributed
-//	//percentage = shares raised this round/postShares. will be modified in capTable.
-//	return AmountRaised
-//    };
-//}
 
 var capToTerm = {"amount raised" : "Amount Raising:",
                  "pre-money" : "Pre-Money Valuation:",
@@ -1002,8 +1082,12 @@ function capTableSheet_(captablesheet){
   this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
   
-  this.addMajorColumn = function(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
-    name = name || "Blank Round";
+  this.getCapsheet() = function() {
+    return this.captablesheet;
+  };
+  
+  this.addMajorColumn = function(round){//I think sending in a round makes more sense, but for now just pass in the name of the round
+    name = round.getName() || "Blank Round";
     var CapSheet = this.captablesheet;
     var data = CapSheet.getDataRange().getValues();
     
@@ -1083,9 +1167,9 @@ function capTableSheet_(captablesheet){
 	} catch (e) {
 	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
 	};
-	var postCell;
+	var postRange;
 	try {
-      postCell = sheet.getRange(post, TotalColumn);
+      postRange = sheet.getRange(post, TotalColumn);
 	} catch (e) {
 	  throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
 	};
@@ -1103,9 +1187,9 @@ function capTableSheet_(captablesheet){
       Logger.log("sumShares looks like this: " + postShares);
     }
     
-    postCell.setFormula(postMoney);
-    postCell = sheet.getRange(post, TotalColumn + 1);
-    postCell.setFormula(postShares);
+    postRange.setFormula(postMoney);
+    postRange = sheet.getRange(post, TotalColumn + 1);
+    postRange.setFormula(postShares);
     
   }
   
@@ -1346,4 +1430,3 @@ function CapTableTester(){
   //capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
   //Logger.log("the deed is done");
 }
-
