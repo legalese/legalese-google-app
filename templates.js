@@ -346,8 +346,8 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		var entity = this.readRows.entitiesByName[parties[partytype][parties_k].name];
 		Logger.log("docsetEmails.explode(): working with %s %s %s", partytype, entity.name, sourceTemplate.name);
 		if (entity.legalese_status
-			&& entity.legalese_status.match(/skip explo/)
-			&& entity.legalese_status.match(sourceTemplate.name)
+			&& entity.legalese_status.match(/skip explo/) // skip exploding / skip exploder
+			&& entity.legalese_status.match(sourceTemplate.name) // add \b, i think
 		   ) {
 		  Logger.log("docsetEmails.explode(%s): SKIPPING because legalese status says %s", entity.name, entity.legalese_status);
 		  continue;
