@@ -966,10 +966,14 @@ function capTableSheet_(captablesheet){
     Logger.log("setting total")
     var sheet = this.captablesheet;
     var TotalColumn = this.getRoundColumnByName("TOTAL");
-    
+
+	// in future it might be possible to have a class to represent the TOTAL column,
+	// and subsume this complexity into methods of that class,
+	// but for now we just grope the values directly.
+	
     var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
     var investorEndRow = this.getCategoryRowCaptable("amount raised") -1;
-    Logger.log("investors exist beween rows " + investorBeginRow + "and" + investorEndRow);
+    Logger.log("investors exist beween rows " + investorBeginRow + " and " + investorEndRow);
     
     for (var row = investorBeginRow; row <= investorEndRow; row ++){
       var sumMoney = "=";
@@ -1222,9 +1226,11 @@ function addColumn(captablesheet){
 }
 //----------------------------------        ***************        ------------------------------------//
 
-function updateTotal(captablesheet){
-  var ss_forTot = new capTableSheet_(captablesheet);
-  ss_forTot.setTotal();
+function updateTotal(){
+  var captableSheet = SpreadsheetApp.getActiveSheet();
+  Logger.log("starting resetTotals using sheet %s", captableSheet.getSheetName());
+  var capSheet = new capTableSheet_(captableSheet);
+  capSheet.setTotal();
 }
 
 function CapTableTester(){
@@ -1244,3 +1250,4 @@ function CapTableTester(){
   //capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
   //Logger.log("the deed is done");
 }
+
