@@ -309,7 +309,7 @@ function capTable_(termsheet, captablesheet) {
 	for (var bst in round.by_security_type) {
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName], bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]) }
 	}
-	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0]) + "&#8232;" + plural(bst_count[0], bst_count[1])}));
+	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0],0) + "&#8232;" + plural(bst_count[0], bst_count[1])}));
   };
 
   
@@ -576,8 +576,8 @@ function parseCaptable(sheet) {
 		if (row[0] == "") { continue }
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-//          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
-//                     row[0],                           j,    minorByNum[j].minor,    row[j]);
+          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+                     row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  if (myRound.new_investors[row[0]] == undefined) {
