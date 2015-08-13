@@ -43,6 +43,15 @@ function capTable_(termsheet, captablesheet) {
   
   Logger.log("capTable_: parsing captablesheet %s, active round being %s",
 			 captablesheet.getSheetName(), termsheet.getSheetName());
+  
+  /**
+  * @method
+  * @return {object} captablesheet
+  */
+  this.getSheet() = function(){
+    var activatedCapSheet = new capTableSheet_(captablesheet);
+    return activatedCapSheet;
+  };
 
   /**
 	* @member {string}
@@ -53,6 +62,10 @@ function capTable_(termsheet, captablesheet) {
 	* @member
 	*/
   this.rounds = parseCaptable(captablesheet);
+  
+  this.getAllRounds = function(){
+    return this.rounds
+  };
 
   /**
 	* @method
@@ -225,6 +238,17 @@ function capTable_(termsheet, captablesheet) {
 	}
 	return toreturn;
   };
+  
+  /**
+  * @method
+  * @return {undefined}
+  */
+  this.rewireAllRounds = function(){
+    for (var cn = 0; cn < this.rounds.length; cn++) {
+      var round = this.rounds[cn];
+      round.rewire();
+    }
+  };
 
   /**
 	* @member {object}
@@ -279,25 +303,6 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
 
-    /*this.updateRounds() = function(round){
-	
-    };
-
-    this.getRoundbyName() = function(name){
-    };
-
-    this.getRoundbyNumber() = function(num){
-    };
-
-    this.getPre() = function(){
-    }
-
-    this.updateInvestorPercentage() = function(round){
-    }
-
-    this.getPost() = function(round){
-    }
-*/
     
   /**
 	* @method
@@ -309,7 +314,7 @@ function capTable_(termsheet, captablesheet) {
 	for (var bst in round.by_security_type) {
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName], bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]) }
 	}
-	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0]) + "&#8232;" + plural(bst_count[0], bst_count[1])}));
+	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0],0) + "&#8232;" + plural(bst_count[0], bst_count[1])}));
   };
 
   
@@ -348,7 +353,193 @@ function capTable_(termsheet, captablesheet) {
 	return toreturn;
   };
   
-}
+};
+
+/**
+ * a Round object
+ * @class
+ * @param {string} Round.name - the name of the round
+ * @param {object} Round.new_investors - dictionary of new investors who are participating in the round
+ * @param {Array} Round.ordered_investors - new investors, listed in order shown in the spreadsheet
+ * @param {sheet} Round.sheet - the google activeSheet()
+ * @return {captable} captable - the captable object that contains this round
+ */
+
+function Round(params) {
+  this.name = params.name;
+  this.new_investors = params.new_investors;
+  this.ordered_investors = params.ordered_investors;
+  this.sheet = params.sheet;
+  this.captable = params.captable; //assume already a capTable_ object
+  this.captablesheet = this.captable.getSheet(this.sheet);
+};
+
+/**
+ * @method
+ * @return {string} name - round name
+ */
+Round.prototype.getName() = function(){
+  return this.name
+};
+
+/**
+ * @method
+ * @return {sheet} the sheet corresponding to the round -- the tab with the same name
+ */
+Round.prototype.getTermSheet = function() {
+  Logger.log("round.getTermSheet: returning %s", this.sheet);
+  return this.sheet;
+};
+
+/**
+ * @method
+ * @param {string} category
+ * @return {Array} Cell - [moneyCell, sharesCell, percentageCell]
+ */
+Round.prototype.getCategoryCellRange() = function(category){
+  var roundColumn = this.captablesheet.getRoundColumnByName(this.name);
+  var categoryRow;
+	try {
+      categoryRow = this.captablesheet.getCategoryRowCaptable(category);
+	} catch (e) {
+	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
+	};
+	var categoryCell;
+	try {
+      categoryCell = [this.captablesheet.getCapsheet().getRange(categoryRow, roundColumn), this.captablesheet.getCapsheet().getRange(categoryRow, roundColumn+1), this.captablesheet.getCapsheet().getRange(categoryRow, roundColumn+2)];
+	} catch (e) {
+	  throw("unable to getRange(" + categoryRow + ", " + roundColumn + ") -- " + e);
+	};
+};
+
+/**
+ * @method
+ * @param {string} category
+ * @return {Array} reference -- A1 Notation for each cell [moneyA1, sharesA1, percentageA1]
+ */
+Round.prototype.getCategoryCellA1Notation()() = function(category){
+  var range = this.getCategoryCellRange(category);
+  var reference = []
+  for (var i; i < range.length; i++){
+    reference[i] = range[i].getA1Notation();
+  }
+  return reference;
+};
+
+/**
+ * @method
+ * @param {string} category
+ * @return {Array} value - [moneyValue, sharesValue, percentageValue]
+ */
+Round.prototype.getCategoryCellValue() = function(category){
+  var range = this.getCategoryCellRange(category);
+  var value = []
+  for (var i; i < range.length; i++){
+    reference[i] = range[i].getValue();
+  }
+  return value;
+};
+
+
+/**
+ * @method
+ * @return {object} toreturn - previous round
+ */
+Round.prototype.getPreviousRound() = function(){
+  var roundList = captable.getAllRounds();
+  var toreturn;
+  for (var ri = 0; ri < roundList.length; ri++) {
+    if (this.rounds[ri].name == roundName) {
+      toreturn = this.rounds[ri - 1];
+      break;
+    }
+  }
+  return toreturn;
+};
+
+
+/**
+ * @method
+ * @return {undefinied} resets pre/post money/shares
+ */
+Round.prototype.rewire = function(){
+  if (this.getPreviousRound() == "undefined"){
+    
+    postRange[0].setFormula("=" + this.getAmountRaisedCell()[0]);
+    postRange[1].setFormula("=" + this.getAmountRaisedCell()[1]);
+    postRange[2].setValue("");
+    //percentage should be an empty cell
+    
+    //set all premoney cells to empty cell
+    
+    premoneyRange[0].setValue("");
+    premoneyRange[1].setValue("");
+    premoneyRange[2].setValue("");
+    
+  }
+  else{
+    postA1Notation = this.getCategoryCellA1Notation("post");
+    prevRoundPostA1Notation = this.getPreviousRound().getCategoryCellA1Notation("post");
+    premoneyA1Notation = this.getCategoryCellA1Notation("pre-money");
+    amountraisedA1Notation = this.getCategoryCellA1Notation("amount raised");
+    
+    postRange[0].setFormula("=" + amountraisedA1Notation[0] + "+" + prevRoundPostA1Notation[0]);
+    postRange[1].setFormula("=" + amountraisedA1Notation[1] + "+" + prevRoundPostA1Notation[1]);
+    //percentage should be an empty cell
+    //postRange[2].setFormula("=" + this.getAmountRaisedCell()[2] + "+" + this.previousRound().getpostRange()[2]);
+    
+    premoneyRange[0].setFormula("=" + prevRoundPostA1Notation[0]);
+    premoneyRange[1].setFormula("=" + prevRoundPostA1Notation[1]);
+    premoneyRange[2].setValue("");
+  }
+  
+};
+
+// this is our "DOM":
+// a captable object contains an array of Round objects
+// a Round object contains an array of Shareholders and an array of NewInvestor objects
+// Shareholder and NewInvestors belong to the same class, "Investor"
+// an Investor object contains a dictionary of share class names to money/shares
+// or whatever ...
+
+/**
+ * getNewInvestors
+ * @method
+ * @return {Array} array of Investor objects (who participate in this round)
+ */
+
+/**
+ * getShareholders
+ * @method
+ * @return {Array} array of Investor objects (who existed prior to this round)
+ */
+
+/**
+ * getPreMoney
+ * @method
+ * @return {Object} pre-money object of money/shares
+ */
+
+/**
+ * getPostShares
+ * @method
+ * @return {Number} post-money number of shares
+ */
+
+/**
+ * getPostMoney
+ * @method
+ * @return {Number} post-money valuation
+ */
+
+/**
+ * getPostMoney
+ * @method
+ * @return {Number} post-money valuation
+ */
+
+
+
 
 // parseCaptable
 // previously known as "Show Me The Money!"
@@ -421,7 +612,14 @@ function parseCaptable(sheet) {
           majorByNum     [j]  = row[j];
 		  majorToRound[row[j]]= captableRounds.length;
 
-          captableRounds.push( { name: row[j], new_investors: {}, ordered_investors: [] } ); // we haz a new round!
+		  // a Round object is now its own thing, not a generic Object
+          captableRounds.push(
+			new Round(
+			  { name: row[j], new_investors: {}, ordered_investors: [],
+				sheet: sheet, captable: this
+			  }
+			)
+		  ); // we haz a new round!
 //          Logger.log("captable/roundname: I have learned about a new round, called %s", row[j]);
         }
       }
@@ -496,8 +694,8 @@ function parseCaptable(sheet) {
 		if (row[0] == "") { continue }
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-//          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
-//                     row[0],                           j,    minorByNum[j].minor,    row[j]);
+          Logger.log("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+                     row[0],                           j,    minorByNum[j].minor,    row[j]);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  if (myRound.new_investors[row[0]] == undefined) {
@@ -874,44 +1072,6 @@ function getPercentageValue(capTable, round, catagory){
 }
 */
 
-//function round_(name, security, investors, pricePerShare){
-//    this.name = name;
-//    this.securityType = asvar_(security);
-//    //investors =
-//
-//    if (securityType == "equity of somesort"){
-//	//price per share box becomes yellow"
-//    };
-//
-//    this.investors = investors; //investors[] contributed to this round
-//    //investors[]
-//    //investors = {name: {money: nn,
-//    //                    shares: nn,
-//    //                    percentage: %%}}
-//
-//    this.getInvestorByName = function(InvestorName){
-//	return investors[InvestorName];
-//	//returns the hash of money, shares, percentage
-//    };
-//
-//    this.pricePerShare = pricePerShare;
-//
-//    //var AmountRaised = [money: 0, shares: 0, percentage: 0];
-//
-//    this.getAmountRaised = function(){
-//	var sumMoney; var sumShares
-//	for (investor in investors){
-//	    sumMoney += investors[investor].money;
-//	    sumShares += investors[investor].shares;
-//	};
-//	AmountRaised[0] = sumMoney;
-//	AmountRaised[1] = sumShares;
-//	//money = total of all investors money
-//	//shares = total of all shares distributed
-//	//percentage = shares raised this round/postShares. will be modified in capTable.
-//	return AmountRaised
-//    };
-//}
 
 var capToTerm = {"amount raised" : "Amount Raising:",
                  "pre-money" : "Pre-Money Valuation:",
@@ -922,7 +1082,12 @@ function capTableSheet_(captablesheet){
   this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
   
-  this.addMajorColumn = function(name){//I think sending in a round makes more sense, but for now just pass in the name of the round
+  this.getCapsheet() = function() {
+    return this.captablesheet;
+  };
+  
+  this.addMajorColumn = function(round){//I think sending in a round makes more sense, but for now just pass in the name of the round
+    name = round.getName() || "Blank Round";
     var CapSheet = this.captablesheet;
     var data = CapSheet.getDataRange().getValues();
     
@@ -939,13 +1104,12 @@ function capTableSheet_(captablesheet){
       
       //WE NEED TO TOTALLY CLEAN ALL OF THIS UP TO LOOK PRETTY
       CapSheet = CapSheet.insertColumnsBefore((roundNames.length - 3) + 1, 3);//columns start at 1, so +1
-      //For whatever reason the CapSheet loses its reference after performing this action
+      //For whatever reason, CapSheet loses its reference after performing this action
       
       var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
       var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
       prevMajorColumn.copyTo(destination);
       //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
-      //Look into the copyTo functions in Range reference
       
       Logger.log("finished the copy and paste");
       var cell = CapSheet.getRange(2, roundNames.length - 2);
@@ -961,6 +1125,119 @@ function capTableSheet_(captablesheet){
     };
 
   };
+  
+  this.setTotal = function(){
+    Logger.log("setting total")
+    var sheet = this.captablesheet;
+    var TotalColumn = this.getRoundColumnByName("TOTAL");
+	Logger.log("setTotal: TotalColumn = %s", TotalColumn);
+	if (TotalColumn == undefined) { throw("are byou on a Cap Table tab?"); }
+
+	// in future it might be possible to have a class to represent the TOTAL column,
+	// and subsume this complexity into methods of that class,
+	// but for now we just grope the values directly.
+	
+    var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
+    var investorEndRow = this.getCategoryRowCaptable("amount raised") -1;
+    Logger.log("investors exist beween rows " + investorBeginRow + " and " + investorEndRow);
+    
+    for (var row = investorBeginRow; row <= investorEndRow; row ++){
+      var sumMoney = "=";
+      var sumShares = "=";
+      for (var mcol = 2; mcol < TotalColumn; mcol += 3){
+        var mrange = sheet.getRange(row, mcol);
+        sumMoney = sumMoney + "+" + mrange.getA1Notation();
+        Logger.log("sumMoney looks like this: " + sumMoney);
+        
+        var srange = sheet.getRange(row, mcol + 1);
+        sumShares = sumShares + "+" + srange.getA1Notation();
+        Logger.log("sumShares looks like this: " + sumShares);
+      }
+      var mcell = sheet.getRange(row, TotalColumn);
+      mcell.setFormula(sumMoney);
+      
+      var scell = sheet.getRange(row, TotalColumn + 1);
+      scell.setFormula(sumShares);
+    }
+    
+    //update post, post should match
+	var post;
+	try {
+      post = this.getCategoryRowCaptable("post");
+	} catch (e) {
+	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
+	};
+	var postRange;
+	try {
+      postRange = sheet.getRange(post, TotalColumn);
+	} catch (e) {
+	  throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
+	};
+	
+    var postMoney = "=";
+    var postShares = "=";
+    
+    for (var pcol = 2; pcol < TotalColumn; pcol += 3){
+      var prange = sheet.getRange(post - 1, pcol);
+      postMoney = postMoney + "+" + prange.getA1Notation();
+      Logger.log("sumMoney looks like this: " + postMoney);
+      
+      var srange = sheet.getRange(row, pcol + 1);
+      postShares = postShares + "+" + srange.getA1Notation();
+      Logger.log("sumShares looks like this: " + postShares);
+    }
+    
+    postRange.setFormula(postMoney);
+    postRange = sheet.getRange(post, TotalColumn + 1);
+    postRange.setFormula(postShares);
+    
+  }
+  
+  //checks all? functions in the cap table to make sure they are pointing in the right place
+  //or should we just pass in a round to be rewired? It may the case that TOTAL and most recent column need to be change, nothing else
+  this.rewireColumns = function(){
+      //We now need to find the column number with the word TOTAL
+    var TotalColumn = this.getRoundColumnByName("TOTAL"); //not quite sure why we need this....
+      //You can copy the code from addMajorColumn that finds the row and column of TOTAL
+      var sheet = this.captablesheet;
+      var data = sheet.getDataRange().getValues();
+    
+      var roundNameRow = this.getCategoryRowCaptable("round name");
+      var roundNames = data[roundNameRow - 1];//array starts at 0, actual rows start at 1
+      //copied from addMajorColumn
+    //Logger.log(roundNames);
+    
+    
+    var amountRaisedRow = this.getCategoryRowCaptable("amount raised");
+    var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
+    
+    for (var round in roundNames){
+      if (round == "round name"){
+        continue;
+      }
+      var col = this.getRoundColumnByName(round);
+      
+      //for the money category
+      var cell = sheet.getRange(amountRaisedRow, col);
+      cell.setFormula("=SUM(INDIRECT(ADDRESS(" + investorBeginRow + ",COLUMN())&" + '":"' + "&ADDRESS(ROW()-1,COLUMN())))");
+      
+      //for the shares category
+      cell = sheet.getRange(amountRaisedRow, col+1);
+      cell.setFormula("=SUM(INDIRECT(ADDRESS(" + investorBeginRow + ",COLUMN())&" + '":"' + "&ADDRESS(ROW()-1,COLUMN())))");
+    }
+      
+      //Logger.log("The row we are looking at is: %s \nand it looks like this: %s", roundNameRow, roundNames);
+
+      //The apparent way to do this would be a for loop, since the money column is already set
+      //var totalRows = sheet.getLastRow();//something like this
+      //for(var i_setFunction = 0; i_setFunction < totalRows; i_setFunction++){//The for-loop may no necessarily begin at 0. . .
+	  //I insist that we call the index counter something other than 'i' for readability's sake, you can change it if you want
+	  //The coordinate of the current cell we should be looking at should be something along the lines of (i_setFunction, roundNames.length - 3)
+	  //I think for setting formulas, R1C1 notation would be better
+	  //You have two choices, of adding each cell directly or using the SUMIF operation, albeit a little bit more complicated
+	  //I think Meng prefers direct addition
+      //}
+  }
   
     this.getCategoryRowCaptable = function(category) {
       var sheet = this.captablesheet;
@@ -1024,7 +1301,9 @@ function capTableSheet_(captablesheet){
       
       var originCell = this.captablesheet.getRange(categoryRow, roundCol);
       var A1Notation = originCell.getA1Notation();
-      var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
+
+	  var cell =                   round.getTermSheet().getRange("B" + termrow);
+//    var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
       cell.setFormula("= 'Cap Table'!" + A1Notation);
       
       
@@ -1036,16 +1315,13 @@ function capTableSheet_(captablesheet){
       roundCol = this.getRoundColumnByName(round);
       
       Logger.log("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
-      var cell = this.captablesheet.getRange(capRow, roundCol);
+	  var cell = round.getTermSheet().getRange(capRow, roundCol);
+//    var cell = this.captablesheet.getRange(capRow, roundCol);
       Logger.log("this is the fomula being set: " + "= '" + round + "' !B" + categoryRow);
       cell.setFormula("= '" + round + "' !B" + categoryRow);
     }
   }
   
-  this.updateTotal = function(){
-    //if total column doesn't exist, set it up. If it does, update!
-    var totalCol = this.getRoundColumnByName("TOTAL");
-  }
     
   //this.getNumRowCapSheet() = function(){
  //   return this.captablesheet.getLastRow();
@@ -1121,18 +1397,36 @@ function newTermSheet(prompt){
 };
 
 
+//----------------------------------------STILL WORKING ON THIS SHIT-----------------------------------//
+function addColumn(captablesheet){
+  var ss_forAdd = new capTableSheet_(captablesheet);
+    ss_forAdd.addMajorColumn();
+    ss_forAdd.setTotal();
+    ss_forAdd.rewireColumns() //<--- Write the Function
+}
+//----------------------------------        ***************        ------------------------------------//
+
+function updateTotal(){
+  var captableSheet = SpreadsheetApp.getActiveSheet();
+  Logger.log("starting resetTotals using sheet %s", captableSheet.getSheetName());
+  var capSheet = new capTableSheet_(captableSheet);
+  capSheet.setTotal();
+}
+
 function CapTableTester(){
   Logger.log("starting tester");
   var SpreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-  var captableSheet = SpreadSheet.getSheetByName("Cap Table");
+  var captableSheet = SpreadSheet.getSheetByName("Copy of Cap Table");
   //var termsheet = SpreadSheet.getSheetByName("Creation of Class F");
   //var cap = new capTable_(termsheet, captableSheet);
   
   //Logger.log(capSheet.getCategoryRowTermSheet("Bridge Round", "price per share"));
-  captableSheet = createCaptable();
+ // captableSheet = createCaptable();
   var capSheet = new capTableSheet_(captableSheet);
-  Logger.log("I have made it into a capTableSheet Object");
-  capSheet.addMajorColumn("wut wut wut");
-  capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
-  Logger.log("the deed is done");
+  capSheet.setTotal();
+  //capSheet.rewireColumns();
+  //Logger.log("I have made it into a capTableSheet Object");
+  //capSheet.addMajorColumn("wut wut wut");
+  //capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
+  //Logger.log("the deed is done");
 }

@@ -107,7 +107,8 @@ function digitCommas_(numstr, chop, formatstr) {
 	chop = 0;
 	if (formatstr.match(/0\.(0+)/)) { chop = formatstr.match(/0\.(0+)/)[1].length }
   }
-  asNum = asNum.toFixed(chop);
+  if (chop != undefined) { asNum = asNum.toFixed(chop); }
+  else { asNum = asNum.toString() }
 
   var parts = asNum.split(/\./);
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
