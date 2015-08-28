@@ -314,7 +314,7 @@ function capTable_(termsheet, captablesheet) {
 	for (var bst in round.by_security_type) {
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName], bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]) }
 	}
-	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0],0) + "&#8232;" + plural(bst_count[0], bst_count[1])}));
+	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0],0) + "&#160;" + plural(bst_count[0], bst_count[1])}));
   };
 
   
