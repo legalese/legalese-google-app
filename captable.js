@@ -109,14 +109,16 @@ function capTable_(termsheet, captablesheet) {
   
   // for each major column we compute the pre/post, old/new investor values.
   // we want to know:
+  // - which investors put in how much money for what securities in this round
+  //   new_investors: { investorName: { shares, money, percentage } }
   // - who the existing shareholders are before the round:
   //   old_investors: { investorName: { shares, money, percentage } }
   // - how many total shares exist at the start of the round:
   //   shares_pre
-  // - how many shares of different types exist at the start of the round:
+  // - how many shares of different types exist after the round
   //   by_security_type = { "Class F Shares" : { "Investor Name" : nnn, "TOTAL" : mmm }, ... }
-  //
   // - we keep a running total to carry forward from round to round
+  // - we define brand_new_investors as someone who has not been been an investor before. this is basically new_investors minus old_investors.
   var totals = { shares_pre: 0,
 				 money_pre: 0,
 				 all_investors: {},
@@ -213,7 +215,17 @@ function capTable_(termsheet, captablesheet) {
 	  Logger.log("capTable: created an ESOP object for round %s: %s", round.name, JSON.stringify(round.ESOP.holders));
 	}
 
-
+	// any new investor who is not already also an old investor
+	round.brand_new_investors = {};
+	for (var ni in round.new_investors) {
+	  if (! round.new_investors[ni]._orig_shares && ! round.new_investors[ni]) continue;
+	  if (round.old_investors[ni]              != undefined) continue;
+	  round.brand_new_investors[ni] = round.new_investors[ni];
+	}
+	["new_investors", "old_investors", "brand_new_investors"].map(function (itype) {
+	  Logger.log("capTable.new(): %s = %s", itype, Object.keys(round[itype]));
+	});
+	
 //	Logger.log("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
 //	Logger.log("capTable.new(): the sheet says that we should have %s new shares", round.amount_raised.shares);
 	// TODO: we should probably raise a stink if those values are not the same.
