@@ -235,7 +235,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 //	Logger.log("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
 //			   sourceTemplate.name, to_list, sourceTemplate.explode);
 	if (to_list.length == 0 && sourceTemplate.explode=="" && ! nullIsOK) {
-	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties?");
+	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties? and are those parties defined?");
 	  // TODO: sometimes the template does define to and cc, but the Entities/Roles neglect to define such.
 	  // this error is misleading in those cases.
 	  // test for those cases and throw a different, more instructive error.
