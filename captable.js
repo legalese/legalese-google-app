@@ -539,7 +539,72 @@ Round.prototype.rewire = function(){
  * @return {Number} post-money valuation
  */
 
+/**
+ * getSecurityType
+ * @method
+ * @return {String} type of security this round deals with
+ */
+Round.prototype.getSecurityType = function(){
+  return this.security_type;
+}
 
+/**
+ * @method
+ * @return {Object}.TOTAL.shares - number of shares, as a string
+ * @return {Object}.TOTAL._orig_shares - number of shares, as a number
+ * @return {Object}.new_investors[investorName].shares - number of shares, as a string
+ * @return {Object}.new_investors[investorName]._orig_shares - number of shares, as a number
+ * @return {Object}.new_investors[investorName].money - price paid, as a string with currency in front
+ * @return {Object}.new_investors[investorName]._orig_money - price paid, as a number
+ */
+Round.prototype.getNewIssues = function(){
+  var toreturn = { TOTAL: { _orig_shares: 0, _orig_money: 0 },
+				   holders: { },
+				 };
+  var currency;
+  for (var ni in this.new_investors) {
+	if (this.new_investors[ni]._orig_shares > 0) {
+	  if (ni == "ESOP") { continue }
+	  toreturn.holders[ni] = this.new_investors[ni];
+	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
+	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  + this.new_investors[ni]._orig_money;
+	}
+	currency = currency || this.new_investors[ni]._format_money;
+  }
+  if (currency == undefined) { return null }
+  toreturn.TOTAL.money = asCurrency_(currency, toreturn.TOTAL._orig_money);
+  toreturn.TOTAL.shares = formatify_("#,##0",  toreturn.TOTAL._orig_shares);
+  return toreturn;
+};
+
+/**
+ * @method
+ * @return {Object}.TOTAL.shares - number of shares, as a string
+ * @return {Object}.TOTAL._orig_shares - number of shares, as a number
+ * @return {Object}.holders[investorName].shares - number of shares, as a string
+ * @return {Object}.holders[investorName]._orig_shares - number of shares, as a number
+ * @return {Object}.holders[investorName].money - price paid, as a string with currency in front
+ * @return {Object}.holders[investorName]._orig_money - price paid, as a number
+ */
+Round.prototype.getRedemptions = function(){
+  var toreturn = { TOTAL: { _orig_shares: 0, _orig_money: 0 },
+				   holders: { },
+				 };
+  var currency;
+  for (var ni in this.new_investors) {
+	if (this.new_investors[ni]._orig_shares < 0) {
+	  if (ni == "ESOP") { continue }
+	  toreturn.holders[ni] = this.new_investors[ni];
+	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares - this.new_investors[ni]._orig_shares;
+	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  - this.new_investors[ni]._orig_money;
+	}
+	currency = currency || this.new_investors[ni]._format_money;
+  }
+  if (currency == undefined) { return null }
+  toreturn.TOTAL.money = asCurrency_(currency, toreturn.TOTAL._orig_money);
+  toreturn.TOTAL.shares = formatify_("#,##0",  toreturn.TOTAL._orig_shares);
+  return toreturn;
+};
 
 
 // parseCaptable
