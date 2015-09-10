@@ -62,6 +62,7 @@ function capTable_(termsheet, captablesheet) {
 	* @member
 	*/
   this.rounds = parseCaptable(captablesheet);
+  this.rounds.captable = this;
   
   this.getAllRounds = function(){
     return this.rounds
@@ -370,8 +371,6 @@ function Round(params) {
   this.new_investors = params.new_investors;
   this.ordered_investors = params.ordered_investors;
   this.sheet = params.sheet;
-  this.captable = params.captable; //assume already a capTable_ object
-  this.captablesheet = this.captable.getSheet(this.sheet);
 };
 
 /**
@@ -618,7 +617,7 @@ function parseCaptable(sheet) {
           captableRounds.push(
 			new Round(
 			  { name: row[j], new_investors: {}, ordered_investors: [],
-				sheet: sheet, captable: this
+				sheet: sheet
 			  }
 			)
 		  ); // we haz a new round!
