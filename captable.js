@@ -48,7 +48,7 @@ function capTable_(termsheet, captablesheet) {
   * @method
   * @return {object} captablesheet
   */
-  this.getSheet() = function(){
+  this.getSheet = function(){
     var activatedCapSheet = new capTableSheet_(captablesheet);
     return activatedCapSheet;
   };
@@ -378,7 +378,7 @@ function Round(params) {
  * @method
  * @return {string} name - round name
  */
-Round.prototype.getName() = function(){
+Round.prototype.getName = function(){
   return this.name
 };
 
@@ -396,7 +396,7 @@ Round.prototype.getTermSheet = function() {
  * @param {string} category
  * @return {Array} Cell - [moneyCell, sharesCell, percentageCell]
  */
-Round.prototype.getCategoryCellRange() = function(category){
+Round.prototype.getCategoryCellRange = function(category){
   var roundColumn = this.captablesheet.getRoundColumnByName(this.name);
   var categoryRow;
 	try {
@@ -417,7 +417,7 @@ Round.prototype.getCategoryCellRange() = function(category){
  * @param {string} category
  * @return {Array} reference -- A1 Notation for each cell [moneyA1, sharesA1, percentageA1]
  */
-Round.prototype.getCategoryCellA1Notation()() = function(category){
+Round.prototype.getCategoryCellA1Notation = function(category){
   var range = this.getCategoryCellRange(category);
   var reference = []
   for (var i; i < range.length; i++){
@@ -431,7 +431,7 @@ Round.prototype.getCategoryCellA1Notation()() = function(category){
  * @param {string} category
  * @return {Array} value - [moneyValue, sharesValue, percentageValue]
  */
-Round.prototype.getCategoryCellValue() = function(category){
+Round.prototype.getCategoryCellValue = function(category){
   var range = this.getCategoryCellRange(category);
   var value = []
   for (var i; i < range.length; i++){
@@ -445,7 +445,7 @@ Round.prototype.getCategoryCellValue() = function(category){
  * @method
  * @return {object} toreturn - previous round
  */
-Round.prototype.getPreviousRound() = function(){
+Round.prototype.getPreviousRound = function(){
   var roundList = captable.getAllRounds();
   var toreturn;
   for (var ri = 0; ri < roundList.length; ri++) {
@@ -507,6 +507,8 @@ Round.prototype.rewire = function(){
  * @method
  * @return {Array} array of Investor objects (who participate in this round)
  */
+
+
 
 /**
  * getShareholders
@@ -1082,7 +1084,7 @@ function capTableSheet_(captablesheet){
   this.spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   this.captablesheet = captablesheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cap Table");
   
-  this.getCapsheet() = function() {
+  this.getCapsheet = function() {
     return this.captablesheet;
   };
   
@@ -1323,11 +1325,11 @@ function capTableSheet_(captablesheet){
   }
   
     
-  //this.getNumRowCapSheet() = function(){
+  //this.getNumRowCapSheet = function(){
  //   return this.captablesheet.getLastRow();
  // }
  //// 
- // this.getNumRowTermSheet() = function(round){
+ // this.getNumRowTermSheet = function(round){
    // return this.spreadsheet.getSheetByName(round).getLastRow();
  // }
 };
