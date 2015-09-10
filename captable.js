@@ -150,12 +150,19 @@ function capTable_(termsheet, captablesheet) {
 
 	var new_shares = 0, new_money = 0;
 	for (var ni in round.new_investors) {
-	  if (round.new_investors[ni].shares == undefined) continue;
+	  if (! round.new_investors[ni]._orig_shares && ! round.new_investors[ni]._orig_money) {
+		Logger.log("deleting new_investor %s from round %s because no money or shares; only attrs are %s",
+				   ni, round.name, Object.keys(round.new_investors[ni]));
+		delete round.new_investors[ni];
+		continue;
+	  }
 	  // handle the _orig_ first, then formatify to produce the actual attribute
-	  new_shares += round.new_investors[ni]._orig_shares;
-	  new_money  += round.new_investors[ni]._orig_money;
-	  totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
-	  totals.by_security_type[round.security_type][ni] += round.new_investors[ni]._orig_shares;
+	  if (round.new_investors[ni]._orig_money)  new_money  += round.new_investors[ni]._orig_money;
+	  if (round.new_investors[ni]._orig_shares) {
+		new_shares += round.new_investors[ni]._orig_shares;
+		totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
+		totals.by_security_type[round.security_type][ni] += round.new_investors[ni]._orig_shares;
+	  }
 	  for (var attr in round.new_investors[ni]) {
 		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
 		if (attr == "percentage") { continue } // percentages don't need to add
