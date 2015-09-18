@@ -579,6 +579,10 @@ Round.prototype.getSecurityType = function(){
   return this.security_type;
 }
 
+Round.prototype.getCurrency = function(){
+  return (this.amount_raised._format_money || this.post._format_money);
+}
+
 /**
  * @method
  * @return {Object}.TOTAL.shares - number of shares, as a string
