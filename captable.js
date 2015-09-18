@@ -780,8 +780,8 @@ function parseCaptable(sheet) {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-//          Logger.log("captable/%s: looking at row[%s], which is %s",
-//                               asvar0,            j,        row[j]);
+          Logger.log("captable/%s: looking at row[%s], which is %s",
+                               asvar0,            j,        row[j]);
 //          Logger.log("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
 //                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
           // learn something useful. er. where do we put the value?
@@ -791,8 +791,8 @@ function parseCaptable(sheet) {
           myRound[asvar0][             minorByNum[j].minor] = formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor);
           myRound[asvar0]["_orig_"   + minorByNum[j].minor] = row[j];
           myRound[asvar0]["_format_" + minorByNum[j].minor] = formats[i][j];
-		  Logger.log("learned column attribute %s.%s.%s = %s (orig=%s) (format=%s)",
-					 myRound.name, row[0], minorByNum[j].minor, myRound[asvar0][minorByNum[j].minor], row[j],
+		  Logger.log("learned column attribute %s.%s.%s = %s (_orig=%s) (_format=%s)",
+					 myRound.name, asvar0, minorByNum[j].minor, myRound[asvar0][minorByNum[j].minor], row[j],
 					 formats[i][j]
 					);
         }

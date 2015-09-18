@@ -601,6 +601,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   var xmlfile;
 
   if (sourceTemplate.url.match(/[._]xml(\.html)?$/)) {
+	Logger.log("templates: trying to create %s in %s", sourceTemplate.name, folder.getName());
 	xmlfile = folder.createFile(mytitle+".xml", filledHTML, 'text/xml');
   }
   else {
@@ -613,7 +614,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
 // ---------------------------------------------------------------------------------------------------------------- include
 // used inside <?= ?> and <? ?>
 function include(name, data, _include, _include2) {
-//  Logger.log("include(%s) running", name);
+  Logger.log("include(%s) running", name);
 //  Logger.log("include(%s) _include=%s, _include2=%s", name, _include, _include2);
   var origInclude = data._include;
   var origInclude2 = data._include2;
