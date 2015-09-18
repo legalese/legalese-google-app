@@ -597,16 +597,23 @@ Round.prototype.getNewIssues = function(){
 				   holders: { },
 				 };
   var currency;
+  Logger.log("Round.getNewIssues(%s): this.new_investors has keys %s", this.name, Object.keys(this.new_investors));
   for (var ni in this.new_investors) {
+	if (ni == "ESOP") { continue }
+	toreturn.holders[ni] = this.new_investors[ni];
 	if (this.new_investors[ni]._orig_shares > 0) {
-	  if (ni == "ESOP") { continue }
-	  toreturn.holders[ni] = this.new_investors[ni];
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
+	}
+	if (this.new_investors[ni]._orig_money > 0) {
 	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  + this.new_investors[ni]._orig_money;
 	}
-	currency = currency || this.new_investors[ni]._format_money;
+	currency = currency || this.new_investors[ni]._format_money || this.getCurrency();
   }
-  if (currency == undefined) { return null }
+  if (currency == undefined) { Logger.log("Round.getNewIssues(%s): amount_raised = %s", this.name, this.amount_raised);
+							   Logger.log("Round.getNewIssues(%s): post = %s", this.name, this.post);
+							   Logger.log("Round.getNewIssues(%s): currency is %s, returning null", this.name, currency);
+							   return null }
+  Logger.log("Round.getNewIssues(%s): TOTAL._orig_money = %s", this.name, toreturn.TOTAL._orig_money);
   toreturn.TOTAL.money = asCurrency_(currency, toreturn.TOTAL._orig_money);
   toreturn.TOTAL.shares = formatify_("#,##0",  toreturn.TOTAL._orig_shares);
   return toreturn;
@@ -633,7 +640,7 @@ Round.prototype.getRedemptions = function(){
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares - this.new_investors[ni]._orig_shares;
 	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  - this.new_investors[ni]._orig_money;
 	}
-	currency = currency || this.new_investors[ni]._format_money;
+	currency = currency || this.new_investors[ni]._format_money || this.getCurrency();
   }
   if (currency == undefined) { return null }
   toreturn.TOTAL.money = asCurrency_(currency, toreturn.TOTAL._orig_money);
