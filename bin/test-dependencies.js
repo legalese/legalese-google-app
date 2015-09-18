@@ -158,7 +158,35 @@ graph.addDep(                'companyHasESOP',  'membersApproveESOP');
 graph.addDep(                                   'membersApproveESOP', 'directorsGiveNoticeESOP');
 
 
-var todo = graph.dependenciesOf('newEmployee');
+// WORKFLOW DEPENDENCIES FOR EQUITY FUNDRAISING
+
+graph.addDep('fundraising', 'directorsIssueEquity');
+graph.addDep(               'directorsIssueEquity', 'directorsWantToIssueEquity');
+graph.addDep(               'directorsIssueEquity', 'articlesDefineClassEquity');
+graph.addDep(                                       'articlesDefineClassEquity', 'membersApproveClassEquity');
+graph.addDep(                                                                    'membersApproveClassEquity', 'directorsGiveNoticeClassEquity');
+
+// 161.—(1)  Notwithstanding anything in a company’s memorandum or articles, the directors shall not, without the prior approval of the company in general meeting, exercise any power of the company to issue shares.
+
+// (2)  Approval for the purposes of this section may be confined to a particular exercise of that power or may apply to the exercise of that power generally; and any such approval may be unconditional or subject to conditions.
+
+graph.addDep(                'directorsIssueEquity', 'memberApprovalExists');
+graph.addDep(                                        'memberApprovalExists', [ 'memberApprovalInCurrentPeriod',
+																		       'lastingMemberApprovalExists' ]);
+
+// (3)  Any approval for the purposes of this section shall continue in force until —
+// (a) the conclusion of the annual general meeting commencing next after the date on which the approval was given; or
+// (b) the expiration of the period within which the next annual general meeting after that date is required by law to be held,
+graph.addDep(                                                                  'memberApprovalInCurrentPeriod', 'directorsProposeIssueEquity');
+
+// (4)  The directors may issue shares notwithstanding that an approval for the purposes of this section has ceased to be in force if the shares are issued in pursuance of an offer, agreement or option made or granted by them while the approval was in force and they were authorised by the approval to make or grant an offer, agreement or option which would or might require shares to be issued after the expiration of the approval.
+graph.addDep(                                                                  'lastingMemberApprovalExists',   'membersApproveIssue');
+
+graph.addDep('fundraising', 'rightsIssue');
+graph.addDep(                'rightsIssue',  'rightsIssueNotice');
+graph.addDep(                'rightsIssue',  'rightsIssueResponses');
+
+var todo = graph.dependenciesOf('newEmployee', 'fundraising');
 for (var todo_i in todo) {
   var dep = todo[todo_i];
   var depnode = djs.nodeNamed[dep];
