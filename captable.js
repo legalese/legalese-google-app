@@ -345,6 +345,7 @@ function capTable_(termsheet, captablesheet) {
 	var round = this.getActiveRound();
 	// all the old investors are given "shareholder" roles
 	// all the new investors are given "new_investor" roles.
+	// all the brand new investors are given "brand_new_investor" roles.
 
 	var toreturn = [];
 	if (! round) { return toreturn }
@@ -357,6 +358,17 @@ function capTable_(termsheet, captablesheet) {
 	  var newRole = { relation:"new_investor", entityname:ni };
 	  newRole.attrs = { new_commitment:       round.new_investors[ni].money,             num_new_shares: round.new_investors[ni].shares,
 				        _orig_new_commitment: round.new_investors[ni]._orig_money,  orig_num_new_shares: round.new_investors[ni]._orig_shares };
+	  toreturn.push(newRole);
+	}
+
+	for (var ni in round.brand_new_investors) {
+	  if (ni == "ESOP" || // special case
+		  round.brand_new_investors[ni].money  == undefined &&
+		  round.brand_new_investors[ni].shares == undefined
+		 ) continue;
+	  var newRole = { relation:"brand_new_investor", entityname:ni };
+	  newRole.attrs = { new_commitment:       round.brand_new_investors[ni].money,             num_new_shares: round.brand_new_investors[ni].shares,
+				        _orig_new_commitment: round.brand_new_investors[ni]._orig_money,  orig_num_new_shares: round.brand_new_investors[ni]._orig_shares };
 	  toreturn.push(newRole);
 	}
 
