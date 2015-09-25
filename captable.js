@@ -70,22 +70,6 @@ function capTable_(termsheet, captablesheet) {
 
   /**
 	* @method
-	* @param {string} roundName - the name of the round you're interested in
-	* @return {object} round - a round
-	*/
-  this.getRound = function(roundName) {
-	var toreturn;
-	for (var ri = 0; ri < this.rounds.length; ri++) {
-	  if (this.rounds[ri].name == roundName) {
-		toreturn = this.rounds[ri];
-		break;
-	  }
-	}
-	return toreturn;
-  };
-
-  /**
-	* @method
 	* @return {object} round - the round corresponding to the active spreadsheet
 	*/
   this.getActiveRound = function() {
@@ -234,14 +218,6 @@ function capTable_(termsheet, captablesheet) {
   }
 
 //  Logger.log("capTable.new(): embroidered rounds to %s", this.rounds);
-
-  /**
-	* @method
-	* @return {object} round - the round corresponding to the active spreadsheet
-	*/
-  this.getActiveRound = function() {
-	return this.getRound(this.activeRound);
-  };
 
   /**
 	* @method
