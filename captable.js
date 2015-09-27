@@ -106,7 +106,8 @@ function capTable_(termsheet, captablesheet) {
   var totals = { shares_pre: 0,
 				 money_pre: 0,
 				 all_investors: {},
-				 by_security_type: {},
+		                 by_security_type: {},
+		                 ESOP: {},
 			   };
 
   for (var cn = 0; cn < this.rounds.length; cn++) {
@@ -193,6 +194,17 @@ function capTable_(termsheet, captablesheet) {
 		else {
 		  Logger.log("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
 		}
+
+	      //preliminary attempt at ESOP running total.
+
+	      round.ESOP = {};
+	      for (var esp in totals.ESOP) {
+		  round.ESOP[esp] = { TOTAL: O};
+		  for (var ike in totals.ESOP[esp]) {
+		      round.ESOP[esp][ike]   = totals.ESOP[esp][ike];
+		      round.ESOP[esp].TOTAL += totals.ESOP[esp][ike];
+		  }
+	      }
 		// TODO: in future add a running total, similar to the rest of how we manage shares by type above.
 		// if we don't do this, then multiple columns which deal with ESOP will not do the right thing.
 	  }
