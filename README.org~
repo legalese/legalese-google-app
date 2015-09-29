@@ -39,7 +39,7 @@ Click Tools / Script Editor.
 
 *** Developers Work On (Public) Feature Branches Together. 
 
-If one or more devs are working on a  feature, they should make a branch to represent work on that feature.
+If one or more devs are working ona  feature, they should make a branch to represent work on that feature.
 
 They can both work on local checkouts of that branch. All the usual drama about [[https://www.atlassian.com/git/tutorials/merging-vs-rebasing/][merge and rebase]] becomes relevant.
 
