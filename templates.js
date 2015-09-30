@@ -587,14 +587,15 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   newTemplate.data._templateName = sourceTemplate.name;
 
   // make this handle templatespec etc correctly. see inc_plain_letterhead.
-  var xmlRootExtras = (config.save_indd && config.save_indd.value) ? ' saveIndd="true"' : '';
+  var xmlRootExtras = [];
+  if (config.save_indd && config.save_indd.value) { xmlRootExtras.push('saveIndd="true"') }
+  if (config.omit_date && config.omit_date.value) { xmlRootExtras.push('omitDate="true"') }
   newTemplate.data.xmlRoot = function(someText) {
-	if (someText == undefined) { someText = '' }
-	else if (! someText.match(/^ /)) { someText = ' ' + someText }
-	return '<Root xmlns:aid="http://ns.adobe.com/AdobeInDesign/4.0/" xmlns:aid5="http://ns.adobe.com/AdobeInDesign/5.0/"'
-	  + xmlRootExtras
-	  + someText
-	  + '>\n';
+	var aid = ['xmlns:aid="http://ns.adobe.com/AdobeInDesign/4.0/"',
+			   'xmlns:aid5="http://ns.adobe.com/AdobeInDesign/5.0/"'];
+	if (someText == undefined) { someText = [] }
+	else if (someText.constructor.name != "Array") { someText = [ someText ] }
+	return '<Root ' + aid.concat(xmlRootExtras, someText).join(" ") + ">";
   };
 
   var filledHTML = newTemplate.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME).getContent();
