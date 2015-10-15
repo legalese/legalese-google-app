@@ -197,15 +197,14 @@ function email_to_cc(email) {
   return [to, emails];
 }
 
-myLogStats = {};
+var myLogStats = {};
+var myLogConfig = { readrows: 6,
+					templates: 6,
+					XXX: 8,
+				  };
 
 function myLog(params, module, loglevel, logconfig) {
-  if (logconfig == undefined) {
-	logconfig = { readrows: 6,
-				  templates: 6,
-				};
-  }
-
+  logconfig = logconfig || myLogConfig;
   params[0] = module + " " + params[0];
 
   // by default, display INFO and above but not DEBUG
@@ -234,4 +233,12 @@ function utLog(params, loglevel, logconfig) {
   }
   if (loglevel == undefined) { loglevel = 7 }
   myLog(params,"util", loglevel, logconfig);
+}
+
+function xxLog(params, loglevel, logconfig) {
+  if (params.constructor.name != "Array") { // allow backward compatibility
+	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
+  }
+  if (loglevel == undefined) { loglevel = 7 }
+  myLog(params,"XXX", loglevel, logconfig);
 }

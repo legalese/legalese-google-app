@@ -98,11 +98,11 @@ function capTable_(termsheet, captablesheet) {
 	* @return {object} round - the round corresponding to the active spreadsheet
 	*/
   this.getActiveRound = function() {
-	ctLog(["captable.getActiveRound(): starting. %s.activeRound = %s", this.constructor.name, this.activeRound], 6);
+	ctLog(["captable.getActiveRound(): starting. activeRound = %s", this.activeRound]);
 	return this.getRound(this.activeRound);
   };
   
-  ctLog("captable initializer: this.activeRound = %s", this.activeRound);
+  ctLog("initializer: this.activeRound = %s", this.activeRound);
   if (! this.getActiveRound()) {
 	// throw "cap table has no column named " + termsheet.getSheetName();
   }
@@ -177,6 +177,7 @@ function capTable_(termsheet, captablesheet) {
 		totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
 		totals.by_security_type[round.security_type][ni] += round.new_investors[ni]._orig_shares;
 	  }
+	  // if it's not something directly measureable in shares we don't record it. but maybe in future we should.
 	  for (var attr in round.new_investors[ni]) {
 		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
 		if (attr == "percentage") { continue } // percentages don't need to add
@@ -328,12 +329,14 @@ function capTable_(termsheet, captablesheet) {
 	* @return {String} holdings - "3 Ordinary Shares and 200 Class F Shares"
 	*/
   this.investorHoldingsInRound = function(investorName, round) {
-	ctLog([".investorHoldingsInRound(%s,%s): starting", investorName, round], 6);
+	ctLog([".investorHoldingsInRound(%s,%s): starting", investorName, round == undefined ? "<undefined round>" : round.getName()], 6);
 	round = round || this.getActiveRound();
-	ctLog(".investorHoldingsInRound(): getActiveRound is ", this.getActiveRound());
+	ctLog([".investorHoldingsInRound: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 6);
 	var pre = [];
 	for (var bst in round.by_security_type) {
-	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName], bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]) }
+	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName],
+																 bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]
+															   ) }
 	}
 	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0],0) + "&#160;" + plural(bst_count[0], bst_count[1])}));
   };
