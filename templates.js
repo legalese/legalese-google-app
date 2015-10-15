@@ -379,7 +379,7 @@ function fillTemplates(sheet) {
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   teLog(["fillTemplates(%s) called; will call readRows(%s)", sheet.getSheetName(), sheet.getSheetName()], 6);
   var entitiesByName = {};
-  var readRows_ = new readRows(sheet, entitiesByName);
+  var readRows_ = new readRows(sheet, entitiesByName,0);
   var templatedata   = readRows_.terms;
   var config         = readRows_.config;
   templatedata.clauses = {};
@@ -392,7 +392,7 @@ function fillTemplates(sheet) {
   // then we have to reload.
   if (createDemoUser_(sheet, readRows_, templatedata, config)) {
 	teLog(["reloading for demo mode: will call readRows(%s)", sheet.getSheetName()], 6);
-	readRows_ = new readRows(sheet, entitiesByName);
+	readRows_ = new readRows(sheet, entitiesByName,0);
 	templatedata   = readRows_.terms;
 	config         = readRows_.config;
 	templatedata._config = config;

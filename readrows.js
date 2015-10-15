@@ -65,14 +65,15 @@
  *  
  * @constructor
  */
-function readRows(sheet, entitiesByName) {
-  Logger.log("readRows: will use sheet " + sheet.getName());
+function readRows(sheet, entitiesByName, includeDepth) {
+  rrLog(["will use sheet %s", sheet.getName()], 6);
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
   var formulas = rows.getFormulas();
   var formats  = rows.getNumberFormats();
 
+  this.includeDepth     = includeDepth || 0;
   this.sheet            = sheet;
   this.terms            = {};
   this.config           = {};
@@ -551,8 +552,8 @@ function readRows(sheet, entitiesByName) {
 	  this.availableTemplates.length == 0 &&
 	  config.templates != undefined
 	 ) {
-	Logger.log("readRows: need to load default Available Templates from master spreadsheet.");
-	var rrAT = new readRows(getSheetByURL_(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName);
+	rrLog("need to load default Available Templates from master spreadsheet.");
+	var rrAT = new readRows(getSheetByURL_(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName, this.includeDepth+1);
  	this.availableTemplates = rrAT.availableTemplates;
   }
   rrLog("returning this.availableTemplates with length %s", this.availableTemplates.length);
