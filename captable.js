@@ -177,7 +177,11 @@ function capTable_(termsheet, captablesheet) {
 		totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
 		totals.by_security_type[round.security_type][ni] += round.new_investors[ni]._orig_shares;
 	  }
-	  // if it's not something directly measureable in shares we don't record it. but maybe in future we should.
+	  // if it's not something directly measureable in shares we assume it's debt, which is measured in money
+	  else if (round.new_investors[ni]._orig_money) {
+		totals.by_security_type[round.security_type][ni] = totals.by_security_type[round.security_type][ni] || 0; // js lacks autovivication, sigh
+		totals.by_security_type[round.security_type][ni] += round.new_investors[ni]._orig_money;
+	  }
 	  for (var attr in round.new_investors[ni]) {
 		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
 		if (attr == "percentage") { continue } // percentages don't need to add
@@ -338,7 +342,13 @@ function capTable_(termsheet, captablesheet) {
 																 bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]
 															   ) }
 	}
-	return commaAnd(pre.map(function(bst_count){return digitCommas_(bst_count[0],0) + "&#160;" + plural(bst_count[0], bst_count[1])}));
+	return commaAnd(pre.map(function(bst_count){
+	  if (bst_count[1].match(/note|debt|kiss|safe/i)) {
+		return asCurrency_(round.getCurrency(), bst_count[0]) + "&#160;of " + plural(2, bst_count[1]);
+	  } else {
+		return digitCommas_(bst_count[0],0) + "&#160;" + plural(bst_count[0], bst_count[1]);
+	  }
+	}));
   };
 
   
