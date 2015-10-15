@@ -215,16 +215,16 @@ function capTable_(termsheet, captablesheet) {
 		  ctLog("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
 		}
 
-	      //preliminary attempt at ESOP running total.
+	    //preliminary attempt at ESOP running total.
 
-	      round.ESOP = {};
-	      for (var esp in totals.ESOP) {
-		  round.ESOP[esp] = { TOTAL: O};
+	    round.ESOPtotals = {};
+	    for (var esp in totals.ESOP) {
+		  round.ESOPtotals[esp] = { TOTAL: O};
 		  for (var ike in totals.ESOP[esp]) {
-		      round.ESOP[esp][ike]   = totals.ESOP[esp][ike];
-		      round.ESOP[esp].TOTAL += totals.ESOP[esp][ike];
+		    round.ESOPtotals[esp][ike]   = totals.ESOP[esp][ike];
+		    round.ESOPtotals[esp].TOTAL += totals.ESOP[esp][ike];
 		  }
-	      }
+	    }
 		// TODO: in future add a running total, similar to the rest of how we manage shares by type above.
 		// if we don't do this, then multiple columns which deal with ESOP will not do the right thing.
 	  }
