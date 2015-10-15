@@ -8,14 +8,14 @@ function legaleseRootFolder_() {
   }
   else {
 	var legaleses = DriveApp.getFoldersByName("Legalese Root");
-	Logger.log("legaleses = " + legaleses);
+	utLog("legaleses = " + legaleses);
 	if (legaleses.hasNext()) {
-	  Logger.log("legaleses is defined");
+	  utLog("legaleses is defined");
 	  // TODO: exclude any Legalese Root folders that are in the trash.
 	  legalese_root = legaleses.next();
-	  Logger.log("legalese_root = " + legalese_root);
+	  utLog("legalese_root = " + legalese_root);
 	} else {
-	  Logger.log("WARNING: Google Drive claims that the Legalese Root folder does not exist. really?");
+	  utLog("WARNING: Google Drive claims that the Legalese Root folder does not exist. really?");
 	  legalese_root = DriveApp.createFolder("Legalese Root");
 	}
 	PropertiesService.getDocumentProperties().setProperty("legalese.rootfolder", JSON.stringify(legalese_root.getId));
@@ -29,9 +29,9 @@ function createFolder_(sheet) {
   var folderName = sheet.getParent().getName() + " "
 	  + sheet.getSheetName() + " "
 	  + Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "yyyyMMdd-HHmmss");
-  Logger.log("attempting createfolder(%s)", folderName);
+  utLog("attempting createfolder(%s)", folderName);
   var folder = legalese_root.createFolder(folderName);
-  Logger.log("createfolder returned " + folder);
+  utLog("createfolder returned " + folder);
 
   legalese_root.addFile(DriveApp.getFileById(sheet.getParent().getId()));
 
@@ -67,7 +67,7 @@ function createReadme_(folder, config, sheet) { // under the parent folder
 
   doc.getBody().appendParagraph("Each PDF, when sent for signature, has its own To: and CC: email addresses. They are shown below.");
 
-  Logger.log("run started");
+  utLog("run started");
   var uniq = uniqueKey(sheet);
   PropertiesService.getDocumentProperties().setProperty("legalese."+uniq+".readme.id", JSON.stringify(doc.getId()));
   return doc;
@@ -95,8 +95,8 @@ function resetDocumentProperties_(which) {
 
 // ---------------------------------------------------------------------------------------------------------------- showDocumentProperties_
 function showDocumentProperties_() {
-  Logger.log("userProperties: %s", JSON.stringify(PropertiesService.getDocumentProperties().getProperties()));
-  Logger.log("scriptProperties: %s", JSON.stringify(PropertiesService.getScriptProperties().getProperties()));
+  utLog("userProperties: %s", JSON.stringify(PropertiesService.getDocumentProperties().getProperties()));
+  utLog("scriptProperties: %s", JSON.stringify(PropertiesService.getScriptProperties().getProperties()));
 }
 
 function getSheetByURL_(url){
@@ -108,7 +108,7 @@ function getSheetByURL_(url){
 	// should we return the first sheet, or should we fail?
 	// i think we should fail.
 	// see http://www.jwz.org/doc/worse-is-better.html
-	Logger.log("getSheetByURL_(%s): doesn't specify a sheet id! dying. (expected a gid=NNN parameter in the URL)", url);
+	utLog("getSheetByURL_(%s): doesn't specify a sheet id! dying. (expected a gid=NNN parameter in the URL)", url);
 	throw("getSheetByURL() doesn't specify a 'gid' sheet id in the url! "+url);
   }
 }
@@ -117,9 +117,9 @@ function getSheetByURL_(url){
 function getSheetById_(ss, id) {
   var sheets = ss.getSheets();
   for (var i=0; i<sheets.length; i++) {
-	Logger.log("does sheet " + i + " ( " + sheets[i].getSheetName() + " have id " + id + "?");
+	utLog("does sheet " + i + " ( " + sheets[i].getSheetName() + " have id " + id + "?");
     if (sheets[i].getSheetId() == id) {
-	  Logger.log("yes: " + sheets[i].getSheetId() + " = " + id + "?");
+	  utLog("yes: " + sheets[i].getSheetId() + " = " + id + "?");
       return sheets[i];
     }
   }
@@ -175,14 +175,14 @@ function getDocumentProperty(sheet, propertyname) {
 // ---------------------------------------------------------------------------------------------------------------- newlinesToCommas
 // used inside <? ?> to convert a multiline address to a singleline address for party-section purposes
 function newlinesToCommas(str) {
-  if (str == undefined) { Logger.log("newlinesToCommas: undefined!"); return undefined }
+  if (str == undefined) { utLog("newlinesToCommas: undefined!"); return undefined }
   return str.replace(/,?\s*\n\s*/g, ", ");
 }
 
 // ---------------------------------------------------------------------------------------------------------------- newlinesToCommas
 // used inside <? ?> to convert a multiline name to the first line for party-section purposes
 function firstline_(str) {
-  if (str == undefined) { Logger.log("firstline: undefined!"); return undefined }
+  if (str == undefined) { utLog("firstline: undefined!"); return undefined }
   return str.split(/,?\s*\n\s*/)[0];
 }
 
@@ -197,4 +197,41 @@ function email_to_cc(email) {
   return [to, emails];
 }
 
+myLogStats = {};
 
+function myLog(params, module, loglevel, logconfig) {
+  if (logconfig == undefined) {
+	logconfig = { readrows: 6,
+				  templates: 6,
+				};
+  }
+
+  params[0] = module + " " + params[0];
+
+  // by default, display INFO and above but not DEBUG
+  var logfilter = logconfig[module] == undefined ? 6 : logconfig[module];
+
+  if (myLogStats[module] == undefined) { myLogStats[module] = { displayed: [], discarded: [] } };
+  if (loglevel <= logfilter) {
+	myLogStats[module].displayed[loglevel] = myLogStats[module].displayed[loglevel] || 0;
+	myLogStats[module].displayed[loglevel]++;
+	Logger.log.apply(Logger, params);
+  }
+  else {
+	myLogStats[module].discarded[loglevel] = myLogStats[module].discarded[loglevel] || 0;
+	myLogStats[module].discarded[loglevel]++;
+  }
+}
+
+function dumpMyLogStats() {
+  Logger.log("myLog stats: %s", myLogStats);
+  Logger.log("myLog to view DEBUG level output, set util.js's myLog logconfig per-module level to 7.");
+}
+
+function utLog(params, loglevel, logconfig) {
+  if (params.constructor.name != "Array") { // allow backward compatibility
+	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
+  }
+  if (loglevel == undefined) { loglevel = 7 }
+  myLog(params,"util", loglevel, logconfig);
+}

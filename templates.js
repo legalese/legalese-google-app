@@ -19,13 +19,13 @@ function desiredTemplates_(config) {
 	var field = asvar_(i);
 	toreturn.push(field);
   }
-  Logger.log("desiredTemplates_: returning %s", toreturn);
+  teLog("desiredTemplates_: returning %s", toreturn);
   return toreturn;
 }
 
 function suitableTemplates(readRows) {
   var availables = readRows.availableTemplates;
-  Logger.log("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
+  teLog("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
   var desireds = desiredTemplates_(readRows.config);
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
@@ -47,7 +47,7 @@ function filenameFor(sourceTemplate, entity) {
 // we can pull a generic HTML template from somewhere else,
 // or it can be one of the project's HTML files.
 function obtainTemplate_(url, nocache, readmeDoc) {
-  // Logger.log("obtainTemplate_(%s) called", url);
+  // teLog("obtainTemplate_(%s) called", url);
 
   // we're actually running within a single script invocation so maybe we should find a more intelligent way to cache within a single session.
   // otherwise this risks not picking up changes
@@ -64,13 +64,13 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	try {
 	  var result = UrlFetchApp.fetch(url, { headers: { "Accept-Encoding": "identity" } } );
 	} catch (e) {
-	  Logger.log("ERROR: caught error (%s) while fetching %s", e, url);
+	  teLog("ERROR: caught error (%s) while fetching %s", e, url);
 	}
 	if (result == undefined) {
 	  try {
 		result = UrlFetchApp.fetch(url, { headers: { "Accept-Encoding": "identity" } } );
 	  } catch (e) {
-		Logger.log("ERROR: caught error (%s) while fetching %s for the second time!", e, url);
+		teLog("ERROR: caught error (%s) while fetching %s for the second time!", e, url);
 		throw ("during obtainTemplate_(" + url + "): " + e);
 	  }
 	}
@@ -88,8 +88,8 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 
 	if (! contents || ! contents.length) {
 	  if (readmeDoc) {
-		readmeDoc.getBody().appendParagraph("obtainTemplate(" + url + ") returned no contents");  	  Logger.log("obtainTemplate(" + url + ") returned no contents");
-		readmeDoc.getBody().appendParagraph(JSON.stringify(result.getAllHeaders()));                    Logger.log("obtainTemplate(" + url + ") headers: " + result.getAllHeaders());
+		readmeDoc.getBody().appendParagraph("obtainTemplate(" + url + ") returned no contents");  	  teLog("obtainTemplate(" + url + ") returned no contents");
+		readmeDoc.getBody().appendParagraph(JSON.stringify(result.getAllHeaders()));                    teLog("obtainTemplate(" + url + ") headers: " + result.getAllHeaders());
 	  }
 	  throw("received zero-length content when fetching " + url);
 	}
@@ -100,7 +100,7 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	  // a run of the google script may take up to 5 minutes, so cache for that time.
 	  // if you're hot and heavy with the updates, set nocache:true in the sourceTemplate properties.
 	}
-	// Logger.log("obtained template %s, length %s bytes", url, contents.length);
+	// teLog("obtained template %s, length %s bytes", url, contents.length);
 	return HtmlService.createTemplate(contents);
   }
   // TODO: find a way to expose the original script context to this section ... otherwise the add-on tries to satisfy createTemplateFromFile()
@@ -124,9 +124,9 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
   this.esNumForTemplate = { };
 
-//  Logger.log("docsetEmails(%s): now I will figure out who gets which PDFs.", sheet.getSheetName());
+//  teLog("docsetEmails(%s): now I will figure out who gets which PDFs.", sheet.getSheetName());
 
-//  Logger.log("docsetEmails(%s): incoming readRows has entitiesByName = %s",
+//  teLog("docsetEmails(%s): incoming readRows has entitiesByName = %s",
 //			 sheet.getSheetName(),
 //			 readRows.entitiesByName
 //			);
@@ -145,21 +145,21 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	var nullIsOK = false;
   
 	for (var mailtype in sourceTemplate.parties) {
-	  Logger.log("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
+	  teLog("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
 				 sourceTemplate.name, mailtype);
 	  
 	  for (var mti in sourceTemplate.parties[mailtype]) { // to | cc
 		var partytype = sourceTemplate.parties[mailtype][mti]; // company, director, shareholder, etc
 		if (partytype == "") {
-//		  Logger.log("docsetEmails:   %s mailtype %s has blank partytypes. skipping.", sourceTemplate.name, mailtype);
+//		  teLog("docsetEmails:   %s mailtype %s has blank partytypes. skipping.", sourceTemplate.name, mailtype);
 		  continue;
 		}
 		if (partytype.toLowerCase() == "null") {
-//		  Logger.log("docsetEmails:   %s mailtype %s has deliberately blank partytypes. skipping.", sourceTemplate.name, mailtype);
+//		  teLog("docsetEmails:   %s mailtype %s has deliberately blank partytypes. skipping.", sourceTemplate.name, mailtype);
 		  nullIsOK = true;
 		  continue;
 		}
-//		Logger.log("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
+//		teLog("docsetEmails: discovered %s: will mail to %s", mailtype, partytype);
 		var mailindex = null;
 
 		// sometimes partytype is "director"
@@ -168,31 +168,31 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		// and we reset partytype from "director[0]" to "director".
 		if (partytype.match(/\[(\d)\]$/)) { mailindex = partytype.match(/\[(\d)\]$/)[1];
 											partytype = partytype.replace(/\[\d\]/, "");
-											Logger.log("docsetEmails: simplified partytype to %s", partytype);
+											teLog("docsetEmails: simplified partytype to %s", partytype);
 										  }
 
-		if (mailtype == "to") { // Logger.log("docsetEmails: initializing to_parties[%s] as array", partytype);
+		if (mailtype == "to") { // teLog("docsetEmails: initializing to_parties[%s] as array", partytype);
 								to_parties[partytype] = [];
 							  }
 		else                  cc_parties[partytype] = [];
 
 		if (readRows.principal.roles[partytype] == undefined) {
-//		  Logger.log("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
+//		  teLog("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
 		  continue;
 		}
 		for (var j in parties[partytype]) {
 		  var entity = parties[partytype][j];
 		  if (mailindex != undefined) {
 			if (j == mailindex) {
-//			  Logger.log("docsetEmails:   matched mailindex %s == %s, chosen %s", mailindex, j, entity.name);
+//			  teLog("docsetEmails:   matched mailindex %s == %s, chosen %s", mailindex, j, entity.name);
 			}
 			else {
-//			  Logger.log("docsetEmails:   matched mailindex %s != %s, skipping %s", mailindex, j, entity.name);
+//			  teLog("docsetEmails:   matched mailindex %s != %s, skipping %s", mailindex, j, entity.name);
 			  continue;
 			}
 		  }
 
-//		  Logger.log("docsetEmails:     what to do with %s entity %s?", partytype, entity.name);
+//		  teLog("docsetEmails:     what to do with %s entity %s?", partytype, entity.name);
 		  if (mailtype == "to") {
 			to_list.push(entity.name);
 			to_parties[partytype].push(entity);
@@ -206,11 +206,11 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	if (sourceTemplate.explode == "") {
 	  this._rcpts  .normals[sourceTemplate.title]={to:to_list,    cc:cc_list};
 	  this._parties.normals[sourceTemplate.title]={to:to_parties, cc:cc_parties};
-//	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].to=%s",sourceTemplate.title, to_list);
-//	  Logger.log("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
-//	  Logger.log("docsetEmails: defining this._parties.normals[%s].to=%s",sourceTemplate.title,Object.keys(to_parties));
+//	  teLog("docsetEmails: defining this._rcpts.normals[%s].to=%s",sourceTemplate.title, to_list);
+//	  teLog("docsetEmails: defining this._rcpts.normals[%s].cc=%s",sourceTemplate.title, cc_list);
+//	  teLog("docsetEmails: defining this._parties.normals[%s].to=%s",sourceTemplate.title,Object.keys(to_parties));
 	} else { // explode first and then set this._rcpts.exploders
-//	  Logger.log("docsetEmails(): will explode %s", sourceTemplate.explode);
+//	  teLog("docsetEmails(): will explode %s", sourceTemplate.explode);
 	  var primary_to_list    = to_list; // probably unnecessary
       for (var j in this.parties[sourceTemplate.explode]) {
 		var entity = parties[sourceTemplate.explode][j];
@@ -218,7 +218,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		// we set the singular as we step through.
 		ex_parties[sourceTemplate.explode] = entity;
 		var mytitle = filenameFor(sourceTemplate, entity);
-//		Logger.log("docsetEmails(): preparing %s exploded %s", sourceTemplate.explode, mytitle);
+//		teLog("docsetEmails(): preparing %s exploded %s", sourceTemplate.explode, mytitle);
 		var exploder_to_list    = primary_to_list.concat([entity.name]);
 		// TODO: if the exploder's email is multiline there needs to be a way for it to append to the cc_list.
 		var exploder_to_parties = {};
@@ -227,12 +227,12 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
 		this._rcpts  .exploders[mytitle] = {to:exploder_to_list,   cc:cc_list};
 		this._parties.exploders[mytitle] = {to:exploder_to_parties,cc:cc_parties};
-//		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
-//		Logger.log("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
-//		Logger.log("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
+//		teLog("docsetEmails: defining this._rcpts.exploders[%s].to=%s",mytitle,exploder_to_list);
+//		teLog("docsetEmails: defining this._rcpts.exploders[%s].cc=%s",mytitle,cc_list);
+//		teLog("docsetEmails: defining this._parties.exploders[%s].to=%s",mytitle,Object.keys(exploder_to_parties));
 	  }
 	}
-//	Logger.log("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
+//	teLog("docsetEmails: testing: does %s have To+CC/Explode? to_list=\"%s\"; explode=\"%s\"",
 //			   sourceTemplate.name, to_list, sourceTemplate.explode);
 	if (to_list.length == 0 && sourceTemplate.explode=="" && ! nullIsOK) {
 	  throw("in the Templates sheet, does " + sourceTemplate.name + " define To and CC parties? and are those parties defined?");
@@ -241,7 +241,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  // test for those cases and throw a different, more instructive error.
 	}
 	else {
-//	  Logger.log("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
+//	  teLog("docsetEmails: Template %s passed To+CC test: to_list=\"%s\"; explode=\"%s\"",
 //				 sourceTemplate.name, to_list, sourceTemplate.explode);
 	}
   }
@@ -253,7 +253,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 
 	var sourceTemplateNames = sourceTemplates.map(function(st){return st.name});
 
-//	Logger.log("docsetEmails.Rcpts(%s), %s", sourceTemplateNames, explodeEntity);
+//	teLog("docsetEmails.Rcpts(%s), %s", sourceTemplateNames, explodeEntity);
 	// pull up all the entities relevant to this particular set of sourceTemplates
 	// this should be easy, we've already done the hard work above.
 	var all_to = [], all_cc = [];
@@ -278,8 +278,8 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	all_to = uniq_(all_to);
 	all_cc = uniq_(all_cc);
 
-	Logger.log("docsetEmails.Rcpts(%s): all_to=%s", sourceTemplateNames, all_to);
-	Logger.log("docsetEmails.Rcpts(%s): all_cc=%s", sourceTemplateNames, all_cc);
+	teLog("docsetEmails.Rcpts(%s): all_to=%s", sourceTemplateNames, all_to);
+	teLog("docsetEmails.Rcpts(%s): all_cc=%s", sourceTemplateNames, all_cc);
 
 	var to_emails = [], cc_emails = [];
 
@@ -296,7 +296,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	  else {
 		var email_to_cc_ = email_to_cc(entity.email);
 		entity._to_email = email_to_cc_[0];
-//		Logger.log("DEBUG: given entity %s, entity.email is %s and _to_email is %s", entityName, entity.email, entity._to_email);
+//		teLog("DEBUG: given entity %s, entity.email is %s and _to_email is %s", entityName, entity.email, entity._to_email);
 		cc_emails = cc_emails.concat(email_to_cc_[1]);
 	  }
 	  if (entity._to_email) {
@@ -320,7 +320,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
   // callback framework for doing things to do with normal sourceTemplates, for both concatenate_pdfs modes
   this.normal = function(individual_callback, group_callback) {
 	var normals   = suitables.filter(function(t){return ! t.explode});
-	Logger.log("docsetEmails.normal(): concatenateMode %s, templates=%s",
+	teLog("docsetEmails.normal(): concatenateMode %s, templates=%s",
 			   this.readRows.config.concatenate_pdfs && this.readRows.config.concatenate_pdfs.values[0] == true,
 			   normals.map(function(t){return t.name}));
 	if (this.readRows.config.concatenate_pdfs && this.readRows.config.concatenate_pdfs.values[0] == true) {
@@ -335,21 +335,21 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
   // callback framework for doing things to do with exploded sourceTemplates
   this.explode = function(callback) {
 	var exploders = this.suitables.filter(function(t){return   t.explode});
-	Logger.log("docsetEmails.explode(): templates=%s",
+	teLog("docsetEmails.explode(): templates=%s",
 			   exploders.map(function(t){return t.name}));
 	for (var explode_i in exploders) {
 	  var sourceTemplate = exploders[explode_i];
 	  var partytype = sourceTemplate.explode;
-	  Logger.log("template %s will explode = %s", sourceTemplate.name, partytype);
-//	  Logger.log("parties[partytype] = %s", parties[partytype]);
+	  teLog("template %s will explode = %s", sourceTemplate.name, partytype);
+//	  teLog("parties[partytype] = %s", parties[partytype]);
 	  for (var parties_k in parties[partytype]) {
 		var entity = this.readRows.entitiesByName[parties[partytype][parties_k].name];
-		Logger.log("docsetEmails.explode(): working with %s %s %s", partytype, entity.name, sourceTemplate.name);
+		teLog("docsetEmails.explode(): working with %s %s %s", partytype, entity.name, sourceTemplate.name);
 		if (entity.legalese_status
 			&& entity.legalese_status.match(/skip explo/) // skip exploding / skip exploder
 			&& entity.legalese_status.match(sourceTemplate.name) // add \b, i think
 		   ) {
-		  Logger.log("docsetEmails.explode(%s): SKIPPING because legalese status says %s", entity.name, entity.legalese_status);
+		  teLog("docsetEmails.explode(%s): SKIPPING because legalese status says %s", entity.name, entity.legalese_status);
 		  continue;
 		}
 		var rcpts = this.Rcpts([sourceTemplate], entity);
@@ -372,11 +372,12 @@ function fillTemplates(sheet) {
 						  ||
 						  SpreadsheetApp.getActiveSheet().getSheetName().toLowerCase() == "controller")
 						 ) {
-	Logger.log("in controller mode, switching to fillOtherTemplates()");
+	teLog("in controller mode, switching to fillOtherTemplates()");
 	fillOtherTemplates_();
 	return;
   }
   sheet = sheet || SpreadsheetApp.getActiveSheet();
+  teLog(["fillTemplates(%s) called; will call readRows(%s)", sheet.getSheetName(), sheet.getSheetName()], 6);
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName);
   var templatedata   = readRows_.terms;
@@ -390,6 +391,7 @@ function fillTemplates(sheet) {
   // if the person is running this in Demo Mode, and there is no User entity defined, then we create one for them.
   // then we have to reload.
   if (createDemoUser_(sheet, readRows_, templatedata, config)) {
+	teLog(["reloading for demo mode: will call readRows(%s)", sheet.getSheetName()], 6);
 	readRows_ = new readRows(sheet, entitiesByName);
 	templatedata   = readRows_.terms;
 	config         = readRows_.config;
@@ -398,7 +400,7 @@ function fillTemplates(sheet) {
   }
 
   var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
-  Logger.log("fillTemplates(%s): got back readRows_.entitiesByName=%s",
+  teLog("fillTemplates(%s): got back readRows_.entitiesByName=%s",
 			 sheet.getSheetName(),
 			 entityNames);
 
@@ -414,14 +416,14 @@ function fillTemplates(sheet) {
   PropertiesService.getDocumentProperties().setProperty("legalese."+uniq+".folder.id", JSON.stringify(folder.getId()));
   PropertiesService.getDocumentProperties().setProperty("legalese."+uniq+".folder.name", JSON.stringify(folder.getName()));
   PropertiesService.getDocumentProperties().setProperty("legalese.templateActiveSheetId", sheet.getSheetId());
-  Logger.log("fillTemplates: property set legalese.%s.folder.id = %s", uniq, folder.getId());
-  Logger.log("fillTemplates: property set legalese.%s.templateActiveSheetId = %s", uniq, sheet.getSheetId());
+  teLog("fillTemplates: property set legalese.%s.folder.id = %s", uniq, folder.getId());
+  teLog("fillTemplates: property set legalese.%s.templateActiveSheetId = %s", uniq, sheet.getSheetId());
 
   var cell = sheet.getRange("E6");
 
   // let's insert the Drive version not the Docs version of the folder url
   cell.setValue("=HYPERLINK(\"https://drive.google.com/drive/u/0/#folders/"+folder.getId()+"\",\""+folder.getName()+"\")");
-  Logger.log("I have set the value to =HYPERLINK(\"https://drive.google.com/drive/u/0/#folders/"+folder.getId()+"\",\""+folder.getName()+"\")");
+  teLog("I have set the value to =HYPERLINK(\"https://drive.google.com/drive/u/0/#folders/"+folder.getId()+"\",\""+folder.getName()+"\")");
 
   // hardcode some useful expressions
   templatedata.xml_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
@@ -430,15 +432,15 @@ function fillTemplates(sheet) {
   templatedata._timezone = sheet.getParent().getSpreadsheetTimeZone();
 
   var suitables = suitableTemplates(readRows_);
-  Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
+  teLog("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   // the parties{} for a given docset are always the same -- all the defined roles are available
   var parties = roles2parties(readRows_);
 
   templatedata.parties = parties;
-  Logger.log("FillTemplates: INFO: assigning templatedata.parties = %s", Object.getOwnPropertyNames(templatedata.parties));
+  teLog("FillTemplates: INFO: assigning templatedata.parties = %s", Object.getOwnPropertyNames(templatedata.parties));
   for (var p in parties) {
-	Logger.log("FillTemplates: INFO: parties[%s] = %s", p, parties[p].map(function(pp){return pp.name}));
+	teLog("FillTemplates: INFO: parties[%s] = %s", p, parties[p].map(function(pp){return pp.name}));
   }
 
   templatedata.company = parties.company[0];
@@ -460,11 +462,11 @@ function fillTemplates(sheet) {
 	if (templatedata._origparties == undefined) {
 	  templatedata._origparties = {};
 	  for (var p in parties) { templatedata._origparties[p] = parties[p] }
-//	  Logger.log("buildTemplate(%s): preserving original parties", sourceTemplate.name);
+//	  teLog("buildTemplate(%s): preserving original parties", sourceTemplate.name);
 	}
 	else {
 	  for (var p in templatedata._origparties) { templatedata.parties[p] = templatedata._origparties[p] }
-//	  Logger.log("buildTemplate(%s): restoring original parties", sourceTemplate.name);
+//	  teLog("buildTemplate(%s): restoring original parties", sourceTemplate.name);
 	}
 
 	// EXCEPTION SCENARIO -- party overrides
@@ -478,16 +480,16 @@ function fillTemplates(sheet) {
 	// Template: | foobar | thing | SomeValue Pte. Ltd.
 	// means that for the foobar template, data.parties.thing = the entity named SomeValue Pte. Ltd.
 	//
-	Logger.log("buildTemplate(%s): config.templates.dict is %s", sourceTemplate.name, config.templates.dict);
+	teLog("buildTemplate(%s): config.templates.dict is %s", sourceTemplate.name, config.templates.dict);
 	if (config.templates.dict[sourceTemplate.name] && config.templates.dict[sourceTemplate.name].length) {
 	  var mydict = config.templates.dict[sourceTemplate.name];
-	  Logger.log("buildTemplate(%s): WE CAN HAZ OVERRIDE! coping with %s", sourceTemplate.name, config.templates.dict[sourceTemplate.name]);
+	  teLog("buildTemplate(%s): WE CAN HAZ OVERRIDE! coping with %s", sourceTemplate.name, config.templates.dict[sourceTemplate.name]);
 
 	  var keyvalues = {};
 	  while (config.templates.dict[sourceTemplate.name].length) { keyvalues[mydict.shift()] = mydict.shift() }
-	  Logger.log("buildTemplate(%s): keyvalues = %s", sourceTemplate.name, keyvalues);
+	  teLog("buildTemplate(%s): keyvalues = %s", sourceTemplate.name, keyvalues);
 	  for (var kk in keyvalues) {
-		Logger.log("buildTemplate(%s): dealing with %s : %s", sourceTemplate.name, kk, keyvalues[kk]);
+		teLog("buildTemplate(%s): dealing with %s : %s", sourceTemplate.name, kk, keyvalues[kk]);
 
 		var matches; // there is similar code elsewhere in readRows() under ROLES
 		if (matches = keyvalues[kk].match(/^\[(.*)\]$/)) {
@@ -496,27 +498,27 @@ function fillTemplates(sheet) {
 		  var to_import = asvar_(matches[1]);
 		  // TODO: sanity check so we don't do a reflexive assignment
 
-		  Logger.log("buildTemplate(%s):         substituting %s = %s", sourceTemplate.name, kk, to_import);
+		  teLog("buildTemplate(%s):         substituting %s = %s", sourceTemplate.name, kk, to_import);
 		  if (! (templatedata.company.roles[to_import] && templatedata.company.roles[to_import].length)) {
-			Logger.log("buildTemplate(%s):         ERROR: substitute [%s] is useless to us", sourceTemplate.name, to_import);
+			teLog("buildTemplate(%s):         ERROR: substitute [%s] is useless to us", sourceTemplate.name, to_import);
 			continue;
 		  }
 		  else {
-			Logger.log("buildTemplate(%s):         substituting: before, parties.%s = %s", sourceTemplate.name, kk, templatedata.company.roles[kk]);
+			teLog("buildTemplate(%s):         substituting: before, parties.%s = %s", sourceTemplate.name, kk, templatedata.company.roles[kk]);
 			templatedata.parties[kk] = templatedata.parties[to_import];
-			Logger.log("buildTemplate(%s):         substituting: after setting to %s, parties.%s = %s", sourceTemplate.name, to_import, kk, templatedata.parties[kk][0].name);
+			teLog("buildTemplate(%s):         substituting: after setting to %s, parties.%s = %s", sourceTemplate.name, to_import, kk, templatedata.parties[kk][0].name);
 		  }
 
 		  if (kk == "company") {
 			templatedata.company = templatedata.parties.company[0];
-			Logger.log("buildTemplate(%s):         final substitution: company =  %s", sourceTemplate.name, templatedata.company.name);
+			teLog("buildTemplate(%s):         final substitution: company =  %s", sourceTemplate.name, templatedata.company.name);
 		  }
 		}
 	  }
 	}
-	//	Logger.log("buildTemplate: assigning newTemplate.data = %s", templatedata);
-//	Logger.log("buildTemplate: newTemplate.data.parties has length = %s", templatedata.data.parties.length);
-//	Logger.log("FillTemplates: recv: templatedata.parties = %s", templatedata.parties);
+	//	teLog("buildTemplate: assigning newTemplate.data = %s", templatedata);
+//	teLog("buildTemplate: newTemplate.data.parties has length = %s", templatedata.data.parties.length);
+//	teLog("FillTemplates: recv: templatedata.parties = %s", templatedata.parties);
 	if (entity) { newTemplate.data.party = newTemplate.data.party || {};
 				  newTemplate.data.party[sourceTemplate.explode] = entity; // do we really want this? it seems to clobber the previous array
 				  newTemplate.data      [sourceTemplate.explode] = entity; }
@@ -525,7 +527,7 @@ function fillTemplates(sheet) {
 	newTemplate.rcpts_to = rcpts[2];
 	newTemplate.rcpts_cc = rcpts[3];
 
-	Logger.log("buildTemplate: newTemplate.rcpts_to = %s", Object.keys(newTemplate.rcpts_to));
+	teLog("buildTemplate: newTemplate.rcpts_to = %s", Object.keys(newTemplate.rcpts_to));
 
 	fillTemplate_(newTemplate, sourceTemplate, filenameFor(sourceTemplate, entity), folder, config);
 
@@ -534,14 +536,14 @@ function fillTemplates(sheet) {
 	if (rcpts[1].length) readmeDoc.getBody().appendParagraph("CC: " + rcpts[1].join(", "));
   };
 
-  Logger.log("FillTemplates(): we do the non-exploded normal templates");
+  teLog("FillTemplates(): we do the non-exploded normal templates");
   docsetEmails_.normal(buildTemplate);
 
-  Logger.log("FillTemplates(): we do the exploded templates");
+  teLog("FillTemplates(): we do the exploded templates");
   docsetEmails_.explode(buildTemplate);
 
   var ROBOT = 'robot@legalese.io';
-  Logger.log("fillTemplates(): sharing %s with %s", folder.getName(), ROBOT);
+  teLog("fillTemplates(): sharing %s with %s", folder.getName(), ROBOT);
   folder.addEditor(ROBOT);
 
   if (config.add_to_folder) {
@@ -555,19 +557,19 @@ function fillTemplates(sheet) {
 	for (var i = 0; i<folderValues.length; i++) {
 	  var addToFolder = DriveApp.getFolderById(folderValues[i]);
 	  if (addToFolder) {
-		Logger.log("fillTemplates(): config says we should add the output folder to %s", addToFolder.getName());
+		teLog("fillTemplates(): config says we should add the output folder to %s", addToFolder.getName());
 		try { addToFolder.addFolder(folder); }
 		catch (e) {
-		  Logger.log("fillTemplates(): failed to do so. %s", e);
+		  teLog("fillTemplates(): failed to do so. %s", e);
 		}
 	  }
 	  else {
-		Logger.log("fillTemplates(): ERROR: unable to getFolderById(%s)!", folderValues[i]);
+		teLog("fillTemplates(): ERROR: unable to getFolderById(%s)!", folderValues[i]);
 	  }
 	}
   }
 
-  Logger.log("that's all folks!");
+  teLog("that's all folks!");
 }
 
 // ---------------------------------------------------------------------------------------------------------------- fillTemplate_
@@ -602,21 +604,21 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   var xmlfile;
 
   if (sourceTemplate.url.match(/[._]xml(\.html)?$/)) {
-	Logger.log("templates: trying to create %s in %s", sourceTemplate.name, folder.getName());
+	teLog("templates: trying to create %s in %s", sourceTemplate.name, folder.getName());
 	xmlfile = folder.createFile(mytitle+".xml", filledHTML, 'text/xml');
   }
   else {
-	Logger.log("we only support xml file types. i am not happy about %s", sourceTemplate.url);
+	teLog("we only support xml file types. i am not happy about %s", sourceTemplate.url);
   }
 
-  Logger.log("finished " + mytitle);
+  teLog("finished " + mytitle);
 }
 
 // ---------------------------------------------------------------------------------------------------------------- include
 // used inside <?= ?> and <? ?>
 function include(name, data, _include, _include2) {
-  Logger.log("include(%s) running", name);
-//  Logger.log("include(%s) _include=%s, _include2=%s", name, _include, _include2);
+  teLog("include(%s) running", name);
+//  teLog("include(%s) _include=%s, _include2=%s", name, _include, _include2);
   var origInclude = data._include;
   var origInclude2 = data._include2;
   var filtered = data._availableTemplates.filter(function(t){return t.name == name});
@@ -627,12 +629,12 @@ function include(name, data, _include, _include2) {
 	childTemplate.data._include = _include || {};
 	childTemplate.data._include2 = _include2 || {};
 	var filledHTML = childTemplate.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME).getContent();
-//	Logger.log("include(%s) complete", name);
+//	teLog("include(%s) complete", name);
 	data._include = origInclude;
 	data._include2 = origInclude2;
 	return filledHTML;
   }
-  Logger.log("include(): unable to find template named %s", name);
+  teLog("include(): unable to find template named %s", name);
   return;
 }
 
@@ -644,7 +646,7 @@ function templateActiveSheetChanged_(sheet) {
   var templateActiveSheetId = PropertiesService.getDocumentProperties().getProperty("legalese.templateActiveSheetId");
   if (templateActiveSheetId == undefined)          { return false }
   if (                sheet == undefined)          { return false }
-  Logger.log("templateActiveSheetChanged: comparing %s with %s, which is %s",
+  teLog("templateActiveSheetChanged: comparing %s with %s, which is %s",
 			 templateActiveSheetId, sheet.getSheetId(),
 			 templateActiveSheetId == sheet.getSheetId()
 			);
@@ -664,4 +666,12 @@ function muteTemplateActiveSheetWarnings_(setter) {
   else {
 	PropertiesService.getDocumentProperties().setProperty("legalese.muteTemplateActiveSheetWarnings", JSON.stringify(setter));
   }
+}
+
+function teLog(params, loglevel, logconfig) {
+  if (params.constructor.name != "Array") { // allow backward compatibility
+	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
+  }
+  if (loglevel == undefined) { loglevel = 7 }
+  myLog(params,"templates", loglevel, logconfig);
 }

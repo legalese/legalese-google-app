@@ -96,7 +96,7 @@ function readRows(sheet, entitiesByName) {
   // maybe we should do it this way and just synthesize the partygroups as needed, along with any other filters.
   var previous = [];
 
-  Logger.log("readRows: starting to parse %s / %s", sheet.getParent().getName(), sheet.getSheetName());
+  rrLog("starting to parse %s / %s", sheet.getParent().getName(), sheet.getSheetName());
 
 // get the formats for the B column -- else we won't know what currency the money fields are in.
   var term_formats = sheet.getRange(1,2,numRows).getNumberFormats();
@@ -106,7 +106,7 @@ function readRows(sheet, entitiesByName) {
   //   below, while parsing a ROLES section;
   //   from outside, after the parsing is done, but when a capTable wishes to impute new roles.
   this.handleNewRoles = function(newRoles) {
-	Logger.log("readRows(%s).handleNewRoles: handling new Roles: %s", this.sheet.getSheetName(), newRoles);
+	rrLog("(%s).handleNewRoles: handling new Roles: %s", this.sheet.getSheetName(), newRoles);
 
 	for (var ri = 0; ri < newRoles.length; ri++) {
 	  var newRole = newRoles[ri];
@@ -115,7 +115,7 @@ function readRows(sheet, entitiesByName) {
 	  var attrs      = newRole.attrs;
 
 	  if (config.skip_party && (relation in config.skip_party.tree)) {
-		Logger.log("handleNewRoles: skipping party role definition for %s", relation);
+		rrLog("handleNewRoles: skipping party role definition for %s", relation);
 		continue;
 	  }
 	  
@@ -131,21 +131,21 @@ function readRows(sheet, entitiesByName) {
 		
 		// TODO: sanity check so we don't do a reflexive assignment
 
-		Logger.log("readRows(%s):         ROLES: merging role %s = %s", sheet.getSheetName(), relation, to_import);
+		rrLog("(%s):         ROLES: merging role %s = %s", sheet.getSheetName(), relation, to_import);
 		if (! (this.roles[to_import] && this.roles[to_import].length)) {
-		  Logger.log("readRows(%s):         ERROR: roles[%s] is useless to us", sheet.getSheetName(), to_import);
-		  Logger.log("readRows(%s):         ERROR: roles[] has keys %s", sheet.getSheetName(), Object.getOwnPropertyNames(this.roles));
-		  Logger.log("readRows(%s):         ERROR: maybe we can find it under the principal's roles?");
+		  rrLog(["(%s):         ERROR: roles[%s] is useless to us", sheet.getSheetName(), to_import], 5);
+		  rrLog(["(%s):         ERROR: roles[] has keys %s", sheet.getSheetName(), Object.getOwnPropertyNames(this.roles)], 5);
+		  rrLog(["(%s):         ERROR: maybe we can find it under the principal's roles?"], 5);
 
 		  // TODO: note that the import is incomplete because you don't get _format_ and _orig_.
 		  // in the future we should get this all cleaned up with a properly OOPy sheet management system.
 		  if (this.principal.roles[to_import] && this.principal.roles[to_import].length) {
-			Logger.log("readRows(%s):         HANDLED: found merge target in this.principal.roles", sheet.getSheetName());
+			rrLog(["(%s):         HANDLED: found merge target in this.principal.roles", sheet.getSheetName()],5);
 			if (Object.keys(attrs).length) {
-			  Logger.log("readRows(%s):         applying attributes to %s %s parties", sheet.getSheetName(), this.principal.roles[to_import].length, to_import);
+			  rrLog(["(%s):         applying attributes to %s %s parties", sheet.getSheetName(), this.principal.roles[to_import].length, to_import], 5);
 			  for (var ti = 0; ti<this.principal.roles[to_import].length; ti++) {
 				for (var k in attrs) { entitiesByName[this.principal.roles[to_import][ti]][k] = attrs[k];
-									   Logger.log("readRows(%s):      %s.%s = %s", sheet.getSheetName(), this.principal.roles[to_import][ti], k, attrs[k]);
+									   rrLog(["(%s):      %s.%s = %s", sheet.getSheetName(), this.principal.roles[to_import][ti], k, attrs[k]], 5);
 									 }
 			  }
 			}
@@ -155,14 +155,14 @@ function readRows(sheet, entitiesByName) {
 		}
 		else { // TODO: should be able to condense this together with the preceding block.
 		  if (Object.keys(attrs).length) {
-			Logger.log("readRows(%s):         applying attributes for local merge: %s", sheet.getSheetName(), attrs);
+			rrLog("(%s):         applying attributes for local merge: %s", sheet.getSheetName(), attrs);
 			for (var ti = 0; ti<this.roles[to_import].length; ti++) {
 			  for (var k in attrs) { entitiesByName[this.roles[to_import][ti]][k] = attrs[k] }
 			}
 		  }
-		  Logger.log("readRows(%s):         ROLES: before local merge, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
+		  rrLog("(%s):         ROLES: before local merge, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
 		  this.roles[relation] = this.roles[relation].concat(this.roles[to_import]);
-		  Logger.log("readRows(%s):         ROLES: after  local merge, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
+		  rrLog("(%s):         ROLES: after  local merge, roles[%s] = %s", sheet.getSheetName(), relation, this.roles[relation]);
 		}
 	  }
 	  else { // plain role assignment, e.g. Director = Smoochy The Frog
@@ -172,16 +172,16 @@ function readRows(sheet, entitiesByName) {
 			this.roles[relation].filter(function(ename){return ename == entityname}) == 0 // not already present in the array
 		   ) {
 		  this.roles[relation].push(entityname);
-		  Logger.log("readRows(%s):         ROLES: party %s is new to the role %s", sheet.getSheetName(), entityname, relation);
+		  rrLog("(%s):         ROLES: party %s is new to the role %s", sheet.getSheetName(), entityname, relation);
 		}
 		else {
-		  Logger.log("readRows(%s):         ROLES: party %s already has role %s", sheet.getSheetName(), entityname, relation);
+		  rrLog("(%s):         ROLES: party %s already has role %s", sheet.getSheetName(), entityname, relation);
 		}
-		Logger.log("readRows(%s):         ROLES: learning party role %s = %s", sheet.getSheetName(), relation, entityname);
-		Logger.log("readRows(%s):         ROLES: this.roles[%s]=%s", sheet.getSheetName(), relation, this.roles[relation]);
+		rrLog("(%s):         ROLES: learning party role %s = %s", sheet.getSheetName(), relation, entityname);
+		rrLog("(%s):         ROLES: this.roles[%s]=%s", sheet.getSheetName(), relation, this.roles[relation]);
 
 		for (var k in attrs) { entity[k] = attrs[k];
-							   Logger.log("readRows(%s):         ROLES: learning %s attribute %s = %s", sheet.getSheetName(), entityname, k, attrs[k]);
+							   rrLog("(%s):         ROLES: learning %s attribute %s = %s", sheet.getSheetName(), entityname, k, attrs[k]);
 							 }
 	  }
 	}	
@@ -190,32 +190,32 @@ function readRows(sheet, entitiesByName) {
   };
 
   this.rebuildRoles = function() {
-	if (this.principal == undefined) { Logger.log("rebuildRoles(): principal is null, doing nothing."); return }
+	if (this.principal == undefined) { rrLog("rebuildRoles(): principal is null, doing nothing."); return }
 	
-	Logger.log("rebuildRoles(%s): given this.principal = %s", sheet.getSheetName(), this.principal.name);
+	rrLog("rebuildRoles(%s): given this.principal = %s", sheet.getSheetName(), this.principal.name);
 
 	this.principal.roles = this.principal.roles || {};
 
 	// set up the principal's .roles property.
 	// also configure the vassals' _role property, though nothing uses this at the moment.
 	for (var k in this.roles) {
-	  Logger.log("rebuildRoles(%s): k=%s, roles[k]=%s, principal.roles[k]=%s", sheet.getSheetName(), k, this.roles[k], this.principal.roles[k]);
+	  rrLog("rebuildRoles(%s): k=%s, roles[k]=%s, principal.roles[k]=%s", sheet.getSheetName(), k, this.roles[k], this.principal.roles[k]);
 
 	  // TODO: this is probably buggy; the logic is unclear and needs to be thought through.
 	  if (this.principal.roles[k] == undefined) {
 		this.principal.roles[k] = [];
-		Logger.log("rebuildRoles(%s): principal.roles[%s] did not exist; initializing", sheet.getSheetName(), k);
+		rrLog("rebuildRoles(%s): principal.roles[%s] did not exist; initializing", sheet.getSheetName(), k);
 	  }
-	  Logger.log("rebuildRoles(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, this.principal.roles[k].length, k);
-	  Logger.log("rebuildRoles(%s): but this.roles %s has %s %s roles", sheet.getSheetName(), this.principal.name, this.roles[k].length, k);
+	  rrLog("rebuildRoles(%s): principal %s now has %s %s roles", sheet.getSheetName(), this.principal.name, this.principal.roles[k].length, k);
+	  rrLog("rebuildRoles(%s): but this.roles %s has %s %s roles", sheet.getSheetName(), this.principal.name, this.roles[k].length, k);
 
 	  for (var pi in this.roles[k]) {
 		var entity = entitiesByName[this.roles[k][pi]];
 		if (entity == undefined) { throw(k + " role " + pi + ' "' + this.roles[k][pi] + "\" refers to an entity that is not defined!") }
 		if (this.principal.roles[k].filter(function(el){return el == entity.name}).length == 1) {
-		  Logger.log("rebuildRoles(%s): principal.roles[%s] has %s.", sheet.getSheetName(), k, entity.name);
+		  rrLog("rebuildRoles(%s): principal.roles[%s] has %s.", sheet.getSheetName(), k, entity.name);
 		} else {
-		  Logger.log("rebuildRoles(%s): principal.roles[%s] lacks %s; adding.", sheet.getSheetName(), k, entity.name);
+		  rrLog("rebuildRoles(%s): principal.roles[%s] lacks %s; adding.", sheet.getSheetName(), k, entity.name);
 		  this.principal.roles[k].push(entity.name);
 		}
 		  
@@ -223,19 +223,19 @@ function readRows(sheet, entitiesByName) {
 		entity._role[this.principal.name] = entity._role[this.principal.name] || [];
 		if (entity._role[this.principal.name].filter(function(el){return el == k}).length == 0) {
 		  entity._role[this.principal.name].push(k);
-		  Logger.log("rebuildRoles(%s): VASSAL: entity %s knows that it is a %s to %s",
+		  rrLog("rebuildRoles(%s): VASSAL: entity %s knows that it is a %s to %s",
 					 sheet.getSheetName(), entity.name, k, this.principal.name);
 		}
 	  }
 	}
 	var entityNames = []; for (var eN in entitiesByName) { entityNames.push(eN) }
-	Logger.log("readRows(%s): have contributed to entitiesByName = %s", sheet.getSheetName(), entityNames);
+	rrLog("(%s): have contributed to entitiesByName = %s", sheet.getSheetName(), entityNames);
 
 	// TODO: waitaminute. aren't these the same object? this.entitiesByName = entitiesByName, no? anyway, this doesn't seem to have any effect really.
   
 	var entityNames = []; for (var eN in this.entitiesByName) { entityNames.push(eN) }
-	Logger.log("readRows(%s): this's this.entitiesByName = %s", sheet.getSheetName(), entityNames);
-	//  Logger.log("readRows: config = %s\n", JSON.stringify(config,null,"  "));
+	rrLog("(%s): this's this.entitiesByName = %s", sheet.getSheetName(), entityNames);
+	//  rrLog("config = %s\n", JSON.stringify(config,null,"  "));
   };
   
   var es_num = 1; // for email ordering the EchoSign fields
@@ -245,8 +245,8 @@ function readRows(sheet, entitiesByName) {
   for (var i = 0; i <= numRows - 1; i++) {
     var row = values[i];
 	// process header rows
-	if (row.filter(function(c){return c.length > 0}).length == 0) { Logger.log("readRows: row %s is blank, skipping", i);  continue; }
-	else 	Logger.log("readRows: row " + i + ": processing row "+row[0]);
+	if (row.filter(function(c){return c.length > 0}).length == 0) { rrLog("row %s is blank, skipping", i);  continue; }
+	else 	rrLog("row " + i + ": processing row "+row[0]);
     if      (row[0] == "KEY TERMS" ||
 			 row[0] == "TERMS") { section="TERMS"; continue; }
     else if (row[0] == "IGNORE"        ||
@@ -269,12 +269,12 @@ function readRows(sheet, entitiesByName) {
 		include_sheet = sheet.getParent().getSheetByName(row[1]);
 	  }
 
-	  Logger.log("readRows(%s): encountered INCLUDE %s", sheet.getSheetName(), row[1]);
+	  rrLog(["(%s): encountered INCLUDE %s", sheet.getSheetName(), row[1]], 6);
 	  if (include_sheet == undefined) { throw("unable to fetch included sheet " + row[1]) }
 
-	  var includedReadRows = new readRows(include_sheet, entitiesByName);
-	  Logger.log("readRows(%s): back from INCLUDE %s; returned principal = %s",
-				 sheet.getSheetName(), row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined);
+	  var includedReadRows = new readRows(include_sheet, entitiesByName, this.includeDepth+1);
+	  rrLog(["(%s): back from INCLUDE %s; returned principal = %s",
+			sheet.getSheetName(), row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined], 6);
 	  // hopefully we've learned about a bunch of new Entities directly into the entitiesByName shared dict.
 	  // we usually throw away the returned object because we don't really care about the included sheet's terms or config.
 
@@ -284,24 +284,24 @@ function readRows(sheet, entitiesByName) {
 
 	  if (includedReadRows.availableTemplates.length > 0) {
 		// TODO: overwrite existing templates, don't just concatenate.
-		Logger.log("readRows(%s): back from INCLUDE %s; absorbing %s new templates",
-				   sheet.getSheetName(), row[1], includedReadRows.availableTemplates.length);
+		rrLog(["(%s): back from INCLUDE %s; absorbing %s new templates",
+			  sheet.getSheetName(), row[1], includedReadRows.availableTemplates.length], 6);
 		this.availableTemplates = this.availableTemplates.concat(includedReadRows.availableTemplates);
 	  }
 	  if (this.principal == undefined) { this.principal = includedReadRows.principal;
-										 Logger.log("readRows(%s): i have no principal, so adopting from %s", sheet.getSheetName(), include_sheet.getSheetName());
+										 rrLog("(%s): i have no principal, so adopting from %s", sheet.getSheetName(), include_sheet.getSheetName());
 									   }
 
 	  if (row[2] != undefined && row[2].length) {
 		// if row[2] says "TERMS" then we include the TERMS as well.
 		if (row[2] == "TERMS") {
-		  Logger.log("readRows(%s): including TERMS as well.", sheet.getSheetName());
+		  rrLog("(%s): including TERMS as well.", sheet.getSheetName());
 		  for (var ti in includedReadRows.terms) {
 			terms[ti] = includedReadRows.terms[ti];
 		  }
 		}
 		else {
-		  Logger.log("WARNING: readRows(%s): unexpected row[2]==%s ... wtf. should only be TERMS if anything", sheet.getSheetName(), row[2]);
+		  rrLog("WARNING: readRows(%s): unexpected row[2]==%s ... wtf. should only be TERMS if anything", sheet.getSheetName(), row[2]);
 		}
 	  }
 
@@ -309,11 +309,11 @@ function readRows(sheet, entitiesByName) {
 	}
     else if (row[0] == "PARTYFORM_ORDER") { section=row[0]; for (var ki in row) { if (ki<1||row[ki]==undefined||!row[ki]){continue}
 																				  entityfieldorder[ki] = row[ki];
-																				  // Logger.log("readRows: PARTYFORM_ORDER: entityfieldorder[%s] = %s", ki, row[ki]);
+																				  // rrLog("PARTYFORM_ORDER: entityfieldorder[%s] = %s", ki, row[ki]);
 																				  origentityfields[entityfieldorder[ki]] = origentityfields[entityfieldorder[ki]]||{};
 																				  origentityfields[entityfieldorder[ki]].column = parseInt(ki)+1;
 																				  origentityfields[entityfieldorder[ki]].row    = i+1;
-																				  // Logger.log("readRows: learned that field with order "+row[ki]+ " is in row %s column %s ", origentityfields[entityfieldorder[ki]].row, origentityfields[entityfieldorder[ki]].column);
+																				  // rrLog("learned that field with order "+row[ki]+ " is in row %s column %s ", origentityfields[entityfieldorder[ki]].row, origentityfields[entityfieldorder[ki]].column);
 																				}
 											continue;
 										  }
@@ -328,13 +328,13 @@ function readRows(sheet, entitiesByName) {
 											continue;
 										  }
     else if (row[0] == "PARTYFORM_DEFAULT") { section=row[0]; for (var ki in row) { if (ki<1||row[ki]==undefined||entityfieldorder[ki]==undefined||row[ki].length==0){continue}
-																					// Logger.log("readRows: learned default value for %s = %s", entityfieldorder[ki], row[ki]);
+																					// rrLog("learned default value for %s = %s", entityfieldorder[ki], row[ki]);
 																					 origentityfields[entityfieldorder[ki]]["default"] = row[ki];
 																				   }
 											continue;
 										  }
     else if (row[0] == "PARTYFORM_REQUIRED") { section=row[0]; for (var ki in row) { if (ki<1||row[ki]==undefined||entityfieldorder[ki]==undefined){continue}
-																					 // Logger.log("readRows: line "+i+" col "+ki+": learned that field with order "+entityfieldorder[ki]+ " has required="+row[ki]);
+																					 // rrLog("line "+i+" col "+ki+": learned that field with order "+entityfieldorder[ki]+ " has required="+row[ki]);
 																					 origentityfields[entityfieldorder[ki]].required = row[ki];
 																				   }
 											continue;
@@ -350,9 +350,9 @@ function readRows(sheet, entitiesByName) {
 		  if (ki < 1 || row[ki] == undefined) { continue }
           origentityfields[entityfieldorder[ki]] = origentityfields[entityfieldorder[ki]] || {};
           origentityfields[entityfieldorder[ki]].fieldname = row[ki];
-		  // Logger.log("readRows: learned origentityfields["+entityfieldorder[ki]+"].fieldname="+row[ki]);
+		  // rrLog("learned origentityfields["+entityfieldorder[ki]+"].fieldname="+row[ki]);
           entityfields[ki] = asvar_(entityfields[ki]);
-		  // Logger.log("readRows(%s): recorded entityfield[%s]=%s", sheet.getSheetName(), ki, entityfields[ki]);
+		  // rrLog("(%s): recorded entityfield[%s]=%s", sheet.getSheetName(), ki, entityfields[ki]);
 		}
 	  }
 	  continue;
@@ -360,13 +360,13 @@ function readRows(sheet, entitiesByName) {
 	else if (row[0] == "AVAILABLE TEMPLATES") {
 	  section = row[0];
 	  templatefields = [];
-	  Logger.log("we got an Available Templates section heading");
+	  rrLog("we got an Available Templates section heading");
 	  while (row[row.length-1] === "") { row.pop() }
 
 	  for (var ki in row) {
 		if (ki < 1 || row[ki] == undefined) { continue }
         templatefields[ki] = asvar_(row[ki]);
-		Logger.log("readRows(%s): learned templatefields[%s]=%s", sheet.getSheetName(), ki, templatefields[ki]);
+		rrLog("(%s): learned templatefields[%s]=%s", sheet.getSheetName(), ki, templatefields[ki]);
 	  }
 	  continue;
 	}
@@ -381,17 +381,17 @@ function readRows(sheet, entitiesByName) {
 	  // formatify_() returns a string. if you want the original value, get it from
 	  terms["_orig_"       + asvar] = row[1];
 	  terms["_format" + asvar] = term_formats[i][0];
-	  Logger.log("readRows(%s): TERMS: %s = %s --> %s (%s)", sheet.getSheetName(), asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
+	  rrLog("(%s): TERMS: %s = %s --> %s (%s)", sheet.getSheetName(), asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
     }
 	else if (section == "ROLES") { // principal relation entity. these are all strings. we attach other details
 	  var relation  = asvar_(row[0]);
-	  if (relation == "ignore") { Logger.log("ignoring %s line %s", relation, row[1]); continue }
+	  if (relation == "ignore") { rrLog("ignoring %s line %s", relation, row[1]); continue }
 
 	  var entityname    = row[1];
 	  var forHandler = {relation:relation, entityname:entityname, attrs:{}};
 
 	  if (row[2]) {
-		Logger.log("WARNING: readRows(%s): found attributes.", sheet.getSheetName());
+		rrLog("WARNING: readRows(%s): found attributes.", sheet.getSheetName());
 		for (var role_x = 2; role_x < row.length; role_x+=2) {
 		  if (row[role_x] && row[role_x+1] != undefined) {
 			forHandler.attrs[             asvar_(row[role_x])] = formatify_(formats[i][role_x+1], row[role_x+1], sheet, asvar_(row[role_x]));
@@ -433,7 +433,7 @@ function readRows(sheet, entitiesByName) {
 
       var coreRelation = asvar_(row[0]);
 	  if (coreRelation == undefined || ! coreRelation.length || coreRelation == "") { continue }
-	  if (coreRelation.toLowerCase() == "ignore") { Logger.log("ignoring %s line %s", coreRelation, row[1]); continue }
+	  if (coreRelation.toLowerCase() == "ignore") { rrLog("ignoring %s line %s", coreRelation, row[1]); continue }
 
 	  this._last_entity_row = i;
 
@@ -449,17 +449,17 @@ function readRows(sheet, entitiesByName) {
 		entity["_format_" + k] = entity_formats[0][ki];
 		entity["_orig_"   + k] = row[ki];
 		if (v && v.length) { entity["_"+k+"_firstline"] = v.replace(/\n.*/g, ""); }
-//		Logger.log("INFO: field %s, ran formatify_(%s, %s) (%s), got %s (%s)",
+//		rrLog("INFO: field %s, ran formatify_(%s, %s) (%s), got %s (%s)",
 //				   k, entity_formats[0][ki], row[ki], (row[ki] != undefined ? row[ki].constructor.name : "undef"), v, v.constructor.name);
       }
 
 	  // all coreRelation relations in the ENTITIES section are defined relative to the principal, which is hardcoded as the first Company to appear
 	  if (coreRelation == "company" && this.principal == undefined) {
 		this.principal = entity;
-		Logger.log("readRows(%s): wiring this.principal = %s",
+		rrLog("(%s): wiring this.principal = %s",
 				   this.sheet.getSheetName(),
 				   entity.name);
-		Logger.log("readRows(%s): wiring this.principal.roles (%s) = this.roles (%s)",
+		rrLog("(%s): wiring this.principal.roles (%s) = this.roles (%s)",
 				   this.sheet.getSheetName(),
 				   this.principal.name,
 				   this.roles);
@@ -469,12 +469,12 @@ function readRows(sheet, entitiesByName) {
   // connect up the parties based on the relations learned from the ROLES section.
   // this establishes PRINCIPAL.roles.RELATION_NAME = [ party1, party2, ..., partyN ]
   // for instance, companyParty.roles.shareholder = [ alice, bob ]
-      Logger.log("readRows: learning entity (core relation = %s), %s", coreRelation, entity.name);
+      rrLog("learning entity (core relation = %s), %s", coreRelation, entity.name);
 	  this.roles[coreRelation] = this.roles[coreRelation] || [];
 	  this.roles[coreRelation].push(entity.name);
 
 	  if (entitiesByName[entity.name] != undefined) {
-		Logger.log("WARNING: entity %s was previously defined somewhere in the include chain ... not clobbering.");
+		rrLog("WARNING: entity %s was previously defined somewhere in the include chain ... not clobbering.");
 	  } else {
 		// Define Global Parties Entity
 		entitiesByName[entity.name] = entity;
@@ -486,24 +486,24 @@ function readRows(sheet, entitiesByName) {
 	  // config.columna.values is an array of values -- if columna repeats, then values from last line only
 	  // config.columna.dict is a dictionary of b: [c,d,e] across multiple lines
 
-//	  Logger.log("CONF: row " + i + ": processing row "+row[0]);
+//	  rrLog("CONF: row " + i + ": processing row "+row[0]);
 	  
 	  // populate the previous
 	  var columna = asvar_(row[0]) || previous[0];
-	  if (columna == "template") { columna = "templates"; Logger.log("CONF: correcting 'template' to 'templates'"); }
+	  if (columna == "template") { columna = "templates"; rrLog("CONF: correcting 'template' to 'templates'"); }
 	  previous[0] = columna;
 
-//	  Logger.log("CONF: columna="+columna);
+//	  rrLog("CONF: columna="+columna);
 
 	  config[columna] = config[columna] || { asRange:null, values:null, dict:{}, tree:{} };
-//	  Logger.log("CONF: config[columna]="+config[columna]);
+//	  rrLog("CONF: config[columna]="+config[columna]);
 
 	  config[columna].asRange = sheet.getRange(i+1,1,1,sheet.getMaxColumns());
-//	  Logger.log("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
+//	  rrLog("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
 
 	  var rowvalues = config[columna].asRange.getValues()[0];
 	  while (rowvalues[rowvalues.length-1] === "") { rowvalues.pop() }
-//	  Logger.log("CONF: rowvalues = %s", rowvalues);
+//	  rrLog("CONF: rowvalues = %s", rowvalues);
 
 	  var descended = [columna];
 
@@ -512,7 +512,7 @@ function readRows(sheet, entitiesByName) {
 		if (leftmost_nonblank == -1
 			&& (! (rowvalues[j] === ""))) { leftmost_nonblank = j }
 	  }
-//	  Logger.log("CONF: leftmost_nonblank=%s", leftmost_nonblank);
+//	  rrLog("CONF: leftmost_nonblank=%s", leftmost_nonblank);
 
 	  for (var j = 0; j < leftmost_nonblank; j++) {
 		descended[j] = previous[j];
@@ -521,14 +521,14 @@ function readRows(sheet, entitiesByName) {
 		if (j >= 1 && ! (rowvalues[j] === "")) { previous[j] = rowvalues[j] }
 		descended[j] = rowvalues[j];
 	  }
-//	  Logger.log("CONF: descended = %s", descended);
+//	  rrLog("CONF: descended = %s", descended);
 
 	  // build value -- config.a.value = b
 	  config[columna].value = descended[1];
 
 	  // build values -- config.a.values = [b,c,d]
 	  config[columna].values = descended.slice(1);
-//	  Logger.log("CONF: " + columna+".values=%s", config[columna].values.join(","));
+//	  rrLog("CONF: " + columna+".values=%s", config[columna].values.join(","));
 
 	  // build tree -- config.a.tree.b.c.d.e.f=g
 	  treeify_(config[columna].tree, descended.slice(1));
@@ -539,10 +539,10 @@ function readRows(sheet, entitiesByName) {
 	  var columnb = asvar_(descended[1]);
 
 	  config[columna].dict[columnb] = columns_cde;
-//	  Logger.log("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
+//	  rrLog("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
 	}
 	else {
-	  Logger.log("readRows: no handler for %s line %s %s ... ignoring", section, row[0], row[1]);
+	  rrLog("no handler for %s line %s %s ... ignoring", section, row[0], row[1]);
 	}
   }
 
@@ -555,10 +555,10 @@ function readRows(sheet, entitiesByName) {
 	var rrAT = new readRows(getSheetByURL_(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName);
  	this.availableTemplates = rrAT.availableTemplates;
   }
-  Logger.log("readRows: returning this.availableTemplates with length %s", this.availableTemplates.length);
+  rrLog("returning this.availableTemplates with length %s", this.availableTemplates.length);
 
   // an Available Templates sheet has no ENTITIES.
-  if (this.principal == undefined) { Logger.log("readRows: principal is undefined ... we must be in an Available Templates sheet.");
+  if (this.principal == undefined) { rrLog("principal is undefined ... we must be in an Available Templates sheet.");
 									 return; }
 
   this.capTable = new capTable_(sheet);
@@ -593,17 +593,17 @@ function roles2parties(readRows_) {
 	  if (readRows_.entitiesByName[partyName]) {
 		parties[role] = parties[role] || [];
 		parties[role].push(readRows_.entitiesByName[partyName]);
-		Logger.log("%s.roles2parties: populated parties[%s] << %s (type=%s)",
+		rrLog("%s.roles2parties: populated parties[%s] << %s (type=%s)",
 				   readRows_.sheet.getSheetName(),
 				   role, partyName, readRows_.entitiesByName[partyName].party_type);
 	  }
 	  else {
-		Logger.log("WARNING: the Roles section defines a party %s which is not defined in any Entities section, so omitting from the data.parties list.", partyName);
+		rrLog("WARNING: the Roles section defines a party %s which is not defined in any Entities section, so omitting from the data.parties list.", partyName);
 	  }
 	}
   }
   if (parties["company"] == undefined) { parties["company"] = [readRows_.principal];
-										 Logger.log("%s.roles2parties: adopting principal %s as my Company party",
+										 rrLog("%s.roles2parties: adopting principal %s as my Company party",
 													readRows_.sheet.getSheetName(),
 													readRows_.principal.name);
 									   }
@@ -617,19 +617,19 @@ function roles2parties(readRows_) {
 function createDemoUser_(sheet, readRows_, templatedata, config) {
   if (! config.demo_mode) { return }
 
-  Logger.log("createDemoUser_: INFO: entering Demo Mode.");
+  rrLog("createDemoUser_: INFO: entering Demo Mode.");
 
   var parties = roles2parties(readRows_);
-  Logger.log("createDemoUser_: parties = %s", parties);
+  rrLog("createDemoUser_: parties = %s", parties);
   
   if (parties[asvar_(config.default_party_role.value)]) {
-	Logger.log("createDemoUser_: INFO: %s is defined: %s", config.default_party_role.value, parties[asvar_(config.default_party_role.value)].name);
+	rrLog("createDemoUser_: INFO: %s is defined: %s", config.default_party_role.value, parties[asvar_(config.default_party_role.value)].name);
 
   } else {
 	var email = Session.getActiveUser().getEmail();
-	Logger.log("createDemoUser_: INFO: user is absent. creating %s, who is %s", config.default_party_role.value, email);
+	rrLog("createDemoUser_: INFO: user is absent. creating %s, who is %s", config.default_party_role.value, email);
 
-	Logger.log("createDemoUser_: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
+	rrLog("createDemoUser_: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
 	sheet.insertRowAfter(readRows_._last_entity_row+1);
 	var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
 
@@ -648,3 +648,10 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
   return true;
 }
 
+function rrLog(params, loglevel, logconfig) {
+  if (params.constructor.name != "Array") { // allow backward compatibility
+	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
+  }
+  if (loglevel == undefined) { loglevel = 7 }
+  myLog(params,"readrows", loglevel, logconfig);
+}
