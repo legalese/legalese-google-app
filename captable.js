@@ -29,7 +29,6 @@ testing to see if commit works
 var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
 var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=827871932";
 
-
 function capTable_(termsheet, captablesheet) {
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
@@ -71,6 +70,22 @@ function capTable_(termsheet, captablesheet) {
     return this.rounds
   };
 
+  /**
+	* @method
+	* @param {string} roundName - the name of the round you're interested in
+	* @return {object} round - a round
+	*/
+  this.getRound = function(roundName) {
+	var toreturn;
+	for (var ri = 0; ri < this.rounds.length; ri++) {
+	  if (this.rounds[ri].name == roundName) {
+		toreturn = this.rounds[ri];
+		break;
+	  }
+	}
+	return toreturn;
+  };
+  
   /**
 	* @method
 	* @return {object} round - the round corresponding to the active spreadsheet
@@ -177,16 +192,16 @@ function capTable_(termsheet, captablesheet) {
 		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
 	  }
 	}
-	ctLog("capTable: round.by_security_type = %s", JSON.stringify(round.by_security_type));
+	ctLog("round.by_security_type = %s", JSON.stringify(round.by_security_type));
 
 	if (round.new_investors["ESOP"] != undefined && round.new_investors["ESOP"].shares) {
-	  ctLog("capTable: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
+	  ctLog("ESOP: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
 	  round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);
-	  ctLog("capTable: establishing ESOP object for round %s", round.name);
+	  ctLog("ESOP: establishing ESOP object for round %s", round.name);
 	  var seen_ESOP_investor = false;
 	  for (var oi in round.ordered_investors) {
 		var inv = round.ordered_investors[oi];
-		ctLog("capTable: considering investor %s", inv);
+		ctLog("ESOP: considering investor %s", inv);
 		if (inv == "ESOP") { seen_ESOP_investor = true;
 							 round.ESOP.createHolder(inv);
 							 round.ESOP.holderGains(inv, round.new_investors[inv]._orig_shares);
@@ -236,22 +251,6 @@ function capTable_(termsheet, captablesheet) {
 
 //  ctLog("capTable.new(): embroidered rounds to %s", this.rounds);
 
-  /**
-	* @method
-	* @param {string} roundName - the name of the round you're interested in
-	* @return {object} round - a round
-	*/
-  this.getRound = function(roundName) {
-	var toreturn;
-	for (var ri = 0; ri < this.rounds.length; ri++) {
-	  if (this.rounds[ri].name == roundName) {
-		toreturn = this.rounds[ri];
-		break;
-	  }
-	}
-	return toreturn;
-  };
-  
   /**
   * @method
   * @return {undefined}
@@ -322,9 +321,9 @@ function capTable_(termsheet, captablesheet) {
 	* @return {String} holdings - "3 Ordinary Shares and 200 Class F Shares"
 	*/
   this.investorHoldingsInRound = function(investorName, round) {
-	ctLog("investorHoldingsInRound(%s,%s): starting", investorName, round);
+	ctLog([".investorHoldingsInRound(%s,%s): starting", investorName, round], 6);
 	round = round || this.getActiveRound();
-	ctLog("investorHoldingsInRound(): getActiveRound is ", this.getActiveRound());
+	ctLog(".investorHoldingsInRound(): getActiveRound is ", this.getActiveRound());
 	var pre = [];
 	for (var bst in round.by_security_type) {
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName], bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]) }
@@ -337,7 +336,7 @@ function capTable_(termsheet, captablesheet) {
 	* @method
 	*/
   this.newRoles = function() {
-	ctLog("captable.newRoles(): starting. calling getActiveRound()");
+	ctLog([".newRoles(): starting. calling getActiveRound()"], 6);
 	var round = this.getActiveRound();
 	// all the old investors are given "shareholder" roles
 	// all the new investors are given "new_investor" roles.
@@ -1562,6 +1561,8 @@ function CapTableTester(){
 }
 
 function ctLog(params, loglevel, logconfig) {
+  myLogConfig.captable = 8;
+
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
