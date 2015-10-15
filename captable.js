@@ -33,12 +33,17 @@ function capTable_(termsheet, captablesheet) {
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
 
+  this.termsheet = termsheet;
+  this.captablesheet = captablesheet;
+  
   if (captablesheet == undefined) {
 	ctLog(["there is no Cap Table sheet for %s.%s, returning .isValid=false", termsheet.getParent().getName(), termsheet.getSheetName()],3);
 	this.isValid = false;
 	return;
   }
   this.isValid = true;
+
+  this.getUrl = function() { return captablesheet.getParent().getUrl() + "#gid=" + captablesheet.getSheetId() };
   
   ctLog(["parsing captablesheet %s.%s, active round being %s.%s",
 		 captablesheet.getParent().getName(), captablesheet.getSheetName(),
@@ -63,13 +68,15 @@ function capTable_(termsheet, captablesheet) {
   /**
 	* @member
 	*/
-  this.rounds = parseCaptable(captablesheet);
+  this.rounds = this.parseCaptable();
   this.rounds.captable = this;
   
   this.getAllRounds = function(){
     return this.rounds
   };
 
+  ctLog("initializer: .getAllRounds returns %s elements", this.getAllRounds().length);
+  
   /**
 	* @method
 	* @param {string} roundName - the name of the round you're interested in
@@ -389,7 +396,6 @@ function capTable_(termsheet, captablesheet) {
  * @param {object} Round.new_investors - dictionary of new investors who are participating in the round
  * @param {Array} Round.ordered_investors - new investors, listed in order shown in the spreadsheet
  * @param {sheet} Round.sheet - the google activeSheet()
- * @return {captable} captable - the captable object that contains this round
  */
 
 function Round(params) {
@@ -397,6 +403,7 @@ function Round(params) {
   this.new_investors = params.new_investors;
   this.ordered_investors = params.ordered_investors;
   this.sheet = params.sheet;
+  this.captable = params.captable;
 };
 
 /**
@@ -471,14 +478,17 @@ Round.prototype.getCategoryCellValue = function(category){
  * @return {object} toreturn - previous round
  */
 Round.prototype.getPreviousRound = function(){
-  var roundList = captable.getAllRounds();
+  ctLog("getPreviousRound trying to return round previous to %s, from %s", this.getName(), this.captable.getUrl());
+  var roundList = this.captable.getAllRounds();
   var toreturn;
   for (var ri = 0; ri < roundList.length; ri++) {
-    if (this.rounds[ri].name == roundName) {
-      toreturn = this.rounds[ri - 1];
+    if (roundList[ri].name == this.getName()) {
+      toreturn = roundList[ri - 1];
       break;
     }
   }
+  if (toreturn)
+	ctLog("getPreviousRound returning round named %s", toreturn.getName());
   return toreturn;
 };
 
@@ -703,8 +713,8 @@ Round.prototype.getRedemptions = function(){
 //  ... // another round
 //  { name: "TOTAL", ... }
 // ]
-function parseCaptable(sheet) {
-  if (sheet == undefined) { throw "parseCaptable() called without a Cap Table sheet specified!" }
+capTable_.prototype.parseCaptable = function() {
+  var sheet = this.captablesheet;
   ctLog("parseCaptable: running on sheet %s", sheet.getSheetName());
 
   var captableRounds = [];
@@ -745,7 +755,7 @@ function parseCaptable(sheet) {
           captableRounds.push(
 			new Round(
 			  { name: row[j], new_investors: {}, ordered_investors: [],
-				sheet: sheet
+				sheet: sheet, captable: this
 			  }
 			)
 		  ); // we haz a new round!
