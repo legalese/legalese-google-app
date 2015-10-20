@@ -559,7 +559,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
   rrLog("returning this.availableTemplates with length %s", this.availableTemplates.length);
 
   // an Available Templates sheet has no ENTITIES.
-  if (this.principal == undefined) { rrLog("principal is undefined ... we must be in an Available Templates sheet.");
+  if (this.principal == undefined) { rrLog("principal is undefined ... we must be in an Available Templates sheet. won't instantiate capTable. includeDepth=%s", this.includeDepth);
 									 return; }
 
   if (this.includeDepth > 0) {

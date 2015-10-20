@@ -30,6 +30,7 @@ var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7
 var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=827871932";
 
 function capTable_(termsheet, captablesheet) {
+  ctLog(["instantiating capTable object"], 6);
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
 
