@@ -65,7 +65,7 @@ function createReadme_(folder, config, sheet) { // under the parent folder
 
   var logs_para = doc.getBody().appendParagraph("Output PDFs").setHeading(DocumentApp.ParagraphHeading.HEADING1);
 
-  doc.getBody().appendParagraph("Each PDF, when sent for signature, has its own To: and CC: email addresses. They are shown below.");
+  doc.getBody().appendParagraph("Each PDF, when sent for signature, has its own To: and CC: email addresses. They are shown below. Order matters! The signature blocks in the PDF are indexed against the email addresses you enter. If you swap the email addresses around, then signatures will end up appearning against the wrong block.");
 
   utLog("run started");
   var uniq = uniqueKey(sheet);
