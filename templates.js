@@ -19,16 +19,37 @@ function desiredTemplates_(config) {
 	var field = asvar_(i);
 	toreturn.push(field);
   }
-  teLog("desiredTemplates_: returning %s", toreturn);
   return toreturn;
 }
 
-function suitableTemplates(readRows) {
+function suitableTemplates(readRows, parties) {
   var availables = readRows.availableTemplates;
   teLog("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
   var desireds = desiredTemplates_(readRows.config);
+  teLog("suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT}));
+  
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
+
+  suitables = suitables.filter(function (aT) {
+	if (! aT.requires || ! aT.requires.length) {
+	  return true;
+	} else {
+	  if (aT.requires.filter(function (rP){
+		teLog("suitableTemplates filtering: %s requires %s; there are %s such parties", aT.name, rP, parties[rP] ? parties[rP].length : "no");
+		return (parties[rP] && parties[rP].length);
+	  }).length == aT.requires.length) {
+		teLog("suitableTemplates filtering: requirement for %s is met; including in suitables.", aT.name);
+		return true;
+	  }
+	  else {
+		teLog("suitableTemplates filtering: requirement for %s is not met; excluding from suitables.", aT.name);
+		return false;
+	  }
+	}
+  });
+  teLog("filtered suitables = %s", suitables.map(function(e){return e.name}).join(", "));
+
   return suitables;
 }
 
@@ -145,8 +166,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 	var nullIsOK = false;
   
 	for (var mailtype in sourceTemplate.parties) {
-	  teLog("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"",
-				 sourceTemplate.name, mailtype);
+//	  teLog("docsetEmails: sourceTemplate %s: expanding mailtype \"%s\"", sourceTemplate.name, mailtype);
 	  
 	  for (var mti in sourceTemplate.parties[mailtype]) { // to | cc
 		var partytype = sourceTemplate.parties[mailtype][mti]; // company, director, shareholder, etc
@@ -431,9 +451,6 @@ function fillTemplates(sheet) {
   templatedata.whitespace_handling_use_characters = '<?whitespace-handling use-characters?>';
   templatedata._timezone = sheet.getParent().getSpreadsheetTimeZone();
 
-  var suitables = suitableTemplates(readRows_);
-  teLog("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
-
   // the parties{} for a given docset are always the same -- all the defined roles are available
   var parties = roles2parties(readRows_);
 
@@ -442,6 +459,8 @@ function fillTemplates(sheet) {
   for (var p in parties) {
 	teLog("FillTemplates: INFO: parties[%s] = %s", p, parties[p].map(function(pp){return pp.name}));
   }
+
+  var suitables = suitableTemplates(readRows_, parties);
 
   templatedata.company = parties.company[0];
   templatedata._entitiesByName = readRows_.entitiesByName;

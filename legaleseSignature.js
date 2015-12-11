@@ -288,7 +288,7 @@ function uploadAgreement(sheet, interactive) {
 
   var parties = legaleseMain.roles2parties(readRows);
 
-  var suitables = legaleseMain.suitableTemplates(readRows);
+  var suitables = legaleseMain.suitableTemplates(readRows, parties);
   Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   var docsetEmails = new legaleseMain.docsetEmails(sheet, readRows, parties, suitables);
