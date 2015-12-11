@@ -200,7 +200,7 @@ function email_to_cc(email) {
 var myLogStats = {};
 var myLogConfig = { readrows: 6,
 					templates: 6,
-					XXX: 8,
+					XXX: 8,  // raise to 8 when you are frustrated. reduce to 6 when you stop caring. 7 is obviously the threshold.
 				  };
 
 function myLog(params, module, loglevel, logconfig) {

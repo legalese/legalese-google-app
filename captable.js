@@ -339,20 +339,14 @@ function capTable_(termsheet, captablesheet) {
 	ctLog([".investorHoldingsInRound: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 6);
 	var pre = [];
 	for (var bst in round.by_security_type) {
+	  Logger.log("investorHoldingsInRound: trying to singularize shares to share: in bst=%s", bst);
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName],
 																 bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]
 															   ) }
 	}
-	return commaAnd(pre.map(function(bst_count){
-	  if (bst_count[1].match(/note|debt|kiss|safe/i)) {
-		return asCurrency_(round.getCurrency(), bst_count[0]) + "&#160;of " + plural(2, bst_count[1]);
-	  } else {
-		return digitCommas_(bst_count[0],0) + "&#160;" + plural(bst_count[0], bst_count[1]);
-	  }
-	}));
+	return round.inWords(pre);
   };
 
-  
   /** return new roles for imputation by readRows_.handleNewRoles()
 	* @method
 	*/
@@ -427,6 +421,27 @@ function Round(params) {
 Round.prototype.getName = function(){
   return this.name
 };
+
+
+/**
+ * @method
+ * @return {string} name - $N worth of convertible notes and N ordinary shares
+ */
+
+// holdings is an array of arrays: [ [ N, round.security_type ], ... ]
+Round.prototype.inWords = function(holdings) {
+  var that = this;
+  ctLog("inWords(%s): starting", holdings);
+  return commaAnd(holdings.map(function(bst_count){
+	ctLog("inWords(): bst_count = %s", bst_count);
+	if (bst_count[1].match(/note|debt|kiss|safe/i)) {
+	  return asCurrency_(that.getCurrency(), bst_count[0]) + "&#160;of " + plural(2, bst_count[1]);
+	} else {
+	  return digitCommas_(bst_count[0],0) + "&#160;" + plural(bst_count[0], bst_count[1]);
+	}
+  }));
+};
+  
 
 /**
  * @method
@@ -625,7 +640,7 @@ Round.prototype.getSecurityType = function(){
 }
 
 Round.prototype.getCurrency = function(){
-  return (this.amount_raised._format_money || this.post._format_money);
+  return (this.amount_raised ? this.amount_raised._format_money : this.post._format_money);
 }
 
 /**
@@ -646,13 +661,19 @@ Round.prototype.getNewIssues = function(){
   for (var ni in this.new_investors) {
 	if (ni == "ESOP") { continue }
 	toreturn.holders[ni] = this.new_investors[ni];
+	var number_of_things;
 	if (this.new_investors[ni]._orig_shares > 0) {
+	  number_of_things = this.new_investors[ni]._orig_shares;
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
 	}
 	if (this.new_investors[ni]._orig_money > 0) {
+	  number_of_things = this.new_investors[ni]._orig_money;
 	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  + this.new_investors[ni]._orig_money;
 	}
 	currency = currency || this.new_investors[ni]._format_money || this.getCurrency();
+	ctLog("Round.getNewIssues: calling inWords()");
+	this.new_investors[ni]._inWords = this.inWords([ [ number_of_things, this.security_type ] ]);
+	ctLog("Round.getNewIssues: back from inWords()");
   }
   if (currency == undefined) { ctLog("Round.getNewIssues(%s): amount_raised = %s", this.name, this.amount_raised);
 							   ctLog("Round.getNewIssues(%s): post = %s", this.name, this.post);
@@ -1585,8 +1606,6 @@ function CapTableTester(){
 }
 
 function ctLog(params, loglevel, logconfig) {
-  myLogConfig.captable = 8;
-
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
