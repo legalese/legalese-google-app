@@ -417,9 +417,9 @@ function readRows(sheet, entitiesByName, includeDepth) {
 		var v = row[ki];
 		switch (k) {
 		case "to":
-		case "cc":
-		  template.parties[k] = v.split(','); break;
-		default: template[k] = v;
+		case "cc":  	 template.parties[k] = v.split(','); break;
+		case "requires": template        [k] = v.length ? v.split(',') : []; break;
+		default:         template        [k] = v;
 		}
 	  }
 	  this.availableTemplates.push(template);
