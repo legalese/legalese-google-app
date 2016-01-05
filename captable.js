@@ -640,7 +640,7 @@ Round.prototype.getSecurityType = function(){
 }
 
 Round.prototype.getCurrency = function(){
-  return (this.amount_raised ? this.amount_raised._format_money : this.post._format_money);
+  return ((this.amount_raised && this.amount_raised._format_money) ? this.amount_raised._format_money : this.post._format_money);
 }
 
 /**
@@ -846,10 +846,10 @@ capTable_.prototype.parseCaptable = function() {
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          ctLog("captable/%s: looking at row[%s], which is %s",
-                               asvar0,            j,        row[j]);
-//          ctLog("captable/%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
-//                               asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
+//          ctLog("%s: looking at row[%s], which is %s",
+//                     asvar0,            j,        row[j]);
+//          ctLog("%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
+//                     asvar0,                                                      minorByNum[j].round.name, minorByNum[j].minor);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  myRound[asvar0] = myRound[asvar0] || {};
