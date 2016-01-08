@@ -12,6 +12,7 @@ function plural(num, singular, plural, locale) {
 	  else if (singular.match(/y$/)) { plural = singular.replace(/y$/,"ies") }
 	  else                        { plural = owl.pluralize(singular) }
 	}
+	if (plural.match(/Shareses$/)) { plural = plural.replace(/Shareses$/, "Shares") }
 	if (isNaN(num)) { return plural }
 	if (num  > 1)   { return plural }
 	if (num == 1)   { return singular }
