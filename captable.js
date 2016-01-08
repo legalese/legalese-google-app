@@ -339,7 +339,7 @@ function capTable_(termsheet, captablesheet) {
 	ctLog([".investorHoldingsInRound: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 6);
 	var pre = [];
 	for (var bst in round.by_security_type) {
-	  Logger.log("investorHoldingsInRound: trying to singularize shares to share: in bst=%s", bst);
+	  ctLog(["investorHoldingsInRound: trying to singularize shares to share: in bst=%s", bst], 8);
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName],
 																 bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]
 															   ) }
