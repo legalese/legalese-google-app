@@ -1,0 +1,76 @@
+#+TITLE: Documentation for Google Apps Codebase
+
+How does the Legalese Google App work?
+
+* About this Document
+
+This document describes the version 1.0 codebase.
+
+* About the Company Spreadsheet
+A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
+- Entities
+- Cap Table
+- Incorporation
+- Seed Round
+- More Rounds
+
+If you cloned the Legalese Demo Master, you will have something that looks like this.
+
+** The Bound Legalese Script
+In any Legalese Company Spreadsheet, if you go to *Tools / Script Editor*, you will see a bunch of code. This code references the LegaleseMain Library.
+
+*** In the future we will release Legalese as a Google Add-On proper.
+
+Then the script won't be bound.
+
+** legaleseMain.js
+https://script.google.com/a/jfdi.asia/d/1CaOAsbTSaLPxh2X2CBmSyKhgOw4lVs8f_YoIPDqQp_5YHnsMG2gOgNdD/edit?usp=drive_web
+
+Every time you update a component, you will need to copy that component from your local editor into the Google App.
+
+** Library Version Management
+If you make a significant change, you will need to, under Manage Versions, save a new version of the LegaleseMain library.
+
+Then you MUST go to the Legalese Demo Master and in its *Tools / Script Editor* update the lirbray version.
+
+** legaleseSignature.js
+At present this only works for Meng's account to insert things into EchoSign. It contains his application keys and is therefore not really public.
+
+** Makefile
+the Makefile inserts Meng's application keys into the actual built legaleseSignature.js.
+
+* Parsing Spreadsheets
+Getting data from a spreadsheet into an internal Javascript representation is the job of a bunch of parsing modules.
+** captable.js
+** readrows.js
+** templates.js
+
+* User Interface Sugar
+We make it easy for parties to fill in their details.
+
+** form.js
+
+* The Controller
+End-users usually run commands like *Add-Ons / Legalese / Generate PDFs* directly from the relevant tab of the spreadsheet.
+
+But an administrator who manages several deals or companies at the same time may find it easier to use the Controller interface.
+
+In the Controller, all tabs are listed on a single spreadsheet.
+
+When a command is run, and the current sheet is a controller sheet, the command operates on whatever row is selected. More than one row may be selected.
+
+** controller.js
+
+* Utilities
+** util.js
+** format.js
+** lingua.js
+** owl.js
+
+* Unused or under development
+** dependencies.js
+** unused.js
+** drawCompany.s
+** svg.js
+** esop.js
+
