@@ -667,7 +667,7 @@ Round.prototype.getNewIssues = function(){
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
 	}
 	if (this.new_investors[ni]._orig_money > 0) {
-	  number_of_things = this.new_investors[ni]._orig_money;
+	  number_of_things = number_of_things || this.new_investors[ni]._orig_money;
 	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  + this.new_investors[ni]._orig_money;
 	}
 	currency = currency || this.new_investors[ni]._format_money || this.getCurrency();
