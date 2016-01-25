@@ -5,14 +5,39 @@ function otherSheets() {
   var toreturn = [];
   for (var i = 0; i < rangeValues.length; i++) {
 	var myRow = activeRange.getSheet().getRange(activeRange.getRow()+i, 1, 1, 10);
-	Logger.log("you are interested in row " + myRow.getValues()[0]);
-	var ss;
+	Logger.log("you are interested in row whose values are " + myRow.getValues()[0]);
+
+	var ss, sheet;
+	// there are two ways to refer to the other sheet.
+	// the old way was to have the spreadsheet id in column 0 and the sheet id in column 1.
+	if (myRow.getValues()[0][0] && ! myRow.getValues()[0][0].match(/http/) && myRow.getValues()[0][1]) {
 	try { ss = SpreadsheetApp.openById(myRow.getValues()[0][0]) } catch (e) {
 	  Logger.log("couldn't open indicated spreadsheet ... probably on wrong row. %s", e);
 	  throw("is your selection on the correct row?");
 	  return;
 	}
-	var sheet = getSheetById_(ss, myRow.getValues()[0][1])
+    sheet = getSheetById_(ss, myRow.getValues()[0][1])
+	}
+
+	// the new way is to just have a link straight out of the URL bar.
+	// that link can be in column A or column C or encoded as a hyperlink upon column C
+	// https://docs.google.com/spreadsheets/d/1CUPlbK0yVw_7EstVEhKu7wbD_ul_nY2LanSF2JYprx8/edit#gid=1563115849
+	else if (myRow.getValues()[0][0] && myRow.getValues()[0][0].match(/http/)) {
+	  sheet = hyperlink2sheet_(myRow.getValues()[0][0]);
+	}
+	else if (myRow.getValues()[0][2] && myRow.getValues()[0][2].match(/http/)) {
+	  sheet = hyperlink2sheet_(myRow.getValues()[0][2]);
+	}
+	else if (myRow.getValues()[0][2] && myRow.getFormulas()[0][2].match(/http/)) {
+	  sheet = hyperlink2sheet_(myRow.getFormulas()[0][2]);
+	}
+
+	if (! sheet) {
+	  throw("column A should contain a link to the sheet you're working on.");
+	  return;
+	}
+	ss = sheet.getParent();
+	
 	Logger.log("smoochy says otherSheets: sheet %s is on row %s", i.toString(), myRow.getRowIndex().toString());
 	myRow.getCell(1,3).setValue("=HYPERLINK(\""
 								+sheet.getParent().getUrl()
