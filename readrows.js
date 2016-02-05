@@ -247,7 +247,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
     var row = values[i];
 	// process header rows
 	if (row.filter(function(c){return c.length > 0}).length == 0) { rrLog("row %s is blank, skipping", i);  continue; }
-	else 	rrLog("row " + i + ": processing row "+row[0]);
+	else 	rrLog("row %s: processing row %s",i+1,row.slice(0,1));
     if      (row[0] == "KEY TERMS" ||
 			 row[0] == "TERMS") { section="TERMS"; continue; }
     else if (row[0] == "IGNORE"        ||
@@ -503,7 +503,16 @@ function readRows(sheet, entitiesByName, includeDepth) {
 //	  rrLog("CONF: " + columna+".asRange=" + config[columna].asRange.getValues()[0].join(","));
 
 	  var rowvalues = config[columna].asRange.getValues()[0];
+
+	  // if a cell contains "//" then we ignore it and all cells to the right
+	  if (rowvalues.indexOf("//") >= 0) {
+		rrLog("CONF: comment cell found, deleting rightward %s",
+			  rowvalues.slice(rowvalues.indexOf("//"), rowvalues.length - rowvalues.indexOf("//")));
+		     rowvalues.splice(rowvalues.indexOf("//"), rowvalues.length - rowvalues.indexOf("//"));
+	  }
+
 	  while (rowvalues[rowvalues.length-1] === "") { rowvalues.pop() }
+	  // get rid of all right-pad empty cells
 //	  rrLog("CONF: rowvalues = %s", rowvalues);
 
 	  var descended = [columna];
