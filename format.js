@@ -380,7 +380,13 @@ function asCurrency_(currency, amount, chop) {
 
   // Logger.log("asCurrency_(%s, %s, %s)", currency, amount, chop);
 
+  
   var mycurrency = currency;
+
+  // a custom number format could be as complex as [>9999999][$₹]##\,##\,##\,##0;[>99999][$₹]##\,##\,##0;[$₹]##,##0
+  // quick hack to handle a complex custom number format; FIXME! respect the full logic.
+  mycurrency = mycurrency.replace(/.*;/,"");
+  
 //  Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
   var mymatch;
   if (mymatch = currency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
