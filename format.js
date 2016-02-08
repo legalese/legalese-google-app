@@ -389,16 +389,16 @@ function asCurrency_(currency, amount, chop) {
   
 //  Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
   var mymatch;
-  if (mymatch = currency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
-  if (currency.match(/#0$/))     { chop = 0 }
+  if (mymatch = mycurrency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
+  if (mycurrency.match(/#0$/))     { chop = 0 }
 //  Logger.log("asCurrency_() chop = %s", chop);
 
   var matches;
-  if (matches = currency.match(/\[\$(.*)\]/)) { // currency
+  if (matches = mycurrency.match(/\[\$(.*)\]/)) { // currency
     mycurrency = matches[0].substring(2,matches[0].length-1).replace(/ /g," "); // nbsp
   }
 
-  if (matches = currency.match(/"\$"/)) { // currency
+  if (matches = mycurrency.match(/"\$"/)) { // currency
     mycurrency = "$";
   }
 
