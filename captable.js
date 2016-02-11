@@ -99,7 +99,7 @@ function capTable_(termsheet, captablesheet) {
 	* @return {object} round - the round corresponding to the active spreadsheet
 	*/
   this.getActiveRound = function() {
-	ctLog(["captable.getActiveRound(): starting. activeRound = %s", this.activeRound]);
+	ctLog(["captable.getActiveRound(): starting. activeRound = %s", this.activeRound], 9);
 	return this.getRound(this.activeRound);
   };
   
@@ -129,7 +129,8 @@ function capTable_(termsheet, captablesheet) {
   //   shares_pre
   // - how many shares of different types exist after the round
   //   by_security_type = { "Class F Shares" : { "Investor Name" : nnn, "TOTAL" : mmm }, ... }
-  // - we keep a running total to carry forward from round to round
+  // - how many shares of different types a given investor holds
+  // - TODO: keep a running total to carry forward from round to round. see issue 84
   // - we define brand_new_investors as someone who has not been been an investor before. this is basically new_investors minus old_investors.
   var totals = { shares_pre: 0,
 				 money_pre: 0,
@@ -207,6 +208,9 @@ function capTable_(termsheet, captablesheet) {
 	}
 	ctLog("round.by_security_type = %s", JSON.stringify(round.by_security_type));
 
+	// TODO: consider a company that has both Class F and Class F-NV shares. sigh.
+	// also, only unrestricted shares count toward their premptive rights so we need to compute those separately.
+	
 	if (round.new_investors["ESOP"] != undefined && round.new_investors["ESOP"].shares) {
 	  ctLog("ESOP: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
 	  round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);
@@ -316,15 +320,16 @@ function capTable_(termsheet, captablesheet) {
 		if (investor.rounds == undefined) {
 		  investor.rounds = [];
 		}
-		investor.rounds.push({name:            round.name,
-							  price_per_share: round.price_per_share.shares,
-							  shares:          investorInRound.shares,
-							  money:           investorInRound.money,
-							  percentage:      investorInRound.percentage,
-							 });
+		ctLog(["allInvestors: investorInRound %s in %s = %s", investorName, round.name, investorInRound],9);
+		var topush = {name:            round.name };
+		if (round.price_per_share != undefined) { topush.price_per_share = round.price_per_share.shares }
+		topush.shares = investorInRound.shares; topush._orig_shares = investorInRound._orig_shares;
+		topush.money  = investorInRound.money;  topush._orig_money  = investorInRound._orig_money;
+		topush.percentage  = investorInRound.percentage;
+		investor.rounds.push(topush);
 	  }
 	}
-	ctLog("i have built allInvestors: %s", JSON.stringify(toreturn));
+	ctLog(["i have built allInvestors: %s", JSON.stringify(toreturn), 8]);
 	return toreturn;
   };
 
@@ -382,16 +387,40 @@ function capTable_(termsheet, captablesheet) {
 	  toreturn.push(newRole);
 	}
 
+	var tentative_shareholders = [];
 	for (var oi in round.old_investors) {
 	  if (oi == "ESOP" || // special case
 		  round.old_investors[oi].money  == undefined &&
 		  round.old_investors[oi].shares == undefined
 		 ) continue;
 	  var newRole = { relation:"shareholder", entityname:oi, attrs:{} };
-	  toreturn.push(newRole);
+	  tentative_shareholders.push(newRole);
 	}
 
-	ctLog("capTable.newRoles(): imputing %s roles", toreturn.length);
+	// shareholders should exclude convertible noteholders.
+	ctLog(["capTable.newRoles(): role shareholder (before) = %s", tentative_shareholders.map(function(e) { return e.entityname })], 6);
+
+	var allInvestors_ = this.allInvestors();// side effect -- decorates investor with a .rounds attribute
+
+	var allInvestorsByName = {};
+	for (var ai_i in allInvestors_) {
+	  allInvestorsByName[allInvestors_[ai_i].name] = allInvestors_[ai_i].rounds;
+	}
+	
+	var chosen_shareholders = [];
+	for (var tsi in tentative_shareholders) {
+	  var sh_name = tentative_shareholders[tsi].entityname;
+	  if (sh_name == "ESOP") continue;
+	  var has_actual_shares = false;
+	  if (allInvestorsByName[sh_name].filter(function(deets) { return deets._orig_shares }).length) {
+		has_actual_shares = true;
+		chosen_shareholders.push(tentative_shareholders[tsi]);
+	  }
+	  if (has_actual_shares) { toreturn.push(newRole); }
+	}
+	ctLog(["capTable.newRoles(): role shareholder (after) = %s", chosen_shareholders.map(function(e) { return e.entityname })], 6);
+
+	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, JSON.stringify(toreturn)]);
 	return toreturn;
   };
   
