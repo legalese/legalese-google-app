@@ -366,10 +366,10 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 		var entity = this.readRows.entitiesByName[parties[partytype][parties_k].name];
 		teLog("docsetEmails.explode(): working with %s %s %s", partytype, entity.name, sourceTemplate.name);
 		if (entity.legalese_status
-			&& entity.legalese_status.match(/skip explo/) // skip exploding / skip exploder
-			&& entity.legalese_status.match(sourceTemplate.name) // add \b, i think
+			&& entity.legalese_status.match(/skip\s+explo\w+\s+[^;]+/) // skip exploding / skip exploder
+			&& entity.legalese_status.match(/skip\s+explo\w+\s+([^;]+)/)[1].match(sourceTemplate.name) // add \b, i think
 		   ) {
-		  teLog("docsetEmails.explode(%s): SKIPPING because legalese status says %s", entity.name, entity.legalese_status);
+		  teLog(["docsetEmails.explode(%s): SKIPPING because legalese status says %s", entity.name, entity.legalese_status],4);
 		  continue;
 		}
 		var rcpts = this.Rcpts([sourceTemplate], entity);

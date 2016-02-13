@@ -115,10 +115,29 @@ function readRows(sheet, entitiesByName, includeDepth) {
 	  var entityname = newRole.entityname;
 	  var attrs      = newRole.attrs;
 
+	  // skip party
 	  if (config.skip_party && (relation in config.skip_party.tree)) {
 		rrLog("handleNewRoles: skipping party role definition for %s", relation);
 		continue;
 	  }
+
+	  var entity = this.entitiesByName[entityname];
+	  // this may not be valid because we have entity aliases like [Founder].
+
+	  // skip role: legalese status: skip role shareholder
+	  // means pretend that this entity is not a shareholder.
+	  // cognate with legalese status: skip exploding sometemplatename
+	  // you can combine them with: skip exploding sometemplatename someothertemplatename; skip role shareholder
+	  
+	  if (entity
+		  && entity.legalese_status
+		  && entity.legalese_status.match(/skip\s+role/)) {
+		  var skip_roles = entity.legalese_status.match(/skip\s+role\s+([^;]+)/)[1];
+		  if (skip_roles.match(relation)) {
+			rrLog(["handleNewRoles(%s): SKIPPING role %s because legalese status says %s", entityname, relation, entity.legalese_status],3);
+			continue;
+		  }
+		 }
 	  
 	  this.roles[relation] = this.roles[relation] || [];
 
