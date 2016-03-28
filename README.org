@@ -6,6 +6,73 @@ How does the Legalese Google App work?
 
 This document describes the version 1.0 codebase.
 
+* How to Set Up a Development Environment
+
+To start hacking on the Google App internals, you need to set up a development environment.
+
+** Clone a Company Spreadsheet
+First, clone the /[[https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=790633300][Legalese Demo Master]]/ if you haven't already. (If you ran the tutorial, you should have cloned it.) To clone it, click on /File/ / /Make a Copy/. Customize it with the name of some made up company.
+
+We will call your copy of the Demo Master a /Company Spreadsheet/.
+
+** Clone the LegaleseMain library.
+Open the [[https://script.google.com/a/legalese.io/d/1CaOAsbTSaLPxh2X2CBmSyKhgOw4lVs8f_YoIPDqQp_5YHnsMG2gOgNdD/edit?usp=drive_web][LegaleseMain]] library. That's the [[https://script.google.com/a/legalese.io/d/1CaOAsbTSaLPxh2X2CBmSyKhgOw4lVs8f_YoIPDqQp_5YHnsMG2gOgNdD/edit?usp=drive_web][official production library]]. You don't want to mess with that for development.
+
+Go to /File/ / /Make a Copy/. Now you have a ~Copy of LegaleseMain~. That's the version you will edit.
+
+Close the tab for the original LegaleseMain library.
+
+In your copy of LegaleseMain, go to /File/ / /Manage Versions/. Give your version a name like "init", then ~Save New Version~.
+
+Open /File/ / /Project Properties/. Copy the "project key". It should look something like ~M6YlbsVrWR18KeWvOMc3708UQWaHMB8in~. If you are lazy you can try grabbing the document ID out of the URL bar but that's not officially supported.
+
+** Point your cloned Company Spreadsheet at your cloned Copy of LegaleseMain.
+Each Company Spreadsheet has an associated Google Apps Script, which you can get to from /Tools/ / /Script Editor/.
+
+That /Company Script/ comes from ~[[code.js][code.js]]~. It doesn't do much; all the heavy lifting happens inside the LegaleseMain script.
+
+Click on /Libraries/ / /Resources.../.
+
+~Remove~ the existing import of LegaleseMain.
+
+Paste the project key into the ~Find a Library~ box at the bottom of the dialog. Press ~select~.
+
+Set the ~identifier~ to ~legaleseMain~.
+
+Turn on Development Mode.
+
+Hit ~Save~.
+
+** Try running the cloned Incorporation tab.
+
+Go to your cloned Company Spreadsheet. Reload the browser tab, because the script changed.
+
+Go to the Incorporation sheet. You can find it at the bottom row of tabs.
+
+Click on /Add-ons/ / /Generate PDFs/.
+
+Google will ask you to authorize the app. Allow.
+
+When the script finishes, an output link should appear in cell E6.
+
+Open that link.
+
+You should see a bunch of XMLs.
+
+Yay! Your cloned Company Spreadsheet is working well against your cloned LegaleseMain library.
+
+In a few minutes those XMLs should turn into PDFs.
+
+** It Didn't Work.
+
+This section will accumulate Tips & Tricks for handling common failure scenarios along the way to setting up a development environment.
+
+** Try Tweaking Your Cloned LegaleseMain library.
+
+With your development copy of the LegaleseMain library open, go to the ~Code.js~ tab.
+
+In the vicinity of Line 88 you should see 
+
 * About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 - Entities
