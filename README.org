@@ -71,7 +71,11 @@ This section will accumulate Tips & Tricks for handling common failure scenarios
 
 With your development copy of the LegaleseMain library open, go to the ~Code.js~ tab.
 
-In the vicinity of Line 88 you should see 
+In the vicinity of Line 88 you should see a commented out DoNothing.
+
+Uncomment it. Reload your Company Spreadsheet.
+
+If you see the new DoNothing, and calling that function works, then you are now able to make bigger edits! Yay.
 
 * About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
