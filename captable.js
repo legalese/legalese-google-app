@@ -416,8 +416,8 @@ function capTable_(termsheet, captablesheet) {
 		has_actual_shares = true;
 		chosen_shareholders.push(tentative_shareholders[tsi]);
 	  }
-	  if (has_actual_shares) { toreturn.push(newRole); }
 	}
+	toreturn = toreturn.concat(chosen_shareholders);
 	ctLog(["capTable.newRoles(): role shareholder (after) = %s", chosen_shareholders.map(function(e) { return e.entityname })], 6);
 
 	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, JSON.stringify(toreturn)]);
