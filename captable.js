@@ -1,5 +1,4 @@
 /**
-testing to see if commit works
  * An object representing a captable.
  * it gets used by the AA-SG-SPA.xml:
  *
@@ -787,6 +786,7 @@ capTable_.prototype.parseCaptable = function() {
   var values   = rows.getValues();
   var formulas = rows.getFormulas();
   var formats  = rows.getNumberFormats();
+  var display  = rows.getDisplayValues();
 
   var section = null;
   var majorToRound = {};
@@ -883,12 +883,12 @@ capTable_.prototype.parseCaptable = function() {
           var myRound = minorByNum[j].round;
 		  myRound[asvar0] = myRound[asvar0] || {};
 		  // for rows "price per share" and "discount" we save it one layer deeper than we actually need to -- so when you pull it out, dereference the minor col.
-          myRound[asvar0][             minorByNum[j].minor] = formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor);
+          myRound[asvar0][             minorByNum[j].minor] = display[i][j]; // this will give us %% -- see #94
           myRound[asvar0]["_orig_"   + minorByNum[j].minor] = row[j];
           myRound[asvar0]["_format_" + minorByNum[j].minor] = formats[i][j];
-		  ctLog("learned column attribute %s.%s.%s = %s (_orig=%s) (_format=%s)",
-					 myRound.name, asvar0, minorByNum[j].minor, myRound[asvar0][minorByNum[j].minor], row[j],
-					 formats[i][j]
+		  ctLog("learned column attribute %s.%s.%s = %s (_orig=%s) (_format=%s) (manually formatted=%s)",
+				myRound.name, asvar0, minorByNum[j].minor, myRound[asvar0][minorByNum[j].minor], row[j],
+				formats[i][j], formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor)
 					);
         }
       }
