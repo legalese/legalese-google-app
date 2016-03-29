@@ -72,6 +72,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
   var values   = rows.getValues();
   var formulas = rows.getFormulas();
   var formats  = rows.getNumberFormats();
+  var display  = rows.getDisplayValues();
 
   this.includeDepth     = includeDepth || 0;
   this.sheet            = sheet;
@@ -397,9 +398,8 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  // TODO: do we need to ignore situations where row[0] !~ /:$/ ? subsection headings might be noisy.
 	  var asvar = asvar_(row[0]);
-      terms[           asvar] = formatify_(term_formats[i][0], row[1], sheet, asvar);
-	  // formatify_() returns a string. if you want the original value, get it from
-	  terms["_orig_"       + asvar] = row[1];
+      terms[            asvar] = display[i][1];
+	  terms["_orig_"  + asvar] = row[1];
 	  terms["_format" + asvar] = term_formats[i][0];
 	  rrLog("(%s): TERMS: %s = %s --> %s (%s)", sheet.getSheetName(), asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
     }
@@ -414,7 +414,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 		rrLog("WARNING: readRows(%s): found attributes.", sheet.getSheetName());
 		for (var role_x = 2; role_x < row.length; role_x+=2) {
 		  if (row[role_x] && row[role_x+1] != undefined) {
-			forHandler.attrs[             asvar_(row[role_x])] = formatify_(formats[i][role_x+1], row[role_x+1], sheet, asvar_(row[role_x]));
+			forHandler.attrs[             asvar_(row[role_x])] = display[i][role_x+1];
 			forHandler.attrs["_format_" + asvar_(row[role_x])] = formats[i][role_x+1];
 			forHandler.attrs["_orig_"   + asvar_(row[role_x])] = row[role_x+1];
 		  }
@@ -450,6 +450,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 					 roleEntities: function(roleName) { return this.roles[roleName].map(function(n){return entitiesByName[n]}) }
 				   };
       var entity_formats = sheet.getRange(i+1,1,1,row.length).getNumberFormats();
+      var entity_display = sheet.getRange(i+1,1,1,row.length).getDisplayValues();
 
       var coreRelation = asvar_(row[0]);
 	  if (coreRelation == undefined || ! coreRelation.length || coreRelation == "") { continue }
@@ -464,13 +465,11 @@ function readRows(sheet, entitiesByName, includeDepth) {
       for (var ki in entityfields) {
         if (ki < 1) { continue }
         var k = entityfields[ki];
-        var v = formatify_(entity_formats[0][ki], row[ki], sheet, k);
+        var v = entity_display[0][ki];
         entity[k] = v;
 		entity["_format_" + k] = entity_formats[0][ki];
 		entity["_orig_"   + k] = row[ki];
 		if (v && v.length) { entity["_"+k+"_firstline"] = v.replace(/\n.*/g, ""); }
-//		rrLog("INFO: field %s, ran formatify_(%s, %s) (%s), got %s (%s)",
-//				   k, entity_formats[0][ki], row[ki], (row[ki] != undefined ? row[ki].constructor.name : "undef"), v, v.constructor.name);
       }
 
 	  // all coreRelation relations in the ENTITIES section are defined relative to the principal, which is hardcoded as the first Company to appear
