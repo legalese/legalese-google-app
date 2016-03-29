@@ -905,7 +905,7 @@ capTable_.prototype.parseCaptable = function() {
 			myRound.ordered_investors.push(row[0]);
 			myRound.new_investors[row[0]] = {};
 		  }
-          myRound.new_investors[row[0]][minorByNum[j].minor] = formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor);
+          myRound.new_investors[row[0]][minorByNum[j].minor] = display[i][j];
           myRound.new_investors[row[0]]["_orig_"+minorByNum[j].minor] = row[j];
           myRound.new_investors[row[0]]["_format_"+minorByNum[j].minor] = formats[i][j];
 		  ctLog("learned investor %s.%s.%s = %s (orig=%s) (format=%s)",

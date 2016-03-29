@@ -575,13 +575,29 @@ function readRows(sheet, entitiesByName, includeDepth) {
 	}
   }
 
-  // if we've read the entire spreadsheet, and it doesn't have an AVAILABLE TEMPLATES section, then we load the default AVAILABLE TEMPLATES from the demo master.
+  // if we've read the entire sheet, and it doesn't have an AVAILABLE TEMPLATES section, then
+  //   if the CONFIGURATION section says to Use Local Available Templates,
+  //      and the current spreadsheet has an Available Templates tab,
+  //   then we load the AVAILABLE TEMPLATES from the current spreadsheet,
+  //   else we load the global production default AVAILABLE TEMPLATES from the Demo Master, which is hardcoded.
   if (this.principal != undefined &&
 	  this.availableTemplates.length == 0 &&
 	  config.templates != undefined
 	 ) {
-	rrLog("need to load default Available Templates from master spreadsheet.");
-	var rrAT = new readRows(getSheetByURL_(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName, this.includeDepth+1);
+	rrLog("need to load Available Templates from somewhere.");
+	var localAT = this.sheet.getParent().getSheetByName("Available Templates");
+
+	var rrAT;
+	if (config.use_local_available_templates && localAT) {
+	  rrLog("loading Available Templates from the tab in the current spreadsheet.");
+	  rrAT = new readRows(localAT, entitiesByName, this.includeDepth+1);
+	} else {
+	  rrLog("loading Available Templates from Legalese Demo Master.");
+	  rrAT = new readRows(getSheetByURL_(DEFAULT_AVAILABLE_TEMPLATES), entitiesByName, this.includeDepth+1);
+	  if (localAT) {
+		rrLog("a local Available Templates tab was detected. If you want to use that sheet instead, set configuration: Use Local Available Templates = TRUE");
+	  }
+	}
  	this.availableTemplates = rrAT.availableTemplates;
   }
   rrLog("returning this.availableTemplates with length %s", this.availableTemplates.length);
