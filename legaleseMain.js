@@ -17,28 +17,6 @@
  * the subsidiary scripts represent chunks of functionality that reside in separate files both in the source repo and in the production google app.
  * why? because that's better than having everything in one file, that's why.
  *
- * TODO
- *
- * does the form submission trigger DTRT if there are multiple forms all callbacking to the same formsubmit?
- *
-** import the termsheets from "How to invest in a JFDI Startup"
- *
-**  reduce the security threat surface -- find a way to make this work with OnlyCurrentDoc.
- *  https://developers.google.com/apps-script/guides/services/authorization
- *
- *  the risk is that a malicious commit on the legalese codebase will embed undesirable content in an xml template file
- *  which then runs with user permissions with access to all the user's docs. this is clearly undesirable.
- *
- *  a functionally equivalent man-in-the-middle attack would intercept the UrlFetch() operation and return a malicious XML template file,
- *  either attacking obtainTemplate or INCLUDE(Available Templates).
- *
- *  lodging the XML templates inside the app itself is a seemingly attractive alternative, but it reduces to the same threat scenario because that data
- *  has to populate from somewhere in the first place.
- *
- *  we should require that all committers with access to GitHub must have 2FA.
- *
- *  ideally we would reduce the authorization scope of this script to only the current doc.
- *  but we need a way to share the resulting PDF with the user without access to everything in Drive!
 */
 
 
