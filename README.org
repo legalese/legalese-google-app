@@ -6,7 +6,7 @@ How does the Legalese Google App work?
 
 This document describes the version 1.0 codebase.
 
-* How to Set Up a Development Environment
+* HOWTO Set Up a Development Environment
 
 To start hacking on the Google App internals, you need to set up a development environment.
 
@@ -76,6 +76,40 @@ In the vicinity of Line 88 you should see a commented out DoNothing.
 Uncomment it. Reload your Company Spreadsheet.
 
 If you see the new DoNothing, and calling that function works, then you are now able to make bigger edits! Yay!
+
+* HOWTO push a new version of the library to production
+
+** make sure it works in development
+in your personal development environment you should be confident that your new library code works.
+
+** run the test suite on dev
+in the glorious future we will have a test suite that gives us this confidence.
+
+** paste the new version of your library code into the production [[https://script.google.com/a/jfdi.asia/d/1CaOAsbTSaLPxh2X2CBmSyKhgOw4lVs8f_YoIPDqQp_5YHnsMG2gOgNdD/edit?usp=drive_web][LegaleseMain]].
+
+If you do not have edit rights to this file, you may have to talk to Meng.
+
+** Under /File/ / /Manage Versions/, snapshot a new version
+give it a descriptive name.
+
+** run the test suite on production
+is a test suite available? if not, the Glorious Future has not yet arrived.
+
+** if the test suite is not available, test manually using the tutorial.
+test it by hand by running through the tutorial as a brand new user.
+
+after cloning the Legalese Demo Master to run the tutorial, under Tools / Script Editor ... Resources / Libraries, import the latest version of the tutorial.
+
+(you might not need to do this, especially if Development Mode is turned on, but it doesn't hurt.)
+
+if the tutorial doesn't work using the latest version of the script, go back and fix it in dev.
+
+** update the Demo Master's library version
+if the tutorial does work using the latest version of the script, then:
+
+In the [[https://script.google.com/a/jfdi.asia/macros/d/MOvtp1yA4TI3Xrsv4up74DcUQWaHMB8in/edit?uiv=2&mid=ACjPJvF9VLsvHVoGr7KS_JoRwV78ZMohPaEVG9eADoZumpbHRQ5WTTzLPOstHU6pu-N5vaOywUgDQPNz5zHN4W0zYq-uhrFJjS6TBCRjn4oWzeu6mCI9ts4VBI6PW8wMXUUrf08D3bPO1c8][script for the production Legalese Demo Master]], click on /Resources/ / /Libraries/ and update the library import to the latest version.
+
+** you're done!
 
 * About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
