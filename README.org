@@ -29,7 +29,7 @@ Open /File/ / /Project Properties/. Copy the "project key". It should look somet
 ** Point your cloned Company Spreadsheet at your cloned Copy of LegaleseMain.
 Each Company Spreadsheet has an associated Google Apps Script, which you can get to from /Tools/ / /Script Editor/.
 
-That /Company Script/ comes from ~[[code.js][code.js]]~. It doesn't do much; all the heavy lifting happens inside the LegaleseMain script.
+That /Company Script/ comes from ~code.js~. It doesn't do much; all the heavy lifting happens inside the LegaleseMain script.
 
 Click on /Libraries/ / /Resources.../.
 
@@ -69,7 +69,7 @@ This section will accumulate Tips & Tricks for handling common failure scenarios
 
 ** Try Tweaking Your Cloned LegaleseMain library.
 
-With your development copy of the LegaleseMain library open, go to the ~Code.js~ tab.
+With your development copy of the LegaleseMain library open, go to the ~LegaleseMain.js~ tab.
 
 In the vicinity of Line 88 you should see a commented out DoNothing.
 
