@@ -111,6 +111,26 @@ In the [[https://script.google.com/a/jfdi.asia/macros/d/MOvtp1yA4TI3Xrsv4up74DcU
 
 ** you're done!
 
+* HOWTO debug your script
+
+If you're getting a red error message when you run a script, grab the logs before they disappear.
+
+Open /Tools / Script Editor/.
+
+In the script source interface, open /View / Logs/. Copy and paste those logs to a text file or email somewhere.
+
+In the script source interface, open /View / Execution Transcript/. Copy and paste the execution transcript.
+
+The logs are output by Logger.log calls. (In Legalese, ~xxLog~ wrappers are defined in each ~.js~ library; see the bottom of ~util.js~.)
+
+The execution transcript is output by the Google Apps Script system itself.
+
+Usually, the cause of the red error message of death can be found at the bottom of either the logs or the execution transcript, because that's where Google Apps Script gave up.
+
+If you're reporting a bug to a developer, using email or a Github issue, please include both the logs and the execution transcript as attachments in your bug report, and also include the last few lines of both in the body of your report.
+
+The error may be inside an XML template instead of a ~.js~ library. In that case, see [[https://developers.google.com/apps-script/guides/html/templates#debugging_templates][Google Apps on Debugging Templates]], and good luck.
+
 * About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 - Entities
