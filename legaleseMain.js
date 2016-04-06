@@ -66,10 +66,10 @@ function onOpen(addOnMenu, legaleseSignature) {
 	.addItem("Generate PDFs", "legaleseMain.fillTemplates")
   	.addItem("Compute Dependencies", "legaleseMain.computeDependencies")
   	.addItem("Do Dependency Thing", "legaleseMain.depWriteForceLayout")
+  	.addItem("Add a Round to the Cap Table", "legaleseMain.addRound")
   //    .addItem("Do Nothing", "legaleseMain.DoNothing")
   //    .addItem("Update TOTAL Column", "legaleseMain.updateTotal")
   //	.addItem("Add a new Investor or other Party", "legaleseMain.addEntity")
-  //   	.addItem("Add a Round to the Cap Table", "legaleseMain.addRound")
   ;
 
   if (legaleseSignature && legaleseSignature._loaded) {
