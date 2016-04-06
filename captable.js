@@ -930,10 +930,23 @@ capTable_.prototype.parseCaptable = function() {
 // Sure, the capTable object will create a bunch of Round objects when parsing an existing capTable.
 // but when we want to add a new round to a capTable we can start by creating the Round and telling the capTable "here you go, deal with this".
 //
-// TODO: let's create an addRoundToCapTable method.
-//
-// TODO: let's create a createTabForRound method.
-//
+
+
+
+
+// an addRoundToCapTable method.
+// see https://github.com/legalese-io/legalese-io.github.io/issues/73
+function addRound() {
+  ctLog("we are now adding a round to the cap table!");
+
+  // let's create a createTabForRound method.
+  //
+}
+
+
+
+
+
 
 function importCapTableTemplate(ss_ToImportTo){
   var capTableTemplate = getSheetByURL_(DEFAULT_CAPTABLE_TEMPLATE);
