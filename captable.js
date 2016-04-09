@@ -936,8 +936,62 @@ capTable_.prototype.parseCaptable = function() {
 
 // an addRoundToCapTable method.
 // see https://github.com/legalese-io/legalese-io.github.io/issues/73
-function addRound() {
+function addRound(capsheet) {
   ctLog("we are now adding a round to the cap table!");
+  
+  var capSheet = new capTableSheet_(capsheet);
+  // Prompt for the new Round Name and create a new Term Sheet
+  var round = newTermSheet("Enter the Round Name: ");
+
+  // Set up a major column in the Cap Table for the new round
+  capSheet.addMajorColumn(round);
+  capSheet.setReference(round, round, "security type");
+  capSheet.setReference(round, round, "pre-money");
+
+  var newInvestorsRow = capSheet.getCategoryRowCaptable("amount raised");
+  var roundColumn = capSheet.getRoundColumnByName(round);
+  var totalColumn = capSheet.getRoundColumnByName("TOTAL");
+
+  // Insert 2 rows for new investors
+  capSheet.captablesheet.insertRowsAfter(newInvestorsRow-1, 2);
+  // Set background for new investors' money to yellow
+  // and enter fake amounts
+  var newMoneyRange = capSheet.captablesheet.getRange(newInvestorsRow, roundColumn, 2);
+  newMoneyRange.setBackground("yellow").setValues([ [12345], [123456] ]);
+
+  // Set formula for number of shares that new investors receive
+  // Example shares formula: =if('My April Round'!$B$16="equity",floor(K14/L$7),"")
+  var securityEssentialRow = capSheet.getCategoryRowTermSheet(round, "security essential");
+  var ppsRow = capSheet.getCategoryRowCaptable("price per share");
+  // Notation for "price per share" cell
+  var ppsNotation = capSheet.captablesheet.getRange(ppsRow, roundColumn+1).getA1Notation();
+  // Freeze row number in cell notation
+  ppsNotation = ppsNotation[0] + "$" + ppsNotation[1];
+
+  // Cell containing first new investor's amount
+  var newMoneyCell = newMoneyRange.getCell(1, 1).getA1Notation();
+  var sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoneyCell + "/" + ppsNotation + "),\"\")";
+  capSheet.captablesheet.getRange(newInvestorsRow, roundColumn+1).setFormula(sharesFormula);
+  // Cell containing second new investor's amount
+  var newMoneyCell = newMoneyRange.getCell(2, 1).getA1Notation();
+  var sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoneyCell + "/" + ppsNotation + "),\"\")";
+  capSheet.captablesheet.getRange(newInvestorsRow+1, roundColumn+1).setFormula(sharesFormula);
+
+  // Update total percentage formulas
+  /*
+  var postRow = capSheet.getCategoryRowCaptable("post");
+  var postSharesCell = capSheet.captablesheet.getRange(postRow, totalColumn+1).getA1Notation();
+  postSharesCell = postSharesCell[0] + "$" + postSharesCell[1];
+
+  var newPerCell = capSheet.captablesheet.getRange(newInvestorsRow, totalColumn+2);
+  newPerCell.setFormula("=" + 
+  capSheet.captablesheet.getRange(totalColumn+2
+  */
+  var percFormula = capSheet.captablesheet.getRange(newInvestorsRow-1, totalColumn+2).getFormulaR1C1();
+  capSheet.captablesheet.getRange(newInvestorsRow, totalColumn+2, 2).setFormulaR1C1(percFormula);
+  
+  // Update totals to reflect the new major column
+  capSheet.setTotal();
 
   // let's create a createTabForRound method.
   //
@@ -1303,7 +1357,8 @@ function capTableSheet_(captablesheet){
   };
   
   this.addMajorColumn = function(round){//I think sending in a round makes more sense, but for now just pass in the name of the round
-    name = round.getName() || "Blank Round";
+    // name = round.getName() || "Blank Round";
+    name = round || "Blank Round";
     var CapSheet = this.captablesheet;
     var data = CapSheet.getDataRange().getValues();
     
@@ -1514,24 +1569,28 @@ function capTableSheet_(captablesheet){
       categoryRow = this.getCategoryRowCaptable(category);
       roundCol = this.getRoundColumnByName(round);
       var termrow = this.getCategoryRowTermSheet(round, category);
-      
       var originCell = this.captablesheet.getRange(categoryRow, roundCol);
       var A1Notation = originCell.getA1Notation();
 
-	  var cell =                   round.getTermSheet().getRange("B" + termrow);
+      var cell = sheetModified.getRange("B" + termrow);
 //    var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
-      cell.setFormula("= 'Cap Table'!" + A1Notation);
-      
+      cell.setFormula("= 'Cap Table'!" + A1Notation);	
       
     }
     else{
       sheetModified = this.captablesheet;
-      categoryRow = this.getCategoryRowTermSheet(round, category);
+      if(category.toLowerCase() === "security type") {
+	// Is there a better way to do this?
+	categoryRow = this.getCategoryRowTermSheet(round, "security type plural");
+      }
+      else {
+	categoryRow = this.getCategoryRowTermSheet(round, category);
+      }
       var capRow = this.getCategoryRowCaptable(category);
       roundCol = this.getRoundColumnByName(round);
       
-      ctLog("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
-	  var cell = round.getTermSheet().getRange(capRow, roundCol);
+      ctLog("termrow is: %s, capRow is: %s, roundCol is: %s", termrow, capRow, roundCol);
+      var cell = sheetModified.getRange(capRow, roundCol);
 //    var cell = this.captablesheet.getRange(capRow, roundCol);
       ctLog("this is the fomula being set: " + "= '" + round + "' !B" + categoryRow);
       cell.setFormula("= '" + round + "' !B" + categoryRow);
@@ -1600,7 +1659,7 @@ function newTermSheet(prompt){
   var roundName = ui.prompt(prompt, ui.ButtonSet.OK_CANCEL);
   var round = roundName.getResponseText();
   ctLog("return round name: " + round);
-  var termTemplate = getSheetByURL(DEFAULT_TERM_TEMPLATE);
+  var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
 
   if (roundName.getSelectedButton() == ui.Button.OK){
     
