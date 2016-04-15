@@ -16,58 +16,50 @@
  * given action.
  * 
  * @constructor
- * @param {Object} params - input parameters describing the dependency
- * @param {string} params.name - name of the dependency
- * @param {string} params.descEnglish - describing the dependency in english
- * @param {Function} params.satisfied - function that informs the caller if the dependency is satisfied, based on real-world facts
+ * @param {Object} readRows_ - a readRows object containing a given sheet
+ * @param {string} templateName - the name of a template named by the sheet
+ * 
+ * returns an object containing children and parties
  */
 
-var nodeNamed = exports.nodeNamed = {}; // hash of name to actual object
-
-var DepNode = exports.DepNode = function DepNode(params) {
-  this.params = params;
-  this.name = params.name;
-  this.descEnglish = params.descEnglish;
-  this.satisfied = params.satisfied;
-  this.templates = params.templates;
-  
-  nodeNamed[this.name] = this;
-
-};
-
-DepNode.prototype.isDesired = function() {
-  return (this.desired == undefined || this.desired);
-};
-
-var DepGroup = exports.DepGroup = function DepGroup(nodes) {
-  this.nodes = nodes;
-};
-
-DepGroup.prototype.resolve = function() {
-  // return the first desired node, or null
-};
-
-var DepGraph = exports.DepGraph = require ("../dependency-graph/lib/dep_graph.js").DepGraph;
-
-DepGraph.prototype.addDep = function(lhs, rhs) {
-  // if rhs is an array, then use DepGroup logic -- the first desired node is promoted to represent the entire group.
-
-  if (rhs.constructor.name == 'Array') {
-	console.log(lhs + ' requires a depGroup!');
-	var depGroup = new DepGroup(rhs);
-	rhs = depGroup.resolve();
-	if (rhs == undefined) { return }
+function depGraph(readRows_, templateName) {
+  deLog("depGraph(%s, %s): starting", readRows_.sheet.getSheetName(), templateName);
+  this.children = [];
+  this.parties  = [];
+  this.sheet = readRows_.sheet;
+  if (! templateName) { // the dependencies for a sheet are the dependencies for all of its suitable templates
+	this.children = readRows_.suitableTemplates.map(function(t){return new depGraph(readRows_, t.name)});
   }
-  // if rhs's .desired property is false, don't add
+  else { // the dependencies for a template are identified in config under the "requires" tree
+	if (readRows_.config.templates.dict2[templateName] &&
+		readRows_.config.templates.dict2[templateName].requires &&
+		readRows_.config.templates.dict2[templateName].requires.length) {
+	  var children = readRows_.config.templates.dict2[templateName].requires;
+	  deLog(["config.templates.%s.requires = %s",templateName,children]);
+	  this.children = children.map (function(tname) {
+		if (tname.match(/ : /)) { // reference to foreign table
+		  deLog(["reference to foreign table %s -- TODO FIXME", tname]);
+		  return;
+		}
+		return new depGraph(readRows_,tname);
+	  }
+								   );
+	}		   
+	else { deLog(["%s does not require any others", templateName]); }
 
-  if (rhs.isDesired()) {
-	this.addDependency(lhs, rhs);
-  } else {
-	console.log(rhs + " is not desired, so not adding dependency");
+	deLog(["populate parties for signatures"]);
   }
-};
+}
 
 
 
 
 
+
+function deLog(params, loglevel, logconfig) {
+  if (params.constructor.name != "Array") { // allow backward compatibility
+	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
+  }
+  if (loglevel == undefined) { loglevel = 7 }
+  myLog(params,"dependencies", loglevel, logconfig);
+}

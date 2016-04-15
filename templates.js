@@ -15,6 +15,7 @@
 // ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
 function desiredTemplates_(config) {
   var toreturn = [];
+  if (! config.templates) return toreturn;
   for (var i in config.templates.tree) {
 	var field = asvar_(i);
 	toreturn.push(field);
@@ -22,11 +23,33 @@ function desiredTemplates_(config) {
   return toreturn;
 }
 
+// ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
+// dumps dependency graph into a tab called Execution
+// deletes everything in the Execution tab
+// writes in all the templates needed to satisfy the current sheet
+// writes in all the signatories as well
+function computeDependencies() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  // TODO: add support for running in Controller mode
+  var entitiesByName = {};
+  var readRows_ = new readRows(sheet, entitiesByName,0);
+
+  teLog(["computeDependencies calling depGraph()",5]);
+  var dg = new depGraph(readRows_);
+  
+  // output to Execution sheet
+  var executionName = "Execution";
+  var execution = sheet.getParent().getSheetByName(executionName)
+	  || sheet.getParent().insertSheet(executionName, sheet.getIndex());
+  execution.clear();
+}
+
+// ---------------------------------------------------------------------------------------------------------------- suitableTemplates
 function suitableTemplates(readRows, parties) {
   var availables = readRows.availableTemplates;
-  teLog("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
+  teLog("suitableTemplates: for sheet %s, available templates are %s", readRows.sheet.getSheetName(), availables.map(function(aT){return aT.name}));
   var desireds = desiredTemplates_(readRows.config);
-  teLog("suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT}));
+  teLog("suitableTemplates: for sheet %s, desired templates are %s", readRows.sheet.getSheetName(), desireds.map(function(aT){return aT}));
   
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
