@@ -158,9 +158,9 @@ function fauxMegaSign(sheet) {
   var sheetPassedIn = ! (sheet == undefined);
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var entitiesByName = {};
-  var readRows = new legaleseMain.readRows(sheet, entitiesByName);
-  var terms    = readRows.terms;
-  var config   = readRows.config;
+  var readRows_ = new legaleseMain.readRows(sheet, entitiesByName);
+  var terms    = readRows_.terms;
+  var config   = readRows_.config;
 
   var parties = terms.parties;
   var to_list = [];
@@ -277,21 +277,21 @@ function uploadAgreement(sheet, interactive) {
 
   var ss = sheet.getParent();
   var entitiesByName = {};
-  var readRows = new legaleseMain.readRows(sheet, entitiesByName);
-  var terms    = readRows.terms;
-  var config   = readRows.config;
+  var readRows_ = new legaleseMain.readRows(sheet, entitiesByName);
+  var terms    = readRows_.terms;
+  var config   = readRows_.config;
 
   var readmeDoc = legaleseMain.getReadme(sheet);
 
   // TODO: be more organized about this. in the same way that we generated one or more output PDFs for each input template
   // we now need to upload exactly that number of PDFs as transientdocuments, then we need to uploadAgreement once for each PDF.
 
-  var parties = legaleseMain.roles2parties(readRows);
+  var parties = legaleseMain.roles2parties(readRows_);
 
-  var suitables = legaleseMain.suitableTemplates(readRows, parties);
+  var suitables = legaleseMain.suitableTemplates(readRows_, parties);
   Logger.log("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
-  var docsetEmails = new legaleseMain.docsetEmails(sheet, readRows, parties, suitables);
+  var docsetEmails = new legaleseMain.docsetEmails(sheet, readRows_, parties, suitables);
 
   // we need to establish:
   // an AGREEMENT contains one or more transientDocuments
