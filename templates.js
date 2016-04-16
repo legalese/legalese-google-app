@@ -23,32 +23,11 @@ function desiredTemplates_(config) {
   return toreturn;
 }
 
-// ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
-// dumps dependency graph into a tab called Execution
-// deletes everything in the Execution tab
-// writes in all the templates needed to satisfy the current sheet
-// writes in all the signatories as well
-function computeDependencies() {
-  var sheet = SpreadsheetApp.getActiveSheet();
-  // TODO: add support for running in Controller mode
-  var entitiesByName = {};
-  var readRows_ = new readRows(sheet, entitiesByName,0);
-
-  teLog(["computeDependencies calling depGraph()",5]);
-  var dg = new depGraph(readRows_);
-  
-  // output to Execution sheet
-  var executionName = "Execution";
-  var execution = sheet.getParent().getSheetByName(executionName)
-	  || sheet.getParent().insertSheet(executionName, sheet.getIndex());
-  execution.clear();
-}
-
 // ---------------------------------------------------------------------------------------------------------------- suitableTemplates
-function suitableTemplates(readRows, parties) {
-  var availables = readRows.availableTemplates;
+function suitableTemplates(readRows_, parties) {
+  var availables = readRows_.availableTemplates;
   teLog(["suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name})],8);
-  var desireds = desiredTemplates_(readRows.config);
+  var desireds = desiredTemplates_(readRows_.config);
   teLog(["suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT})],8);
   
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
@@ -155,14 +134,16 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 
 
 // see documentation in notes-to-self.org
-var docsetEmails = function (sheet, readRows, parties, suitables) {
+var docsetEmails = function (sheet, readRows_, parties, suitables) {
   this.sheet = sheet;
-  this.readRows = readRows;
+  this.readRows = readRows_;
   this.parties = parties;
   this.suitables = suitables;
+  var that = this;
 
-  var readmeDoc = getReadme(sheet);
+  teLog("docsetEmails(%s): running", this.sheetname);
 
+  
   this.sequence;
   if (this.suitables.length > 1) { this.sequence = 1; } // each sourcetemplate gets a sequence ID. exploded templates all share the same sequence id.
 
@@ -219,7 +200,7 @@ var docsetEmails = function (sheet, readRows, parties, suitables) {
 							  }
 		else                  cc_parties[partytype] = [];
 
-		if (readRows.principal.roles[partytype] == undefined) {
+		if (readRows_.principal.roles[partytype] == undefined) {
 //		  teLog("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
 		  continue;
 		}
@@ -420,7 +401,8 @@ function fillTemplates(sheet) {
 	return;
   }
   sheet = sheet || SpreadsheetApp.getActiveSheet();
-  teLog(["fillTemplates(%s) called; will call readRows(%s)", sheet.getSheetName(), sheet.getSheetName()], 6);
+  var sheetname = sheet.getSheetName();
+  teLog(["fillTemplates(%s) called; will call readRows(%s)", sheetname, sheetname], 6);
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName,0);
   var templatedata   = readRows_.terms;
@@ -434,7 +416,7 @@ function fillTemplates(sheet) {
   // if the person is running this in Demo Mode, and there is no User entity defined, then we create one for them.
   // then we have to reload.
   if (createDemoUser_(sheet, readRows_, templatedata, config)) {
-	teLog(["reloading for demo mode: will call readRows(%s)", sheet.getSheetName()], 6);
+	teLog(["reloading for demo mode: will call readRows(%s)", sheetname], 6);
 	readRows_ = new readRows(sheet, entitiesByName,0);
 	templatedata   = readRows_.terms;
 	config         = readRows_.config;
@@ -444,8 +426,8 @@ function fillTemplates(sheet) {
 
   var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
   teLog("fillTemplates(%s): got back readRows_.entitiesByName=%s",
-			 sheet.getSheetName(),
-			 entityNames);
+		sheetname,
+		entityNames);
 
   if (config.templates == undefined) {
 	throw("sheet doesn't specify any templates ... are you on a Entities sheet perhaps?");
@@ -511,7 +493,7 @@ function fillTemplates(sheet) {
   templatedata.company = parties.company[0];
   templatedata._entitiesByName = readRows_.entitiesByName;
 
-  var docsetEmails_ = new docsetEmails(sheet, readRows_, parties, suitables);
+  var docsetEmails_ = readRows_.docsetEmails;
 
   // you will see the same pattern in uploadAgreement.
   var buildTemplate = function(sourceTemplates, entity, rcpts, explosion) { // this is a callback run within the docsetEmails_ object.
@@ -545,6 +527,12 @@ function fillTemplates(sheet) {
 	// Template: | foobar | thing | SomeValue Pte. Ltd.
 	// means that for the foobar template, data.parties.thing = the entity named SomeValue Pte. Ltd.
 	//
+
+	// TODO
+	// this is a huge mess because we now overload the syntax to allow "requires".
+	// if we are going to seriously support this mechanism in future we should prefix it with a "party_override" key
+	// and use dict2 instead of dict.
+	
 	teLog("buildTemplate(%s): config.templates.dict is %s", sourceTemplate.name, config.templates.dict);
 	if (config.templates.dict[sourceTemplate.name] && config.templates.dict[sourceTemplate.name].length) {
 	  var mydict = config.templates.dict[sourceTemplate.name];
@@ -555,6 +543,10 @@ function fillTemplates(sheet) {
 	  teLog("buildTemplate(%s): keyvalues = %s", sourceTemplate.name, keyvalues);
 	  for (var kk in keyvalues) {
 		teLog("buildTemplate(%s): dealing with %s : %s", sourceTemplate.name, kk, keyvalues[kk]);
+		if (kk == "requires") {
+		  teLog("buildTemplate(%s): that's not meant to be an override; skipping.", sourceTemplate.name);
+		  continue;
+		}
 
 		var matches; // there is similar code elsewhere in readRows() under ROLES
 		if (matches = keyvalues[kk].match(/^\[(.*)\]$/)) {
