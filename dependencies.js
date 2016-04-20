@@ -6,6 +6,8 @@
  * a node group is an ordered set of nodes.
  * if node in the group is satisfied, then the entire group is satisfied.
  * if the group is not satisfied, then the first node in the group is desired.
+ * 
+ * CS: https://en.wikipedia.org/wiki/Topological_sorting
  */
 
 // ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
@@ -33,12 +35,11 @@ function computeDependencies() {
 }
 
 
-
 /*
  * We describe the nodes of the dependency graph in some detail here.
- * Later, the DepGraph library takes care of computing the graph.
+ * Later, the depGraph library takes care of computing the graph.
  * At run-time, we calculate which dependences are already satisfied.
- * We then return a list of templates which are needed to execute a
+ * We then display a list of templates which are needed to execute a
  * given action.
  * 
  * @constructor
@@ -124,9 +125,7 @@ depGraph.prototype.as_array = function(depth) {
   for (var i in this.children) {
 	var child = this.children[i];
 	mya.push(prefix + child.name + " -> " + this.name);
-	mya.push("");
 	mya = mya.concat(child.as_array(depth+1));
-	mya.push("");
   }
   mya.push("");
   return mya;
