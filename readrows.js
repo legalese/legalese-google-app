@@ -398,7 +398,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  // TODO: do we need to ignore situations where row[0] !~ /:$/ ? subsection headings might be noisy.
 	  var asvar = asvar_(row[0]);
-      terms[            asvar] = display[i][1];
+      terms[            asvar] = (values[i][1] === true || values[i][1] === false ? values[i][1] : display[i][1]);
 	  terms["_orig_"  + asvar] = row[1];
 	  terms["_format" + asvar] = term_formats[i][0];
 	  rrLog("(%s): TERMS: %s = %s --> %s (%s)", sheet.getSheetName(), asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
@@ -414,7 +414,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 		rrLog("WARNING: readRows(%s): found attributes.", sheet.getSheetName());
 		for (var role_x = 2; role_x < row.length; role_x+=2) {
 		  if (row[role_x] && row[role_x+1] != undefined) {
-			forHandler.attrs[             asvar_(row[role_x])] = display[i][role_x+1];
+			forHandler.attrs[             asvar_(row[role_x])] = (values[i][role_x+1] === true || values[i][role_x+1] === false) ? values[i][role_x+1] : display[i][role_x+1];
 			forHandler.attrs["_format_" + asvar_(row[role_x])] = formats[i][role_x+1];
 			forHandler.attrs["_orig_"   + asvar_(row[role_x])] = row[role_x+1];
 		  }
@@ -465,7 +465,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
       for (var ki in entityfields) {
         if (ki < 1) { continue }
         var k = entityfields[ki];
-        var v = entity_display[0][ki];
+        var v = row[ki] === true || row[ki] === false ? row[ki] : entity_display[0][ki];
         entity[k] = v;
 		entity["_format_" + k] = entity_formats[0][ki];
 		entity["_orig_"   + k] = row[ki];
