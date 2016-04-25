@@ -391,6 +391,7 @@ function capTable_(termsheet, captablesheet) {
 	var tentative_shareholders = [];
 	for (var oi in round.old_investors) {
 	  if (oi == "ESOP" || // special case
+		  round.old_investors[oi].shares == 0 ||
 		  round.old_investors[oi].money  == undefined &&
 		  round.old_investors[oi].shares == undefined
 		 ) continue;
@@ -717,7 +718,7 @@ Round.prototype.getNewIssues = function(){
   for (var ni in this.new_investors) {
 	if (ni == "ESOP") { continue }
 	toreturn.holders[ni] = this.new_investors[ni];
-	var number_of_things;
+	var number_of_things = undefined;
 	if (this.new_investors[ni]._orig_shares > 0) {
 	  number_of_things = this.new_investors[ni]._orig_shares;
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
