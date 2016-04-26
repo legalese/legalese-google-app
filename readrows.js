@@ -202,7 +202,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 		rrLog("(%s):         ROLES: learning party role %s = %s", this.sheetName, relation, entityname);
 		rrLog("(%s):         ROLES: this.roles[%s]=%s", this.sheetName, relation, this.roles[relation]);
 
-		rrLog("(%s):         ROLES: entityname = %s; entity = %s", this.sheetName, entityname, entity);
+		rrLog("(%s):         ROLES: entityname = %s; entity object has %s keys", this.sheetName, entityname, Object.keys(entity).length);
 		
 		for (var k in attrs) { entity[k] = attrs[k];
 							   rrLog("(%s):         ROLES: learning %s attribute %s = %s", this.sheetName, entityname, k, attrs[k]);
