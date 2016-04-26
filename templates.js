@@ -424,7 +424,7 @@ function fillTemplates(sheet) {
 	templatedata._availableTemplates = readRows_.availableTemplates;
   }
 
-  var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
+  var entityNames = []; for (var eN in readRows_.entitiesByName) { entityNames.push(eN) }
   teLog("fillTemplates(%s): got back readRows_.entitiesByName=%s",
 			 sheet.getSheetName(),
 			 entityNames);
