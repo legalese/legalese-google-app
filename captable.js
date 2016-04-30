@@ -952,8 +952,37 @@ function addRound(capsheet) {
   var roundColumn = capSheet.getRoundColumnByName(round);
   var totalColumn = capSheet.getRoundColumnByName("TOTAL");
 
+  // Get the last "Investor" row from the Entities sheet
+  var entitiesSheet = capSheet.captablesheet.getParent().getSheetByName("Entities");
+  var entitiesNumRows = entitiesSheet.getLastRow();
+  var entitiesRows = entitiesSheet.getSheetValues(1, 1, entitiesNumRows, 1);
+  var i = 0;
+  for(i=0; i<entitiesNumRows; i++) {
+    if(entitiesRows[i][0] == "Investor") {
+      for(i=i+1; i<=entitiesNumRows; i++) {
+	if(entitiesRows[i][0] != "Investor") {
+	  break;
+	}
+      }
+      break;
+    }
+  }
+
+  ctLog("Inserting 2 rows into Entities at row: " + i);
+  // Insert 2 investors into the Entities Sheet
+  if(i < entitiesNumRows) {
+    entitiesSheet.insertRowsAfter(i, 2);
+  }
+  // Enter fake investor names
+  entitiesSheet.getRange(i+1, 1, 2, 2).setValues([ ["Investor", "Investor 1"], ["Investor", "Investor 2"] ]);
+
   // Insert 2 rows for new investors
   capSheet.captablesheet.insertRowsAfter(newInvestorsRow-1, 2);
+
+  // Set new investors' names to Entities sheet references
+  capSheet.captablesheet.getRange(newInvestorsRow, 1).setFormula("=Entities!B" + (i+1));
+  capSheet.captablesheet.getRange(newInvestorsRow+1, 1).setFormula("=Entities!B" + (i+2));
+
   // Set background for new investors' money to yellow
   // and enter fake amounts
   var newMoneyRange = capSheet.captablesheet.getRange(newInvestorsRow, roundColumn, 2);
