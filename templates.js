@@ -24,9 +24,9 @@ function desiredTemplates_(config) {
 
 function suitableTemplates(readRows, parties) {
   var availables = readRows.availableTemplates;
-  teLog("suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name}));
+  teLog(["suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name})],8);
   var desireds = desiredTemplates_(readRows.config);
-  teLog("suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT}));
+  teLog(["suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT})],8);
   
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
@@ -458,7 +458,30 @@ function fillTemplates(sheet) {
 
   // the parties{} for a given docset are always the same -- all the defined roles are available
   var parties = roles2parties(readRows_);
+  
+  teLog(["fillTemplates: looking for negate_role: %s", config.negate_role],4);
+  if (config.negate_role &&
+	  config.negate_role.dict) {
+	teLog(["fillTemplates: handling negate_role exceptions"],4);
+	// specifically negated roles: in config,
+	// negate role: / shareholder / Alice
 
+	for (var negatePartyType in config.negate_role.dict) {
+	  teLog(["fillTemplates: handling negate_role exceptions"],4);
+
+	  config.negate_role.dict[negatePartyType].map(function(negatePartyName) {
+		teLog(["fillTemplates: negating party %s from the list of %s", negatePartyName, negatePartyType],5);
+
+		if (parties[negatePartyType] &&
+			parties[negatePartyType].indexOf(negatePartyName) > -1) {
+		  teLog(["fillTemplates: found and removing."],5);
+		}
+		parties[negatePartyType] = parties[negatePartyType].filter(function(pname){return (pname != negatePartyName)});
+	  });
+	  teLog(["fillTemplates: after negation, parties %s are %s", negatePartyType, Object.keys(parties[negatePartyType])], 6);
+	}
+  }
+  
   templatedata.parties = parties;
   teLog("FillTemplates: INFO: assigning templatedata.parties = %s", Object.getOwnPropertyNames(templatedata.parties));
   for (var p in parties) {
