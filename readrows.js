@@ -563,11 +563,21 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  // build dict -- config.a.dict.b = [c,d,e]
 	  var columns_cde = config[columna].values.slice(1);
-	  if (columns_cde[0] == undefined) { continue }
-	  var columnb = asvar_(descended[1]);
+	  if (columns_cde[0] != undefined) {
+		var columnb = asvar_(descended[1]);
+		config[columna].dict[columnb] = columns_cde;
+		rrLog(["CONF dict: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(",")]);
 
-	  config[columna].dict[columnb] = columns_cde;
-//	  rrLog("CONF: %s", columna+".dict."+columnb+"=" + config[columna].dict[columnb].join(","));
+		// build dict2 -- config.a.dict2.b.c = [d,e]
+		var columns_de = config[columna].values.slice(2);
+		if (columns_de[0] != undefined) {
+		  var columnc = asvar_(descended[2]);
+		  config[columna].dict2 = config[columna].dict2 || {};
+		  config[columna].dict2[columnb] = config[columna].dict2[columnb] || {};
+		  config[columna].dict2[columnb][columnc] = columns_de;
+		  rrLog(["CONF dict2: %s.dict2.%s.%s = %s", columna, columnb, columnc, columns_de],5);
+		}
+	  }
 	}
 	else {
 	  rrLog("no handler for %s line %s %s ... ignoring", section, row[0], row[1]);
@@ -620,6 +630,9 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	this.terms.capTable = this.capTable; // make it accessible from within templates
   }
+
+  this.roles2parties = roles2parties(this);
+  this.suitableTemplates = suitableTemplates(this, this.roles2parties);
 }
 
 function treeify_(root, arr) {
@@ -631,9 +644,7 @@ function treeify_(root, arr) {
 }
 
 
-
-// TODO: turn this into a method
-// map
+// this is available as a property readRows_.roles2parties
 function roles2parties(readRows_) {
   var parties = {};
   // each role shows a list of names. populate the parties array with a list of expanded entity objects.
