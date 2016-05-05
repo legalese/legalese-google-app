@@ -8,13 +8,14 @@ function readDepSheet(){
   var sheet = SpreadsheetApp.getActiveSheet();
   var mydepSheet = new depSheet();
   mydepSheet.read(sheet);
+  return mydepSheet;
 }
 
 function depWriteForceLayout() {
-  var sheet = SpreadsheetApp.getActiveSheet();
-  var mydepSheet = new depSheet();
-  mydepSheet.read(sheet);
+  var mydepSheet = readDepSheet();
   mydepSheet.layout_force();
+  mydepSheet.layout_htmlFileIndex();
+  dumpMyLogStats();
 }
 
 function depSheet() {
@@ -22,7 +23,7 @@ function depSheet() {
   this.vertex = []; // { type=BLANK|SUBSECTION|PDF|PARTY, title=String, URL=String, templatename=String, state=(done|waived|optional|pending|unready) }
   this.edge   = []; // { source=vertex_id, target=vertex_id } // for a Target to be considered done, all its Sources must be done, waived, or optional
 
-  // parsed spreadsheet cells
+  // we keep track of parsed spreadsheet cells
   this.cell = []; // cell[y][x] = VertexIndex
   // type VertexIndex = Int
   
@@ -53,7 +54,7 @@ depSheet.prototype.read = function(sheet) {
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows(); this.numRows = numRows;
   var values   = rows.getValues();
-  var formulas = rows.getFormulas();
+  this.formulas = rows.getFormulas();
   var formats  = rows.getNumberFormats();
   var display  = rows.getDisplayValues();
 
@@ -65,8 +66,8 @@ depSheet.prototype.read = function(sheet) {
     var row = values[i];
 	this.cell[i] = this.cell[i] || [];
 	// process header rows
-	if (row.filter(function(c){return c.length > 0}).length == 0) { deLog("row %s is blank, skipping", i);  continue; }
-	else 	if (row[0]) deLog(["row %s: processing row %s",i+1,row.slice(0,1)],8);
+	if (row.filter(function(c){return c.length > 0}).length == 0) { deLog(["row %s is blank, skipping", i],9);  continue; }
+	else 	if (row[0]) deLog(["row %s: processing row %s",i+1,row.slice(0,1)],9);
 
 	// we have a new sheet subsection
     if      (row[0] == "DEPENDENCIES") {
@@ -92,6 +93,17 @@ depSheet.prototype.read = function(sheet) {
     else if (row[0] == "DEP NODES") {
 	  section=row[0];
 	  if (currentsubsectionvertex) { currentsubsectionvertex.endrow = i-1 }
+	}
+    else if (row[0] == "OUTPUT FOLDER") { // this really should be a CONFIG section
+	  section=row[0];
+	  deLog(["matched OUTPUT FOLDER section: %s", this.formulas[i]],8);
+	  var words = this.formulas[i].slice(1).filter(function(e){return (e != undefined && e.length)});
+	  if (! words.length) {
+		deLog(["matched OUTPUT FOLDER section: %s", row.slice(1)],8);
+		words = row.slice(1).filter(function(e){return (e != undefined && e.length)});
+	  }
+	  this.output_folder = formulate_folder(words.shift());
+	  deLog(["determined output folder is %s", this.output_folder.name],8);
 	}
 
 	// main processing, section-dependent
@@ -129,6 +141,8 @@ depSheet.prototype.read = function(sheet) {
 		 this.vertex.filter(function(v){return (v.type == "pdf")  }).length,
 		 this.vertex.filter(function(v){return (v.type == "party")}).length],8);
 
+  this.decorateVertices();
+  
   // completed first pass over the entire sheet, and built up .vertex and .cell.
   // now we run a second pass over .cell, inferring edges based on position.
   //
@@ -162,7 +176,51 @@ depSheet.prototype.read = function(sheet) {
   // if a vertex has no sources, then, to be complete, it has to be coloured green -- it's probably a party source.
 
   // how do we distinguish between unready and pending vs waiting, etc?
+  // this is where the green tip of coding currently awaits.
 };
+
+// extract additional information about each vertex
+depSheet.prototype.decorateVertices = function() {
+  var self = this;
+  // associate the ultimate filename of the linked PDF.
+
+  // there's usually a hyperlink formula
+
+  for (var v = 0; v < this.vertex.length; v++) {
+	var vertex = this.vertex[v];
+	if (vertex.type == "pdf") {
+	  var formula = self.formulas[vertex.cell[0]][vertex.cell[1]];
+	  deLog(["decorating %s (formula %s)", vertex.title, formula],8);
+
+	  // [16-05-05 02:08:21:775 PDT] dependencies decorating Class F Agreement - Leow Thai Chee (formula =HYPERLINK("https://drive.google.com/open?id=0BxOaYa8pqqSwS2pVZl9hZnZCdzg","Class F Agreement - Leow Thai Chee"))
+	  // [16-05-05 02:08:21:775 PDT] dependencies decorating Directors' Resolution for Allotment (formula =HYPERLINK("https://drive.google.com/open?id=0BxOaYa8pqqSwaG1Oa2ZKQ1Q1ekk","Directors' Resolution for Allotment"))
+
+	  if (formula.match(/^=HYPERLINK\("([^"]+)"/)) {
+		var formulated = formulate_file(formula);
+		vertex.url      = formulated.url;
+		vertex.driveID  = formulated.id;			 
+		vertex.name     = formulated.name;
+		vertex.file     = formulated.file;
+		deLog(["   %s has name=%s size=%s", formulated.id, formulated.name, formulated.file],9);
+	  }
+	}
+  }
+};
+
+function formulate_file (formula) {
+  var url = formula.match(/^=HYPERLINK\("([^"]+)"/) ? (formula.match(/^=HYPERLINK\("([^"]+)"/)[1]) : formula;
+  var id  = url.match(/id=([-\w]+)/)[1];               
+  var file = DriveApp.getFileById(id);                 
+  return { url:url, id:id, file:file, name:file.getName() };
+}
+
+function formulate_folder (formula) {
+  var url = formula.match(/^=HYPERLINK\("([^"]+)"/) ? (formula.match(/^=HYPERLINK\("([^"]+)"/)[1]) : formula;
+  var id  = url.match(/(?:id=|folders\/)([-\w]+)/)[1];               
+  var folder = DriveApp.getFolderById(id);                 
+  return { url:url, id:id, folder:folder, name:folder.getName() };
+}
+
 
 depSheet.prototype.findEdges_subsection_subsection = function() {
   var self = this;
@@ -232,6 +290,45 @@ depSheet.prototype.getVertexesInSubsection = function(subsection) {
   return this.vertex.filter(function(v){ return (v.subsection == subsection) });
 };
 
+depSheet.prototype.getSubsections = function() {
+  return this.vertex.filter(function(v){ return (v.type == "subsection") });
+};
+
+depSheet.prototype.topoSortedSubsections = function() {
+  return this.topoSort(this.getSubsections());
+};
+
+depSheet.prototype.topoSortedPDFs = function(subsection) {
+  var vs = this.getVertexesInSubsection(subsection);
+  return this.topoSort(vs);
+};
+
+depSheet.prototype.topoSort = function(input) {
+  var self = this;
+  // let's borrow Kahn's algorithm.
+  // First, find a list of "start nodes" which have no incoming edges and insert them into a set S; at least one such node must exist in a non-empty acyclic graph. Then:
+  // L ← Empty list that will contain the sorted elements
+  // S ← Set of all nodes with no incoming edges
+  // while S is non-empty do
+  //     remove a node n from S
+  //     add n to tail of L
+  //     for each node m with an edge e from n to m do
+  //        remove edge e from the graph
+  //        if m has no other incoming edges then
+  //          insert m into S
+  //     if graph has edges then
+  //        return error (graph has at least one cycle)
+  //     else 
+  //       return L (a topologically sorted order)
+  //
+
+  var start = input.filter(function(vertex){
+	return (self.sourcesFor(self.vertexId(vertex)).length == 0);
+  });
+  deLog(["topoSort: start nodes with no incoming edges are: %s", start],8);
+  
+};
+
 depSheet.prototype.left_neighbours = function(vertex) {
   var mysubsectionvertex = this.getSubsectionVertex(vertex.subsection);
   var section_start = mysubsectionvertex.cell[0];
@@ -299,10 +396,60 @@ depSheet.prototype.layout_force = function() {
 														  }});
   this.d3.links = this.edge.map(function(edge){return {source:edge[0], target:edge[1]}});
 
-  this.sheet.getRange(this.sheet.getMaxRows(), 1)
-	.setValue(
-	  JSON.stringify(this.d3)
-	);
+  this.idempotent_write("dag.json", JSON.stringify(this.d3));
+};
+
+depSheet.prototype.idempotent_write = function(filename, content) {
+  var outfile;
+  var iterator = this.output_folder.folder.getFilesByName(filename);
+  if (iterator.hasNext()) {
+	outfile = iterator.next();
+	outfile.setContent(content);
+  }
+  else {
+	outfile = this.output_folder.folder.createFile(filename, content);
+  }
+  return outfile;
+}
+
+// output an HTML index listing all the PDFs, organized by section.
+depSheet.prototype.layout_htmlFileIndex = function() {
+  var self = this;
+  var root = XmlService.createElement("html");
+  var head = XmlService.createElement("head"); root.addContent(head);
+  var body = XmlService.createElement("body"); root.addContent(body);
+  var subsections = self.getSubsections();
+
+  var existingFiles = {};
+  var iterator = this.output_folder.folder.getFiles();
+  while (iterator.hasNext()) { var file = iterator.next(); existingFiles[file] = file }
+  
+  for (var vs = 0; vs < subsections.length; vs++) {
+	body.addContent(XmlService.createElement("h2").setText(subsections[vs].title));
+
+	var pdflist = XmlService.createElement("ol"); body.addContent(pdflist);
+	var pdfs = this.getVertexesInSubsection(subsections[vs].title).filter(function(e){return e.type=="pdf"});
+	for (var vpdf = 0; vpdf < pdfs.length; vpdf++) {
+	  pdflist.addContent(XmlService.createElement("li")
+						 .addContent((pdfs[vpdf].name
+									  ? (XmlService.createElement("a").setAttribute("href",pdfs[vpdf].name))
+									  : (XmlService.createElement("b"))
+									 ).setText(pdfs[vpdf].title))
+						);
+	  // if the PDF isn't in the output folder, add it.
+	  if (pdfs[vpdf].file) {
+		if (existingFiles[pdfs[vpdf].file]) {
+		  deLog(["html output: %s already exists, no need to add", pdfs[vpdf].name],9);
+		}
+		else {
+		  deLog(["html output: adding %s to output folder %s", pdfs[vpdf].name, this.output_folder.name],8);
+		  this.output_folder.folder.addFile(pdfs[vpdf].file);
+		}
+	  }
+	}
+  }
+
+  this.idempotent_write("index.html", XmlService.getPrettyFormat().format(XmlService.createDocument(root)));
 };
 
 function deLog(params, loglevel, logconfig) {
