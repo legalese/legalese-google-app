@@ -391,15 +391,23 @@ depSheet.prototype.layout_dagre = function() {
 
 // https://vida.io/documents/fGzpzjP98Bs2ShMHW
 depSheet.prototype.layout_force = function() {
-  this.d3.nodes = this.vertex.map(function(vertex){return {title:(vertex.type == "pdf" ? vertex.subsection + " - " : "") + vertex.title,
-														   type:vertex.type,
-														  }});
-  this.d3.links = this.edge.map(function(edge){return {source:edge[0], target:edge[1]}});
-
-  this.idempotent_write("dag.json", JSON.stringify(this.d3));
+  this.d3.nodes = this.vertex.map(function(vertex){
+	var toreturn = {title:(vertex.type == "pdf" ? vertex.subsection + " - " : "") + vertex.title,
+					type:vertex.type,
+				   };
+	if (vertex.url) {
+	  toreturn.url = vertex.url;
+	  toreturn.filename = vertex.name;
+	}
+	return toreturn;
+  });
+  this.d3.links = this.edge.map(function(edge){
+	return {source:edge[0], target:edge[1]}});
+  
+  this.idempotent_write("dag.json", JSON.stringify(this.d3), "text/plain");
 };
 
-depSheet.prototype.idempotent_write = function(filename, content) {
+depSheet.prototype.idempotent_write = function(filename, content, mimetype) {
   var outfile;
   var iterator = this.output_folder.folder.getFilesByName(filename);
   if (iterator.hasNext()) {
@@ -407,7 +415,7 @@ depSheet.prototype.idempotent_write = function(filename, content) {
 	outfile.setContent(content);
   }
   else {
-	outfile = this.output_folder.folder.createFile(filename, content);
+	outfile = this.output_folder.folder.createFile(filename, content, mimetype);
   }
   return outfile;
 }
@@ -449,7 +457,7 @@ depSheet.prototype.layout_htmlFileIndex = function() {
 	}
   }
 
-  this.idempotent_write("index.html", XmlService.getPrettyFormat().format(XmlService.createDocument(root)));
+  this.idempotent_write("index.html", XmlService.getPrettyFormat().format(XmlService.createDocument(root)), "text/html");
 };
 
 function deLog(params, loglevel, logconfig) {
