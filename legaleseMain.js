@@ -65,6 +65,7 @@ function onOpen(addOnMenu, legaleseSignature) {
 	.addItem("Create Form", "legaleseMain.setupForm")
 	.addItem("Generate PDFs", "legaleseMain.fillTemplates")
   	.addItem("Compute Dependencies", "legaleseMain.computeDependencies")
+  	.addItem("Do Dependency Thing", "legaleseMain.depWriteForceLayout")
   //    .addItem("Do Nothing", "legaleseMain.DoNothing")
   //    .addItem("Update TOTAL Column", "legaleseMain.updateTotal")
   //	.addItem("Add a new Investor or other Party", "legaleseMain.addEntity")
