@@ -426,12 +426,12 @@ depSheet.prototype.layout_force = function() {
   //
   // RIPENING:
   // basically the toposort, from source to target, early to late, leaf to root.
-  // Each document starts out a neutral gray.
-  // we turn all the subsections red.
+  // Each document and party starts out a neutral gray.
+  // Each subsection starts out red.
   // pick the earliest subsection.
   // change the colour of all the nodes in that subsection to black, to indicate that subsection is now active
   // Wait one beat.
-  // Identify the ready PDFs -- anything with no sources or whose sources are all green -- turns its party leaves red, and turns itself red.
+  // Identify the ready PDFs -- anything with no sources or whose sources are all green turns its party leaves red, and turns itself red.
   // Wait one beat.
   // each party that is red waits a random brief amount of time, then turns green.
   // That allows the next set of documents to turn red, together with their partes.
@@ -445,7 +445,7 @@ depSheet.prototype.layout_force = function() {
   // to avoid repeatedly changing to the same state, reflect the fact the object has crossed that stage by either shifting off the list or labeling it in place.
   //
   // STAGES OF GROWTH:
-  // this.d3staged.nodes = [ [0,[rootSubsection,...]],    [100,[rootPDFs,...]],    [200,[partyPDFs,...]],    [300,[otherSubsections]], ...]
+  // this.d3staged.nodes = [ [0,[rootSubsection,...]],    [100,[rootPDFs,...]],    [200,[PDFparties,...]],    [300,[otherSubsections]], ...]
   //
   // STAGES OF COLOUR CHANGE:
   // rootSubsection = { title:..., type:..., ripeness:[  [0,neutral],   [100,black],   [200,red],   [300,green]  ] }
