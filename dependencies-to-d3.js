@@ -391,6 +391,8 @@ depSheet.prototype.layout_dagre = function() {
 
 // https://vida.io/documents/fGzpzjP98Bs2ShMHW
 depSheet.prototype.layout_force = function() {
+
+  // complete graph
   this.d3.nodes = this.vertex.map(function(vertex){
 	var toreturn = {title:(vertex.type == "pdf" ? vertex.subsection + " - " : "") + vertex.title,
 					type:vertex.type,
@@ -403,10 +405,58 @@ depSheet.prototype.layout_force = function() {
   });
   this.d3.links = this.edge.map(function(edge){
 	return {source:edge[0], target:edge[1]}});
+
+  // output
+  this.idempotent_write("dag.json",    JSON.stringify(this.d3), "text/plain");
+
+  this.d3staged = { }; // {nodes,links}
+  // nodes : [ (StageTime,[RipeningNode]) ]
+  //                       RipeningNode :: { Node + [ (StageTime,Colour) ]
+  // links : same old
+  //
+  // the animation shows the growth of a tree, then the ripening of the tree.
+  //
+  // GROWTH:
+  // First, just one goal -- the root (type=subsection).
+  // Then the documents to be signed for that subsection (type=pdf).
+  // Then the parties for those documents. (type=party)
+  // Then the other three four subsections. (type=subsection)
+  // And their documents. (type=pdf)
+  // And their parties. (type=parties)
+  //
+  // RIPENING:
+  // basically the toposort, from source to target, early to late, leaf to root.
+  // Each document starts out a neutral gray.
+  // we turn all the subsections red.
+  // pick the earliest subsection.
+  // change the colour of all the nodes in that subsection to black, to indicate that subsection is now active
+  // Wait one beat.
+  // Identify the ready PDFs -- anything with no sources or whose sources are all green -- turns its party leaves red, and turns itself red.
+  // Wait one beat.
+  // each party that is red waits a random brief amount of time, then turns green.
+  // That allows the next set of documents to turn red, together with their partes.
+  // Eventually all the PDFs and parties in a subsection are green, and
+  // so we turn that subsection node green.
+  //
+  // Maybe off to one side we can maintain a running count of signature and PDFs done?                      
   
-  this.idempotent_write("dag.json", JSON.stringify(this.d3), "text/plain");
+  // we have the idea of a stagetime, which is an int, which we map to D3 ticks in some way.
+  // as the stagetime "present" increases, any element whose stagetime crosses the present boundary changes state.
+  // to avoid repeatedly changing to the same state, reflect the fact the object has crossed that stage by either shifting off the list or labeling it in place.
+  //
+  // STAGES OF GROWTH:
+  // this.d3staged.nodes = [ [0,[rootSubsection,...]],    [100,[rootPDFs,...]],    [200,[partyPDFs,...]],    [300,[otherSubsections]], ...]
+  //
+  // STAGES OF COLOUR CHANGE:
+  // rootSubsection = { title:..., type:..., ripeness:[  [0,neutral],   [100,black],   [200,red],   [300,green]  ] }
+  //
+  
+
+  // output
+  // this.idempotent_write("staged.json", JSON.stringify(this.d3staged), "text/plain");
 };
 
+// this Google Drive equivalent of cat > filename; if the file already exists, overwrite; if not, create.
 depSheet.prototype.idempotent_write = function(filename, content, mimetype) {
   var outfile;
   var iterator = this.output_folder.folder.getFilesByName(filename);
@@ -440,7 +490,7 @@ depSheet.prototype.layout_htmlFileIndex = function() {
 	for (var vpdf = 0; vpdf < pdfs.length; vpdf++) {
 	  pdflist.addContent(XmlService.createElement("li")
 						 .addContent((pdfs[vpdf].name
-									  ? (XmlService.createElement("a").setAttribute("href",pdfs[vpdf].name))
+									  ? (XmlService.createElement("a").setAttribute("href",encodeURI(pdfs[vpdf].name)))
 									  : (XmlService.createElement("b"))
 									 ).setText(pdfs[vpdf].title))
 						);
