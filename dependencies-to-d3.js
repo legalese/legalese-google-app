@@ -13,8 +13,9 @@ function readDepSheet(){
 
 function depWriteForceLayout() {
   var mydepSheet = readDepSheet();
-  mydepSheet.layout_force();
-  mydepSheet.layout_htmlFileIndex();
+  mydepSheet.layout_stages("stages.json");
+//  mydepSheet.layout_d3("dag.json");
+//  mydepSheet.layout_htmlFileIndex();
   dumpMyLogStats();
 }
 
@@ -29,6 +30,9 @@ function depSheet() {
   
   // later, we export to a list of nodes and links suitable for consumption by d3.
   this.d3 = { nodes: [], links: [] };
+  this.stages = [ ]; // [ {id:, nodes:, links:} ]
+  this.v2n_all = [];
+  this.v2n_current = [];
 }
 
 depSheet.prototype.read = function(sheet) {
@@ -271,11 +275,11 @@ depSheet.prototype.findEdges_pdf_subsection = function() {
 };
 
 depSheet.prototype.sourcesFor = function(v) {
-  return this.edge.filter(function(e){return e[1] == v});
+  return this.edge.filter(function(e){return e[1] == v}).map(function(e){return e[0]});
 }
   
 depSheet.prototype.targetsFor = function(v) {
-  return this.edge.filter(function(e){return e[0] == v});
+  return this.edge.filter(function(e){return e[0] == v}).map(function(e){return e[1]});
 }
 
 depSheet.prototype.vertexId = function(vertex) {
@@ -286,8 +290,8 @@ depSheet.prototype.getSubsectionVertex = function(title) {
   return this.vertex.filter(function(v){ return (v.type == "subsection" && v.title == title) })[0];
 };
 
-depSheet.prototype.getVertexesInSubsection = function(subsection) {
-  return this.vertex.filter(function(v){ return (v.subsection == subsection) });
+depSheet.prototype.getVertexesInSubsection = function(subsectiontitle) {
+  return this.vertex.filter(function(v){ return (v.subsection == subsectiontitle && v.title != subsectiontitle && v.type != "subsection") });
 };
 
 depSheet.prototype.getSubsections = function() {
@@ -389,38 +393,47 @@ depSheet.prototype.findEdges_party_pdf = function() {
 depSheet.prototype.layout_dagre = function() {
 };
 
+depSheet.prototype.vertex2node = function(vertex){
+  var toreturn = {title:(vertex.type == "pdf" ? vertex.subsection + " - " : "") + vertex.title,
+				  type:vertex.type,
+				 };
+  return toreturn;
+}
+
+depSheet.prototype.layout_vertex2nodes = function() {
+  return this.vertex.map(this.vertex2node);
+};  
+
+depSheet.prototype.edge2link = function(edge){
+  return {source:edge[0], target:edge[1]}
+};
+
+depSheet.prototype.layout_edges2links = function() {
+  return this.edge.map(this.edge2link);
+};
+
 // https://vida.io/documents/fGzpzjP98Bs2ShMHW
-depSheet.prototype.layout_force = function() {
+depSheet.prototype.layout_d3 = function(outfile) {
+  this.idempotent_write(outfile,   JSON.stringify(this.layout_for_d3({})), "text/javascript");
+};
 
-  // complete graph
-  this.d3.nodes = this.vertex.map(function(vertex){
-	var toreturn = {title:(vertex.type == "pdf" ? vertex.subsection + " - " : "") + vertex.title,
-					type:vertex.type,
-				   };
-	if (vertex.url) {
-	  toreturn.url = vertex.url;
-	  toreturn.filename = vertex.name;
-	}
-	return toreturn;
-  });
-  this.d3.links = this.edge.map(function(edge){
-	return {source:edge[0], target:edge[1]}});
+depSheet.prototype.layout_for_d3 = function(myobject) {
+  myobject.nodes = this.layout_vertex2nodes();
+  myobject.links = this.layout_edges2links();
 
-  // output
-  this.idempotent_write("dag.json",    JSON.stringify(this.d3), "text/plain");
+  return myobject;
+};
 
-  this.d3staged = { }; // {nodes,links}
-  // nodes : [ (StageTime,[RipeningNode]) ]
-  //                       RipeningNode :: { Node + [ (StageTime,Colour) ]
-  // links : same old
+depSheet.prototype.layout_stages = function(outfile) {
+  var self = this;
   //
   // the animation shows the growth of a tree, then the ripening of the tree.
   //
   // GROWTH:
   // First, just one goal -- the root (type=subsection).
   // Then the documents to be signed for that subsection (type=pdf).
-  // Then the parties for those documents. (type=party)
-  // Then the other three four subsections. (type=subsection)
+  // Then the signatories for those documents. (type=party)
+  // Then the other three subsections. (type=subsection)
   // And their documents. (type=pdf)
   // And their parties. (type=parties)
   //
@@ -440,21 +453,105 @@ depSheet.prototype.layout_force = function() {
   //
   // Maybe off to one side we can maintain a running count of signature and PDFs done?                      
   
-  // we have the idea of a stagetime, which is an int, which we map to D3 ticks in some way.
-  // as the stagetime "present" increases, any element whose stagetime crosses the present boundary changes state.
-  // to avoid repeatedly changing to the same state, reflect the fact the object has crossed that stage by either shifting off the list or labeling it in place.
-  //
+  // we have the idea of a stagetime, which is ordered
   // STAGES OF GROWTH:
-  // this.d3staged.nodes = [ [0,[rootSubsection,...]],    [100,[rootPDFs,...]],    [200,[PDFparties,...]],    [300,[otherSubsections]], ...]
+  // this.stages.nodes = [ {id:0, nodes:[rootSubsection,...], links:[]} ]
   //
   // STAGES OF COLOUR CHANGE:
   // rootSubsection = { title:..., type:..., ripeness:[  [0,neutral],   [100,black],   [200,red],   [300,green]  ] }
   //
-  
 
+  // the first stage is the final subsection.
+  var finalTarget = this.vertex
+	  .filter(function(f){return (f.type == "subsection")})
+	  .filter(function(vertex){
+		deLog(["%s has targets %s",
+			   vertex.title,
+			   self.targetsFor(self.vertexId(vertex))
+			   .map(function(t){return self.vertex[t] ? self.vertex[t].title : t + " not found in vertex list"})
+			  ],8);
+		return (self.targetsFor(self.vertexId(vertex)).length == 0);
+	  })
+  ;
+  var staged = new depSheet();
+  deLog(["stage 1: finalTarget = %s", finalTarget],8);
+  staged.vertex = finalTarget;
+  staged.addStage({id:1})
+
+  // the second stage: all the PDFs in the final subsection.
+  // we have to recalculate all the links because the links
+  // are numbered by the index of the vertices, and if the
+  // vertices keep extending, the indexes will be different
+  // to their number from the "all" graph.
+  // let's just set up a fresh graph and import the desired bits into it.
+  deLog(["stage 2: subsection vertices: %s",
+		 self.getVertexesInSubsection(finalTarget[0].title)
+		 .filter(function(f){return f.type=="pdf"})
+		 .length
+		],8);
+  staged.vertex = staged.vertex.concat(self.getVertexesInSubsection(finalTarget[0].title)
+									   .filter(function(f){return f.type=="pdf"}));
+  deLog(["stage 2: staged.vertex now has length %s", staged.vertex.length],8);
+  staged.findEdges_party_pdf();
+  staged.findEdges_pdf_pdf();
+  staged.findEdges_pdf_subsection();
+  staged.addStage({id:2});
+
+  deLog(["stage 3: subsection vertices: %s",
+		 self.getVertexesInSubsection(finalTarget[0].title)
+		 .filter(function(f){return f.type=="party"})
+		 .length
+		],8);
+  staged.vertex = staged.vertex.concat(self.getVertexesInSubsection(finalTarget[0].title)
+									   .filter(function(f){return f.type=="party"}));
+  deLog(["stage 3: staged.vertex now has length %s", staged.vertex.length],8);
+  staged.findEdges_party_pdf();
+  staged.findEdges_pdf_pdf();
+  staged.findEdges_pdf_subsection();
+  staged.addStage({id:3});
+  
   // output
-  // this.idempotent_write("staged.json", JSON.stringify(this.d3staged), "text/plain");
+  for (var s = 0; s < staged.stages.length; s++) {
+	var stage = staged.stages[s];
+	// convert v2n_current from vertex to node
+	stage.nodes = stage.v2n_current.map(self.vertex2node);
+	delete stage.v2n_current;
+  }
+  this.idempotent_write(outfile, JSON.stringify({stages:staged.stages}), "text/plain");
 };
+
+depSheet.prototype.addStage = function(newstage){
+  var self = this;
+  var previous = this.stages[this.stages.length-1];
+  // add the nodes which aren't already nodes from a previous stage.
+  deLog(["i have %s vertices available to consider.", this.vertex.length],8);
+  
+  newstage.v2n_current = [];
+  newstage.links = this.layout_edges2links(); // need make run the same dedup as for nodes
+  
+  for (var v = 0; v < self.vertex.length; v++) {
+	var vertex = self.vertex[v];
+	if (self.alreadyStaged(vertex)) {
+	  deLog(["addStage %s: vertex %s previously staged.", newstage.id, vertex.title],8);
+	  continue }
+	else {
+	  deLog(["addStage %s: staging new vertex %s", newstage.id, vertex.title],8);
+	  self.v2n_all.push(vertex);
+	  newstage.v2n_current.push(vertex);
+	}
+  }
+
+  this.stages.push(newstage);
+};
+
+depSheet.prototype.alreadyStaged = function(test) { // lol, check out the O(n*m) profligacy
+  var self = this;
+  if (test.title == "Series Seed") {
+	deLog(["looking inside v2n_all for %s", test],8);
+  }
+  deLog(["search result: %s", self.v2n_all.indexOf(test)],8);
+  return (self.v2n_all.indexOf(test) >= 0);
+}
 
 // this Google Drive equivalent of cat > filename; if the file already exists, overwrite; if not, create.
 depSheet.prototype.idempotent_write = function(filename, content, mimetype) {
