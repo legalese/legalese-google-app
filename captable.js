@@ -979,6 +979,7 @@ function addRound(capsheet) {
   capSheet.addMajorColumn(round);
   capSheet.setReference(round, round, "security type");
   capSheet.setReference(round, round, "pre-money");
+  capSheet.setReference("Cap Table", round, "price per share", 1);
 
   var newInvestorsRow = capSheet.getCategoryRowCaptable("amount raised");
   var roundColumn = capSheet.getRoundColumnByName(round);
@@ -1596,7 +1597,7 @@ function capTableSheet_(captablesheet){
     for (var row = 1; row <= lastRow; row++){
       cell = termsheet.getRange(row, 1);
       ctLog("the cell value is " + cell.getValue());
-      if (cell.getValue() == termCategory){
+      if (cell.getValue().replace("(unused) ", "") == termCategory){
         ctLog("HURRAY FOUND IT, and it is row " + row);
         return row;
       }
@@ -1621,7 +1622,7 @@ function capTableSheet_(captablesheet){
     
   };
   
-  this.setReference = function(origin, round, category){
+  this.setReference = function(origin, round, category, columnOffset){
     var sheetModified;
     var categoryRow;
     var roundCol;
@@ -1630,6 +1631,10 @@ function capTableSheet_(captablesheet){
       sheetModified = this.spreadSheet.getSheetByName(round);
       categoryRow = this.getCategoryRowCaptable(category);
       roundCol = this.getRoundColumnByName(round);
+      if(!columnOffset) {
+	columnOffset = 0;
+      }
+      roundCol = roundCol + columnOffset;
       var termrow = this.getCategoryRowTermSheet(round, category);
       var originCell = this.captablesheet.getRange(categoryRow, roundCol);
       var A1Notation = originCell.getA1Notation();
