@@ -971,6 +971,9 @@ function addRound(capsheet) {
   var capSheet = new capTableSheet_(capsheet);
   // Prompt for the new Round Name and create a new Term Sheet
   var round = newTermSheet("Enter the Round Name: ");
+  if(!round) {
+    return;
+  }
 
   // Set up a major column in the Cap Table for the new round
   capSheet.addMajorColumn(round);
@@ -1720,14 +1723,13 @@ function newTermSheet(prompt){
   ctLog("return round name: " + round);
   var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
 
-  if (roundName.getSelectedButton() == ui.Button.OK){
-    
-	var newTermSheet = termTemplate.copyTo(spreadSheet);
-	spreadSheet.setActiveSheet(newTermSheet);
-	newTermSheet.setName(round);
+  if (roundName.getSelectedButton() == ui.Button.OK && round) {
+    var newTermSheet = termTemplate.copyTo(spreadSheet);
+    spreadSheet.setActiveSheet(newTermSheet);
+    newTermSheet.setName(round);
+    return round;
   };
   
-  return round;
 };
 
 
