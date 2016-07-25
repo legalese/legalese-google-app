@@ -1411,8 +1411,19 @@ function capTableSheet_(captablesheet){
       //For whatever reason, CapSheet loses its reference after performing this action
       
       var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
-      var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
+      var destination = CapSheet.getRange(1, roundNames.length - 3 + 1, CapSheet.getLastRow(), 3);
       prevMajorColumn.copyTo(destination);
+      // We want to copy only formulas, so we empty the non-formula cells
+      var numRows = destination.getNumRows();
+      var numCols = destination.getNumColumns();
+      for (var i = 1; i <= numRows; i++) {
+	for (var j = 1; j <= numCols; j++) {
+	  ctLog("Formula at " + i + ", " + j + " is " + destination.getCell(i,j).getFormula());
+	  if(destination.getCell(i,j).getFormula().charAt(0) != '=') {
+	    destination.getCell(i,j).setValue("");
+	  }
+	}
+      }
       //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
       
       ctLog("finished the copy and paste");
