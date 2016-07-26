@@ -1018,8 +1018,11 @@ function addRound(capsheet) {
 
   // Set background for new investors' money to yellow
   // and enter fake amounts
-  var newMoneyRange = capSheet.captablesheet.getRange(newInvestorsRow, roundColumn, 2);
-  newMoneyRange.setBackground("yellow").setValues([ [12345], [123456] ]);
+  var newMoneyRange = capSheet.captablesheet.getRange(newInvestorsRow, roundColumn, 2, 3);
+  var newMoney;
+  var newShares;
+  var newPercent;
+  newMoneyRange.offset(0, 0, 2, 1).setBackground("yellow").setValues([ [12345], [123456] ]);
 
   // Set formula for number of shares that new investors receive
   // Example shares formula: =if('My April Round'!$B$16="equity",floor(K14/L$7),"")
@@ -1030,14 +1033,24 @@ function addRound(capsheet) {
   // Freeze row number in cell notation
   ppsNotation = ppsNotation[0] + "$" + ppsNotation[1];
 
-  // Cell containing first new investor's amount
-  var newMoneyCell = newMoneyRange.getCell(1, 1).getA1Notation();
-  var sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoneyCell + "/" + ppsNotation + "),\"\")";
-  capSheet.captablesheet.getRange(newInvestorsRow, roundColumn+1).setFormula(sharesFormula);
-  // Cell containing second new investor's amount
-  var newMoneyCell = newMoneyRange.getCell(2, 1).getA1Notation();
-  var sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoneyCell + "/" + ppsNotation + "),\"\")";
-  capSheet.captablesheet.getRange(newInvestorsRow+1, roundColumn+1).setFormula(sharesFormula);
+  // First new investor's numbers
+  var sharesFormula;
+  var postRow = capSheet.getCategoryRowCaptable("post");
+  var postShares = capSheet.captablesheet.getRange(postRow, roundColumn+1);
+  postShares = getFixedNotation(postShares.getA1Notation(), "A$1");
+  newMoney = newMoneyRange.getCell(1, 1);
+  newShares = newMoneyRange.getCell(1, 2);
+  newPercent = newMoneyRange.getCell(1, 3);
+  sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoney.getA1Notation() + "/" + ppsNotation + "),\"\")";
+  newShares.setFormula(sharesFormula);
+  newPercent.setFormula("=" + newShares.getA1Notation() + "/" + postShares);
+  // Second new investor's numbers
+  newMoney = newMoneyRange.getCell(2, 1);
+  newShares = newMoneyRange.getCell(2, 2);
+  newPercent = newMoneyRange.getCell(2, 3);
+  sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoney.getA1Notation() + "/" + ppsNotation + "),\"\")";
+  newShares.setFormula(sharesFormula);
+  newPercent.setFormula("=" + newShares.getA1Notation() + "/" + postShares);
   
   // Update totals to reflect the new major column
   capSheet.setTotal();
