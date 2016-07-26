@@ -1009,19 +1009,6 @@ function addRound(capsheet) {
   var newMoneyCell = newMoneyRange.getCell(2, 1).getA1Notation();
   var sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoneyCell + "/" + ppsNotation + "),\"\")";
   capSheet.captablesheet.getRange(newInvestorsRow+1, roundColumn+1).setFormula(sharesFormula);
-
-  // Update total percentage formulas
-  /*
-  var postRow = capSheet.getCategoryRowCaptable("post");
-  var postSharesCell = capSheet.captablesheet.getRange(postRow, totalColumn+1).getA1Notation();
-  postSharesCell = postSharesCell[0] + "$" + postSharesCell[1];
-
-  var newPerCell = capSheet.captablesheet.getRange(newInvestorsRow, totalColumn+2);
-  newPerCell.setFormula("=" + 
-  capSheet.captablesheet.getRange(totalColumn+2
-  */
-  var percFormula = capSheet.captablesheet.getRange(newInvestorsRow-1, totalColumn+2).getFormulaR1C1();
-  capSheet.captablesheet.getRange(newInvestorsRow, totalColumn+2, 2).setFormulaR1C1(percFormula);
   
   // Update totals to reflect the new major column
   capSheet.setTotal();
@@ -1455,6 +1442,21 @@ function capTableSheet_(captablesheet){
     var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
     var investorEndRow = this.getCategoryRowCaptable("amount raised") -1;
     ctLog("investors exist beween rows " + investorBeginRow + " and " + investorEndRow);
+
+    // locate post row
+    var post;
+    try {
+      post = this.getCategoryRowCaptable("post");
+    } catch (e) {
+      throw("you need to be on a Cap Table tab to run this menu item -- " + e);
+    };
+    var postRange;
+    try {
+      postRange = sheet.getRange(post, TotalColumn);
+    } catch (e) {
+      throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
+    };
+    var postSharesRange = sheet.getRange(post, TotalColumn + 1);
     
     for (var row = investorBeginRow; row <= investorEndRow; row ++){
       var sumMoney = "=";
@@ -1473,22 +1475,16 @@ function capTableSheet_(captablesheet){
       
       var scell = sheet.getRange(row, TotalColumn + 1);
       scell.setFormula(sumShares);
+
+      var pcell = sheet.getRange(row, TotalColumn + 2);
+      var postSharesFixed = postSharesRange.getA1Notation();
+      var fixRegex = /([A-Z]+)(\d+)/;
+      postSharesFixed = postSharesFixed.replace(fixRegex, "$1\$$$2");
+      var sumPercent = "=" + scell.getA1Notation() + "/" + postSharesFixed;
+      pcell.setFormula(sumPercent);
     }
     
     //update post, post should match
-	var post;
-	try {
-      post = this.getCategoryRowCaptable("post");
-	} catch (e) {
-	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
-	};
-	var postRange;
-	try {
-      postRange = sheet.getRange(post, TotalColumn);
-	} catch (e) {
-	  throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
-	};
-	
     var postMoney = "=";
     var postShares = "=";
     
@@ -1503,9 +1499,7 @@ function capTableSheet_(captablesheet){
     }
     
     postRange.setFormula(postMoney);
-    postRange = sheet.getRange(post, TotalColumn + 1);
-    postRange.setFormula(postShares);
-    
+    postSharesRange.setFormula(postShares);
   }
   
   //checks all? functions in the cap table to make sure they are pointing in the right place
