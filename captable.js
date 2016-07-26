@@ -1477,9 +1477,7 @@ function capTableSheet_(captablesheet){
       scell.setFormula(sumShares);
 
       var pcell = sheet.getRange(row, TotalColumn + 2);
-      var postSharesFixed = postSharesRange.getA1Notation();
-      var fixRegex = /([A-Z]+)(\d+)/;
-      postSharesFixed = postSharesFixed.replace(fixRegex, "$1\$$$2");
+      var postSharesFixed = getFixedNotation(postSharesRange.getA1Notation(), "A$1");
       var sumPercent = "=" + scell.getA1Notation() + "/" + postSharesFixed;
       pcell.setFormula(sumPercent);
     }
