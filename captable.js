@@ -1445,7 +1445,10 @@ function capTableSheet_(captablesheet){
       // We want to copy only formulas, so we empty the non-formula cells
       var numRows = destination.getNumRows();
       var numCols = destination.getNumColumns();
-      for (var i = 1; i <= numRows; i++) {
+      var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
+      var investorEndRow = this.getCategoryRowCaptable("amount raised") - 1;
+      ctLog("Investor begin row: " + investorBeginRow + ", end row: " + investorEndRow);
+      for (var i = investorBeginRow; i <= investorEndRow; i++) {
 	for (var j = 1; j <= numCols; j++) {
 	  ctLog("Formula at " + i + ", " + j + " is " + destination.getCell(i,j).getFormula());
 	  if(destination.getCell(i,j).getFormula().charAt(0) != '=') {
