@@ -948,13 +948,20 @@ function addRound(capsheet) {
 
   // Set up a major column in the Cap Table for the new round
   capSheet.addMajorColumn(round);
-  capSheet.setReference(round, round, "security type");
-  capSheet.setReference(round, round, "pre-money");
-  capSheet.setReference("Cap Table", round, "price per share", 1);
 
+  // Useful locators
   var newInvestorsRow = capSheet.getCategoryRowCaptable("amount raised");
   var roundColumn = capSheet.getRoundColumnByName(round);
   var totalColumn = capSheet.getRoundColumnByName("TOTAL");
+  
+  // Enter basic values for new round
+  capSheet.setReference(round, round, "security type");
+  var dateRow = capSheet.getCategoryRowCaptable("approximate date");
+  var dateValue = Utilities.formatDate(new Date(), capSheet.captablesheet.getParent().getSpreadsheetTimeZone(), "yyyy-mm-dd");
+  capSheet.captablesheet.getRange(dateRow, roundColumn).setValue(dateValue);
+  capSheet.setReference(round, round, "pre-money");
+  capSheet.setReference("Cap Table", round, "price per share", 1);
+
 
   // Get the last "Investor" row from the Entities sheet
   var entitiesSheet = capSheet.captablesheet.getParent().getSheetByName("Entities");
