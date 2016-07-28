@@ -1002,7 +1002,7 @@ function addRound(capsheet) {
   // Notation for "price per share" cell
   var ppsNotation = capSheet.captablesheet.getRange(ppsRow, roundColumn+1).getA1Notation();
   // Freeze row number in cell notation
-  ppsNotation = ppsNotation[0] + "$" + ppsNotation[1];
+  ppsNotation = getFixedNotation(ppsNotation, "A$1");
 
   // First new investor's numbers
   var sharesFormula;
