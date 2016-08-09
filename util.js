@@ -203,6 +203,11 @@ var myLogConfig = { readrows: 6,
 					XXX: 8,  // raise to 8 when you are frustrated. reduce to 6 when you stop caring. 7 is obviously the threshold.
 				  };
 
+// README: a more elegant way to change debug verbosity,
+// rather than edit the global legaleseMain or development legaleseMain,
+// is to add a line at the top of the local spreadsheet's script editor
+//   legaleseMain.myLogConfig.readrows = 8;
+
 function myLog(params, module, loglevel, logconfig) {
   logconfig = logconfig || myLogConfig;
   params[0] = module + " " + params[0];
