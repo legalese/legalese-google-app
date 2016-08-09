@@ -44,6 +44,8 @@ function main() {
   // move any descendants of incoming/, which appear to have been processed correctly (i.e. a .pdf exists for each .xml), into done/
   moveFoldersToDone(incomingFolder, DriveApp.getRootFolder(), doneFolder);
   
+  Logger.log("notInMyDrive has %s elements", notInMyDrive.length);
+
   // move any shared items (that are not in My Drive already) into the incoming/ or done/ folder depending on whether they're complete
   for (var i = 0; i < notInMyDrive.length; i++) {
     var item_as_file = DriveApp.getFileById(notInMyDrive[i].id);
@@ -93,7 +95,7 @@ function folderIsComplete(folder) {
   
   Logger.log("found xml files: %s", xmls);
   Logger.log("found pdf files: %s", pdfs);
-  if (anyLacking) { Logger.log("%s lacks XMLs/PDFs, so not Complete.", folder.getName());
+  if (anyLacking) { Logger.log("%s lacks XMLs, so not Complete.", folder.getName());
                    return false; }
     
   for (var filename in xmls) {
@@ -153,7 +155,9 @@ function readDrive() {
   var now = Utilities.formatDate(new Date(), SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "yyyyMMdd-HHmmss");
   for (var i = 0; i < shared.length; i++) {
     setCellLink(sheet, [2, height+i], shared[i].title, shared[i].alternateLink);
-    var parents = shared[i].parents.map(function toDriveApp(parent) { return DriveApp.getFolderById(parent.id) });
+    var parents = shared[i].parents.map(function toDriveApp(parent) { return DriveApp.getFolderById(parent.id) })
+    .filter(function(p){return (p.getName() == "done" || p.getName() == "incoming")});
+    
     sheet.getRange(height+i, 6 ).setValue(parents.length ? '=HYPERLINK("' + parents[0].getUrl() + '","' + parents[0].getName() + '")' : "new");
     sheet.getRange(height+i, 7 ).setValue(shared[i].id);
     sheet.getRange(height+i, 10).setValue(now);
@@ -185,6 +189,7 @@ function listShared() {
     }
     pageToken = folders.nextPageToken;
   } while (pageToken);
+  Logger.log("shared with me: %s", toreturn.map(function(f){return f.title}));
   return toreturn;
 }
 
@@ -197,12 +202,10 @@ function showTree(sheet, xy, me, filetype, exclusions) {
 
   setCellLink(sheet, xy, me.getName() + (filetype == 'folder' ? "/" : ""), me.getUrl()); // sometimes i am a file, sometimes a folder.
 
-  Logger.log("exclusions = %s", exclusions);
-
   if (filetype == "folder") {
 	var exclusions_match = exclusions.filter(function(e){return e === me.getName()});
 	if (exclusions_match.length) {
-	  Logger.log("pruning exclusion %s" + exclusions_match);
+	  Logger.log("pruning exclusion %s", exclusions_match);
 	  setCellLink(sheet, [xy[0]+1, xy[1]], "pruned");
 	}
 	else {
