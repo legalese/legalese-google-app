@@ -10,7 +10,7 @@
  * CS: https://en.wikipedia.org/wiki/Topological_sorting
  */
 
-// ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
+// ---------------------------------------------------------------------------------------------------------------- computeDependencies
 // dumps dependency graph into a tab called Execution
 // deletes everything in the Execution tab
 // writes in all the templates needed to satisfy the current sheet
