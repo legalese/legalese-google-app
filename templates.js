@@ -599,7 +599,7 @@ function fillTemplates(sheet) {
   teLog("FillTemplates(): we do the exploded templates");
   docsetEmails_.explode(buildTemplate);
 
-  var ROBOT = 'robot@legalese.com';
+  var ROBOT = 'robot@legalese.io';
   teLog("fillTemplates(): sharing %s with %s", folder.getName(), ROBOT);
   folder.addEditor(ROBOT);
 
