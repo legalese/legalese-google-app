@@ -399,7 +399,11 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  // TODO: do we need to ignore situations where row[0] !~ /:$/ ? subsection headings might be noisy.
 	  var asvar = asvar_(row[0]);
-      terms[            asvar] = display[i][1];
+      if ( row[1] === true || row[1] === false ) { // handle booleans separately
+		terms[            asvar] = row[1];
+	  } else {
+		terms[            asvar] = display[i][1];
+	  }
 	  terms["_orig_"  + asvar] = row[1];
 	  terms["_format" + asvar] = term_formats[i][0];
 	  rrLog("(%s): TERMS: %s = %s --> %s (%s)", this.sheetname, asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
