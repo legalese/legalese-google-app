@@ -13,6 +13,8 @@
   */
 
 // ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
+var currentTemplate;
+
 function desiredTemplates_(config) {
   var toreturn = [];
   if (! config.templates) return toreturn;
@@ -664,6 +666,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   clausetext2num = {};
   newTemplate.data.signature_comment = null;
   newTemplate.data._templateName = sourceTemplate.name;
+  currentTemplate = sourceTemplate.name;
 
   // make this handle templatespec etc correctly. see inc_plain_letterhead.
   var xmlRootExtras = [];
