@@ -22,3 +22,5 @@
    - GET requests to:
      - [[http://localhost:8080/api/company/foo]] for company name search
      - [[http://localhost:8080/api/company/uen/bar]] for UEN search
+** Working example
+   - [[http://legalese-1739871667.ap-southeast-1.elb.amazonaws.com/api/company/foo]]
