@@ -20,5 +20,5 @@
    - Run ~index.js~ with ~nohup node index.js &~ - if background is required.
 ** How to query
    - GET requests to:
-     - http://localhost:8080/api/company/foo for company name search
-     - http://localhost:8080/api/company/uen/bar for UEN search
+     - [[http://localhost:8080/api/company/foo]] for company name search
+     - [[http://localhost:8080/api/company/uen/bar]] for UEN search
