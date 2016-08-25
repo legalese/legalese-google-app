@@ -1,0 +1,8 @@
+* HOW TO USE THIS
+** INSTALL
+   This runs off of [[http://casperjs.org/][CasperJS]]. Install it.
+** RUN
+   Run it in Terminal: casperjs questnet.js.
+** TODO
+   1. Include option args for CLI.
+   2. Integrate with Node API.
