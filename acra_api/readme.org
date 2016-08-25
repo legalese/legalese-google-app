@@ -1,0 +1,24 @@
+* ACRA API for retrieving company business profiles.
+** What this is
+   This is just app.js: i.e., just the file which runs the node API.
+** What you actually need/to do to use this
+   - [[https://docs.mongodb.com/master/tutorial/install-mongodb-on-os-x/][Install MongoDB]]
+   - As with all node projects:
+     - ~npm install mongodb~ (note: mongodb and mongo are /not/ the same thing)
+     - ~npm install body-parser~
+     - ~npm install express~
+   - Put ~index.js~ in your project root folder.
+   - Get the UEN XML file from [[http://ref.data.gov.sg/UENfiles/UEN_DATAGOV.zip][data.gov]]
+   - Translate it to JSON with [[https://www.npmjs.com/package/xml2js][xml2js]], or better still [[https://hackage.haskell.org/package/xml-to-json][a Haskell parser]]
+   - Because MongoDB only takes inserts of up to 16mb, split the file using the python script included
+   - Create a new mongod instance while in the project directory with ~mongod --dbpath=/foo~
+   - Insert with ~ls -1 *.json | while read jsonfile; do mongoimport --database foo --collection bar --file $jsonfile --jsonArray --type json; done~
+     - Note: if overwriting, drop the database first.
+   - Change the relevant fields in ~app.js~ to the correct database name.
+   - Ensure that mongod is running. Open another terminal instance with ~mongod~.
+   - Use ~db.<collection>.find({ENTITY_NAME:"<name>"})~ to make sure your data is in there.
+   - Run ~index.js~ with ~nohup node index.js &~ - if background is required.
+** How to query
+   - GET requests to:
+     - http://localhost:8080/api/company/foo for company name search
+     - http://localhost:8080/api/company/uen/bar for UEN search
