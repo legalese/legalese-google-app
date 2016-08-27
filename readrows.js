@@ -298,7 +298,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 	  rrLog(["(%s): back from INCLUDE %s; returned principal = %s",
 			this.sheetname, row[1], includedReadRows.principal ? includedReadRows.principal.name : undefined], 6);
 	  // hopefully we've learned about a bunch of new Entities directly into the entitiesByName shared dict.
-	  // we usually throw away the returned object because we don't really care about the included sheet's terms or config.
+	  // we usually throw away the returned object because we don't really care about the included sheet's terms, etc.
 
 	  // one may also INCLUDE an Available Templates sheet. if one does so, the default Available Templates sheet will NOT be loaded
 	  // unless you explicitly load it.
@@ -313,6 +313,16 @@ function readRows(sheet, entitiesByName, includeDepth) {
 	  if (this.principal == undefined) { this.principal = includedReadRows.principal;
 										 rrLog("(%s): i have no principal, so adopting from %s", this.sheetname, include_sheet.getSheetName());
 									   }
+
+	  rrLog(["Original config: %s", JSON.stringify(config)], 6);
+	  // copy over new configurations from the included sheet, preserve existing ones
+	  for (var key in includedReadRows.config) {
+	    if(config[key] === undefined) {
+	      config[key] = includedReadRows.config[key];
+	    }
+	  }
+	  rrLog(["INCLUDEd config: %s", JSON.stringify(includedReadRows.config)], 6);
+	  rrLog(["New config: %s", JSON.stringify(config)], 6);
 
 	  if (row[2] != undefined && row[2].length) {
 		// if row[2] says "TERMS" then we include the TERMS as well.
