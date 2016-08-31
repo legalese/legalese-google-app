@@ -755,10 +755,3 @@ function muteTemplateActiveSheetWarnings_(setter) {
   }
 }
 
-function teLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  if (loglevel == undefined) { loglevel = 7 }
-  myLog(params,"templates", loglevel, logconfig);
-}

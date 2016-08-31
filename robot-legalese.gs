@@ -44,7 +44,7 @@ function main() {
   // move any descendants of incoming/, which appear to have been processed correctly (i.e. a .pdf exists for each .xml), into done/
   moveFoldersToDone(incomingFolder, DriveApp.getRootFolder(), doneFolder);
   
-  Logger.log("notInMyDrive has %s elements", notInMyDrive.length);
+  rlLog("notInMyDrive has %s elements", notInMyDrive.length);
 
   // move any shared items (that are not in My Drive already) into the incoming/ or done/ folder depending on whether they're complete
   for (var i = 0; i < notInMyDrive.length; i++) {
@@ -52,15 +52,15 @@ function main() {
     if (item_as_file.getMimeType() == "application/vnd.google-apps.folder") {
       var item_as_folder = DriveApp.getFolderById(notInMyDrive[i].id);
       if (folderIsComplete(item_as_folder)) {
-        Logger.log("weird -- %s seems to be complete, so moving directly to done/", item_as_folder.getName());
+        rlLog("weird -- %s seems to be complete, so moving directly to done/", item_as_folder.getName());
         doneFolder.addFolder(item_as_folder);      
       }
       else {
-        Logger.log("moving %s to incoming/", item_as_folder.getName());
+        rlLog("moving %s to incoming/", item_as_folder.getName());
         incomingFolder.addFolder(item_as_folder);      
       }        
     } else {
-      Logger.log("%s has mimetype (%s) -- not a folder, so not moving", item_as_file.getName(), item_as_file.getMimeType());
+      rlLog("%s has mimetype (%s) -- not a folder, so not moving", item_as_file.getName(), item_as_file.getMimeType());
     }
   }
 
@@ -93,25 +93,25 @@ function folderIsComplete(folder) {
   // we sometimes delete the xml files after generating the PDFs.
   // a folder with at least one PDFs, and with no XMLs, should be considered complete.
   
-  Logger.log("found xml files: %s", xmls);
-  Logger.log("found pdf files: %s", pdfs);
-  if (anyLacking) { Logger.log("%s lacks XMLs, so not Complete.", folder.getName());
+  rlLog("found xml files: %s", xmls);
+  rlLog("found pdf files: %s", pdfs);
+  if (anyLacking) { rlLog("%s lacks XMLs, so not Complete.", folder.getName());
                    return false; }
     
   for (var filename in xmls) {
     if (pdfs[filename] == undefined) { anyLacking++ }
   }
-  if (anyLacking) { Logger.log("%s lacks %s PDFs, so not Complete.", folder.getName(), anyLacking.toString());
+  if (anyLacking) { rlLog("%s lacks %s PDFs, so not Complete.", folder.getName(), anyLacking.toString());
                    return false; }
 
-  Logger.log("%s is Complete.", folder.getName());
+  rlLog("%s is Complete.", folder.getName());
   return true;
 }
 
 // (recursive) if the current folder is Complete, move it to done/, otherwise, recurse into descendants
 function moveFoldersToDone(folder, parentFolder, doneFolder) {
   if (folder.getName() != "incoming" && folderIsComplete(folder)) {
-    Logger.log("moving %s from %s/ to %s/", folder.getName(), parentFolder.getName(), doneFolder.getName());
+    rlLog("moving %s from %s/ to %s/", folder.getName(), parentFolder.getName(), doneFolder.getName());
     doneFolder.addFolder(folder);
     parentFolder.removeFolder(folder);    
   }
@@ -189,7 +189,7 @@ function listShared() {
     }
     pageToken = folders.nextPageToken;
   } while (pageToken);
-  Logger.log("shared with me: %s", toreturn.map(function(f){return f.title}));
+  rlLog("shared with me: %s", toreturn.map(function(f){return f.title}));
   return toreturn;
 }
 
@@ -205,7 +205,7 @@ function showTree(sheet, xy, me, filetype, exclusions) {
   if (filetype == "folder") {
 	var exclusions_match = exclusions.filter(function(e){return e === me.getName()});
 	if (exclusions_match.length) {
-	  Logger.log("pruning exclusion %s", exclusions_match);
+	  rlLog("pruning exclusion %s", exclusions_match);
 	  setCellLink(sheet, [xy[0]+1, xy[1]], "pruned");
 	}
 	else {

@@ -94,7 +94,7 @@ function onOpen(addOnMenu, legaleseSignature) {
   if (sheet.getName() == "UI") {
 	var sectionRange = sectionRangeNamed(sheet,"Entity Groups");
 	var myRange = sheet.getRange(sectionRange[0], 2, sectionRange[1]-sectionRange[0]+1, 1);
-	Logger.log("resetting C2 datavalidation range to " + myRange.getA1Notation());
+	lmLog("resetting C2 datavalidation range to " + myRange.getA1Notation());
 	setDataValidation(sheet, "C2", myRange.getA1Notation());
   }
 
@@ -107,9 +107,9 @@ function onOpen(addOnMenu, legaleseSignature) {
 
 // ---------------------------------------------------------------------------------------------------------------- quicktest
 function quicktest() {
-  Logger.log("i will run new capTable_()");
+  lmLog("i will run new capTable_()");
   var capTable = new capTable_();
-  // Logger.log("i haz run new capTable_() and got back %s", capTable);
+  // lmLog("i haz run new capTable_() and got back %s", capTable);
   capTable.columnNames();
 }
 

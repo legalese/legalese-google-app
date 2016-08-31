@@ -1860,11 +1860,3 @@ function CapTableTester(){
   //capSheet.setReference("Cap Table", "Bridge Round", "pre-money");
   //ctLog("the deed is done");
 }
-
-function ctLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  if (loglevel == undefined) { loglevel = 7 }
-  myLog(params,"captable", loglevel, logconfig);
-}

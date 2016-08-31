@@ -17,7 +17,7 @@ function plural(num, singular, plural, locale) {
 	if (num  > 1)   { return plural }
 	if (num == 1)   { return singular }
 	if (num == 0)   { return plural }
-	Logger.log("WARNING: unable to determine if %s is singular or plural.", num);
+	liLog("WARNING: unable to determine if %s is singular or plural.", num);
   }
 }
 
@@ -100,7 +100,7 @@ function digitCommas_(numstr, chop, formatstr) {
   if (numstr == undefined) { return }
   var asNum;
   if      (numstr.constructor.name == "Number") { asNum = numstr; }
-  else { Logger.log("WARNING: digitCommas given a %s to work with (%s); hope Number() works!",
+  else { liLog("WARNING: digitCommas given a %s to work with (%s); hope Number() works!",
 					numstr.constructor.name, numstr.replace(/[^0-9.]/g,""));
 		 asNum = Number(numstr);
 	   }
@@ -115,7 +115,7 @@ function digitCommas_(numstr, chop, formatstr) {
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
   var asString = parts.join(".");
-  // Logger.log("digitCommas_(%s,%s,%s): returning %s", numstr, chop, formatstr, asString);
+  // liLog("digitCommas_(%s,%s,%s): returning %s", numstr, chop, formatstr, asString);
   return asString;
 }
 

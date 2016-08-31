@@ -5,14 +5,14 @@ function otherSheets() {
   var toreturn = [];
   for (var i = 0; i < rangeValues.length; i++) {
 	var myRow = activeRange.getSheet().getRange(activeRange.getRow()+i, 1, 1, 10);
-	Logger.log("you are interested in row whose values are " + myRow.getValues()[0]);
+	crLog("you are interested in row whose values are " + myRow.getValues()[0]);
 
 	var ss, sheet;
 	// there are two ways to refer to the other sheet.
 	// the old way was to have the spreadsheet id in column 0 and the sheet id in column 1.
 	if (myRow.getValues()[0][0] && ! myRow.getValues()[0][0].match(/http/) && myRow.getValues()[0][1]) {
 	try { ss = SpreadsheetApp.openById(myRow.getValues()[0][0]) } catch (e) {
-	  Logger.log("couldn't open indicated spreadsheet ... probably on wrong row. %s", e);
+	  crLog("couldn't open indicated spreadsheet ... probably on wrong row. %s", e);
 	  throw("is your selection on the correct row?");
 	  return;
 	}
@@ -38,7 +38,7 @@ function otherSheets() {
 	}
 	ss = sheet.getParent();
 	
-	Logger.log("smoochy says otherSheets: sheet %s is on row %s", i.toString(), myRow.getRowIndex().toString());
+	crLog("smoochy says otherSheets: sheet %s is on row %s", i.toString(), myRow.getRowIndex().toString());
 	myRow.getCell(1,3).setValue("=HYPERLINK(\""
 								+sheet.getParent().getUrl()
 								+"#gid="
@@ -57,7 +57,7 @@ function fillOtherTemplates_() {
   var sheets = otherSheets();
   for (var i = 0; i < sheets.length; i++) {
 	var sheet = sheets[i];
-	Logger.log("will generate template for " + sheet.getName());
+	crLog("will generate template for " + sheet.getName());
 	fillTemplates(sheet);
 
 	var uniq = uniqueKey(sheet);
@@ -88,7 +88,7 @@ function cloneSpreadsheet() {
   var mySheet = activeRange.getSheet();
   var insertions = 0;
   for (var i = 0; i < (insertions+activeRange.getValues().length); i++) {
-	Logger.log("cloneSpreadsheet: i = %s; activeRange.getValues().length = %s", i, activeRange.getValues().length);
+	crLog("cloneSpreadsheet: i = %s; activeRange.getValues().length = %s", i, activeRange.getValues().length);
 
 	var myRow = mySheet.getRange(activeRange.getRow()+i, 1, 1, mySheet.getLastColumn());
 
@@ -99,30 +99,30 @@ function cloneSpreadsheet() {
 	// column D, E, ...: the names of the sheets that should be copied. By default, only Entities will be cloned.
 	// then we reset column A and B to the the ssid and the sheetid
 
-	Logger.log("you are interested in row " + myRow.getValues()[0]);
-	if (myRow.getValues()[0][0] != "clone") { Logger.log("not a cloneable row. skipping"); continue }
+	crLog("you are interested in row " + myRow.getValues()[0]);
+	if (myRow.getValues()[0][0] != "clone") { crLog("not a cloneable row. skipping"); continue }
 
 	var sourceSheet;
 	try { sourceSheet = hyperlink2sheet_(myRow.getFormulas()[0][1] || myRow.getValues()[0][1]) } catch (e) {
-	  Logger.log("couldn't open source spreadsheet ... probably on wrong row. %s", e);
+	  crLog("couldn't open source spreadsheet ... probably on wrong row. %s", e);
 	  throw("is your selection on the correct row?");
 	  return;
 	}
 
 	// duplicate the spreadsheet
 	var copySS = sourceSheet.getParent().copy(myRow.getValues()[0][2]);
-	Logger.log("copied %s to %s", sourceSheet.getParent().getName(), myRow.getValues()[0][2]);
+	crLog("copied %s to %s", sourceSheet.getParent().getName(), myRow.getValues()[0][2]);
 
 	var SSfile = DriveApp.getFileById(copySS.getId());
 	legalese_root.addFile(SSfile);
 	DriveApp.getRootFolder().removeFile(SSfile);
-	Logger.log("moved to legalese root folder");
+	crLog("moved to legalese root folder");
 
 	// columns D onward specify the names of desired sheets
 	// if user did not specify any sheets then we assume that all sheets were desired
 	// if user did specify then we delete all copied sheets which were not specified
 	var specified = myRow.getValues()[0].splice(3).filter(function(cellvalue){return cellvalue != undefined && cellvalue.length});
-	Logger.log("user specified desired sheets %s", specified);
+	crLog("user specified desired sheets %s", specified);
 	if (specified.length) {
 	  var sheets = copySS.getSheets();
 	  for (var si = 0; si < sheets.length; si++) {
@@ -135,7 +135,7 @@ function cloneSpreadsheet() {
 
 	// which sheets are left?
 	sheets = copySS.getSheets();
-	Logger.log("copied spreadsheet now has %s agreement sheets: %s", sheets.length, sheets.map(function(s){return s.getSheetName()}));
+	crLog("copied spreadsheet now has %s agreement sheets: %s", sheets.length, sheets.map(function(s){return s.getSheetName()}));
 
 	var inner_insertions = 0;
 
@@ -146,7 +146,7 @@ function cloneSpreadsheet() {
 	  // first response replaces the active row. subsequent responses require row insertions.
 	  if (j == 0) newRow = myRow
 	  else {
-		Logger.log("inserting a new row after index %s", myRow.getRowIndex());
+		crLog("inserting a new row after index %s", myRow.getRowIndex());
 		newRow = mySheet
 		  .insertRowAfter(myRow.getRowIndex() + inner_insertions)
 		  .getRange(myRow.getRowIndex()+inner_insertions+1,1,1,5);

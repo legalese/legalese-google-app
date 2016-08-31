@@ -19,11 +19,11 @@
 function onOpen() {
   var legaleseMainExists = false;
   try { if (legaleseMain) { legaleseMainExists = legaleseMain._loaded } }
-  catch (e) { Logger.log("caught error %s while testing legaleseMain", e) }
+  catch (e) { ceLog("caught error %s while testing legaleseMain", e) }
 
   var legaleseSignatureExists = false;
   try { if (legaleseSignature) { legaleseSignatureExists = legaleseSignature._loaded } }
-  catch (e) { Logger.log("caught error %s while testing legaleseSignature", e) }
+  catch (e) { ceLog("caught error %s while testing legaleseSignature", e) }
 
   if (legaleseMainExists) {
 	legaleseMain.onOpen(SpreadsheetApp.getUi().createAddonMenu(),
@@ -36,13 +36,13 @@ function onOpen() {
 function onFormSubmit(e) {
   var legaleseMainExists = false;
   try { if (legaleseMain) { legaleseMainExists = legaleseMain._loaded } }
-  catch (e) { Logger.log("caught error %s while testing legaleseMain", e) }
+  catch (e) { ceLog("caught error %s while testing legaleseMain", e) }
 
   if (! legaleseMainExists) return;
 
   var legaleseSignatureExists = false;
   try { if (legaleseSignature) { legaleseSignatureExists = legaleseSignature._loaded } }
-  catch (e) { Logger.log("caught error %s while testing legaleseSignature", e) }
+  catch (e) { ceLog("caught error %s while testing legaleseSignature", e) }
 
   if (legaleseSignatureExists) legaleseMain.onFormSubmit(e, legaleseSignature);
   else                         legaleseMain.onFormSubmit(e, null);

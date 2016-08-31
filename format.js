@@ -1,4 +1,4 @@
-
+x
 
 // ---------------------------------------------------------------------------------------------------------------- asvar_
 function asvar_(str) {
@@ -285,11 +285,11 @@ function formatify_(format, string, sheet, fieldname) {
       // toreturn = string.toString().substr(0,15).replace(/ 0/, " ");  // Jan 01 2015 => Jan 1 2015
 
 	  if (string.toString().length == 0) { return "" }
-//	  Logger.log("input date: " + string.toString().substr(0,15));
+//	  ftLog("input date: " + string.toString().substr(0,15));
 	  toreturn = Utilities.formatDate(new Date(string.toString().substr(0,15)),
 									  sheet.getParent().getSpreadsheetTimeZone(),
 									  "EEEE d MMMM YYYY");
-//	  Logger.log("output date: " + toreturn);
+//	  ftLog("output date: " + toreturn);
 
     }
 	else if (string != undefined && string.constructor.name == "Date") {
@@ -305,7 +305,7 @@ function formatify_(format, string, sheet, fieldname) {
 
 	  // http://stackoverflow.com/questions/17715841/gas-how-to-read-the-correct-time-values-form-google-spreadsheet/17727300#17727300
 
-	  Logger.log("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
+	  ftLog("formatify_(%s, %s) called. the input string is a %s", format, string, string != undefined ? string.constructor.name : "undef");
 
 	  // Get the date value in the spreadsheet's timezone.
 	  var spreadsheetTimezone = sheet.getParent().getSpreadsheetTimeZone();
@@ -323,7 +323,7 @@ function formatify_(format, string, sheet, fieldname) {
 	  if      (format == 'h":"mm" "am/pm') { myformat = "h:mm a" }
 	  else if (format == 'HH:mm')          { myformat = "H:mm" }
 	  else if (format == 'HH:mm:ss')       { myformat = "H:mm:ss" }
-	  Logger.log("formatify_(): spreadsheetTimezone=%s", spreadsheetTimezone);
+	  ftLog("formatify_(): spreadsheetTimezone=%s", spreadsheetTimezone);
 
 	  toreturn = Utilities.formatDate(new Date(diff),
 									  "UTC",
@@ -349,18 +349,18 @@ function formatify_(format, string, sheet, fieldname) {
 	  toreturn = digitCommas_(string, chop);
 	}
 	else {
-	  // Logger.log("INFO: formatify(%s) fell to default; will toString()", string.constructor.name);
+	  // ftLog("INFO: formatify(%s) fell to default; will toString()", string.constructor.name);
 	  toreturn = string.toString();
 	}
   }
   else { toreturn = string }
-  // Logger.log("INFO: formatify_("+format+","+string+") = "+toreturn+ " ("+toreturn.constructor.name+")");
+  // ftLog("INFO: formatify_("+format+","+string+") = "+toreturn+ " ("+toreturn.constructor.name+")");
   return toreturn;
 }
 
 function asNum_(instr) {
   var num = instr;
-  if (instr == undefined) { Logger.log("WARNING: asNum_() received an undefined argument"); return }
+  if (instr == undefined) { ftLog("WARNING: asNum_() received an undefined argument"); return }
   if (instr.constructor.name == "Number") { num = instr.toString() }
   return num.replace(/[^.\d]/g,"");
 }
@@ -378,7 +378,7 @@ function asCurrency_(currency, amount, chop) {
   
   // currency can be either just "S$" or the full numberFormat specification string.
 
-  // Logger.log("asCurrency_(%s, %s, %s)", currency, amount, chop);
+  // ftLog("asCurrency_(%s, %s, %s)", currency, amount, chop);
 
   
   var mycurrency = currency;
@@ -387,11 +387,11 @@ function asCurrency_(currency, amount, chop) {
   // quick hack to handle a complex custom number format; FIXME! respect the full logic.
   mycurrency = mycurrency.replace(/.*;/,"");
   
-//  Logger.log("asCurrency_(%s,%s,%s)", currency, amount, chop);
+//  ftLog("asCurrency_(%s,%s,%s)", currency, amount, chop);
   var mymatch;
   if (mymatch = mycurrency.match(/#0\.(0+)/)) { chop = mymatch[1].length }
   if (mycurrency.match(/#0$/))     { chop = 0 }
-//  Logger.log("asCurrency_() chop = %s", chop);
+//  ftLog("asCurrency_() chop = %s", chop);
 
   var matches;
   if (matches = mycurrency.match(/\[\$(.*)\]/)) { // currency
