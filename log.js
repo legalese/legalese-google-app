@@ -49,7 +49,7 @@ function xxLog(params, loglevel, logconfig) {
        If a conflict still occurs, this convention may be revised, so check back often!
 */
 
-function coLog(params, loglevel, logconfig) {
+function cdLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
