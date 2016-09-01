@@ -41,6 +41,14 @@ function xxLog(params, loglevel, logconfig) {
   myLog(params,"XXX", loglevel, logconfig);
 }
 
+/* Logging function naming convention for JS modules:
+   The logging function is named xyLog, where xy is a function of the module filename:
+   If it contains multiple words, xy = initials of first two words (legaleseMain = lm)
+   If it is a single word, xy = first two letters, unless there is a conflict, in which case,
+     x = first letter and y = last consonant of the filename for all conflicting filenames
+       If a conflict still occurs, this convention may be revised, so check back often!
+*/
+
 function coLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
