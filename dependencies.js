@@ -21,7 +21,7 @@ function computeDependencies() {
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName,0);
 
-  teLog(["computeDependencies calling depGraph()",5]);
+  deLog(["computeDependencies calling depGraph()",5]);
   var dg = new depGraph(readRows_);
   
   // output to Execution sheet
