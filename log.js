@@ -3,7 +3,7 @@ function xmLog(params, loglevel, logconfig) {
     params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
   if (loglevel == undefined) { loglevel = 7 }
-  myLog(params, "xml", loglevel, logconfig);
+  myLog(params, "(XML) " + currentTemplate, loglevel, logconfig);
 }
 
 var jsonify = function(obj){
