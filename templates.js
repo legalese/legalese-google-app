@@ -497,6 +497,10 @@ function fillTemplates(sheet) {
 
   // you will see the same pattern in uploadAgreement.
   var buildTemplate = function(sourceTemplates, entity, rcpts, explosion) { // this is a callback run within the docsetEmails_ object.
+	if (sourceTemplates.length > 1) {
+	  teLog(["buildTemplate(%s): WARNING: given %s sourceTemplates; potential collision error", sourceTemplates.length],3);
+	  teLog(["buildTemplate(%s): WARNING: URLs are ", sourceTemplates.map(function(st){ return st.url }).join(", ")],3);
+	}
 	var sourceTemplate = sourceTemplates[0];
 	var newTemplate = obtainTemplate_(sourceTemplate.url, sourceTemplate.nocache, readmeDoc);
 	newTemplate.data = templatedata; // NOTE: this is the  first global inside the XML context
@@ -679,9 +683,11 @@ function include(name, data, _include, _include2) {
   var origInclude = data._include;
   var origInclude2 = data._include2;
   var filtered = data._availableTemplates.filter(function(t){return t.name == name});
-  teLog(["include(): after filtering, found template %s", filtered],6);
+  for (var i=0; i<filtered.length; i++) {
+	teLog(["include(): found %s: %s", filtered[i].name, filtered[i].url]);
+  }
   if (filtered.length > 1) {
-	teLog(["include(): after filtering, found %s templates named %s; picking the last one.", filtered.length, name],5);
+	teLog(["include(): found multiple (%s) %s templates; picking the last one.", filtered.length, name],5);
 	filtered = [filtered.pop()];
   }
   if (filtered.length == 1) {
