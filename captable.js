@@ -228,7 +228,7 @@ function capTable_(termsheet, captablesheet) {
 		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
 		}
 		else {
-		  ctLog("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
+		  ctLog("in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
 		}
 
 	    //preliminary attempt at ESOP running total.
@@ -255,7 +255,7 @@ function capTable_(termsheet, captablesheet) {
 	  round.brand_new_investors[ni] = round.new_investors[ni];
 	}
 	["new_investors", "old_investors", "brand_new_investors"].map(function (itype) {
-	  ctLog("capTable.new(): %s = %s", itype, Object.keys(round[itype]));
+	  ctLog("capTable.new(%s): %s = %s", round.name, itype, Object.keys(round[itype]));
 	});
 	
 //	ctLog("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
@@ -360,6 +360,7 @@ function capTable_(termsheet, captablesheet) {
 	// all the old investors are given "shareholder" roles
 	// all the new investors are given "new_investor" roles.
 	// all the brand new investors are given "brand_new_investor" roles.
+	// sit_out_investors are those old investors who are not new_investors -- they are sitting out of the current round.
 
 	var toreturn = [];
 	if (! round) { return toreturn }
@@ -373,6 +374,7 @@ function capTable_(termsheet, captablesheet) {
 	  newRole.attrs = { new_commitment:       round.new_investors[ni].money,             num_new_shares: round.new_investors[ni].shares,
 				        _orig_new_commitment: round.new_investors[ni]._orig_money,  orig_num_new_shares: round.new_investors[ni]._orig_shares };
 	  toreturn.push(newRole);
+	  ctLog(["newRoles(%s): pushing from new_investors: %s", round.name, ni],8);
 	}
 
 	for (var ni in round.brand_new_investors) {
@@ -389,6 +391,7 @@ function capTable_(termsheet, captablesheet) {
 	var tentative_shareholders = [];
 	for (var oi in round.old_investors) {
 	  if (oi == "ESOP" || // special case
+		  round.old_investors[oi].shares == 0 ||
 		  round.old_investors[oi].money  == undefined &&
 		  round.old_investors[oi].shares == undefined
 		 ) continue;
@@ -397,7 +400,7 @@ function capTable_(termsheet, captablesheet) {
 	}
 
 	// shareholders should exclude convertible noteholders.
-	ctLog(["capTable.newRoles(): role shareholder (before) = %s", tentative_shareholders.map(function(e) { return e.entityname })], 6);
+	ctLog(["newRoles(%s): role shareholder (before) = %s", round.name, tentative_shareholders.map(function(e) { return e.entityname })], 6);
 
 	var allInvestors_ = this.allInvestors();// side effect -- decorates investor with a .rounds attribute
 
@@ -417,9 +420,35 @@ function capTable_(termsheet, captablesheet) {
 	  }
 	}
 	toreturn = toreturn.concat(chosen_shareholders);
-	ctLog(["capTable.newRoles(): role shareholder (after) = %s", chosen_shareholders.map(function(e) { return e.entityname })], 6);
+	ctLog(["newRoles(%s): role shareholder (after) = %s", round.name, chosen_shareholders.map(function(e) { return e.entityname })], 6);
 
-	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, JSON.stringify(toreturn)]);
+
+	// sit_out_shareholders are those old investors who are not new_investors -- they are sitting out of the current round.
+	ctLog(["newRoles(%s): constructing sit_out_shareholders.", round.name],8);
+	ctLog(["newRoles(%s): that should be old investors minus new investors", round.name],8);
+
+	var sitout_old_names = chosen_shareholders.map(function(e) { return e.entityname });
+	ctLog(["newRoles(%s): sitout old investors = %s", round.name, sitout_old_names],8);
+	
+	var sitout_new_names = toreturn.filter(function(tr){return tr.relation == "new_investor"})
+		.map(function(tr){return tr.entityname});
+	ctLog(["newRoles(%s): sitout new investors = %s", round.name, sitout_new_names],8);
+	if (sitout_new_names.length == 0) {
+	  ctLog(["newRoles(%s): wtf. toreturn=%s", round.name, JSON.stringify(toreturn)],8);
+	}
+
+	var sitout_shareholders = chosen_shareholders
+		.filter(function(old){ return ( sitout_new_names.indexOf(old.entityname) < 0)} ) // not new_investor
+		.map   (function(old){ return { relation:"sitout_shareholder", entityname:old.entityname, attrs:old.attrs } });
+	ctLog(["newRoles(%s): sitout shareholders = %s", round.name, sitout_shareholders.map(function(e){return e.entityname})],8);
+	toreturn = toreturn.concat(sitout_shareholders);
+
+	round.sitout_shareholders = {};
+	for (var siti in sitout_shareholders) {
+	  round.sitout_shareholders[sitout_shareholders[siti].entityname] = round.old_investors[sitout_shareholders[siti].entityname];
+	}
+	
+	ctLog(["newRoles(%s): imputing %s roles: %s", round.name, toreturn.length, JSON.stringify(toreturn)]);
 	return toreturn;
   };
   
@@ -689,7 +718,7 @@ Round.prototype.getNewIssues = function(){
   for (var ni in this.new_investors) {
 	if (ni == "ESOP") { continue }
 	toreturn.holders[ni] = this.new_investors[ni];
-	var number_of_things;
+	var number_of_things = undefined;
 	if (this.new_investors[ni]._orig_shares > 0) {
 	  number_of_things = this.new_investors[ni]._orig_shares;
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
@@ -930,10 +959,117 @@ capTable_.prototype.parseCaptable = function() {
 // Sure, the capTable object will create a bunch of Round objects when parsing an existing capTable.
 // but when we want to add a new round to a capTable we can start by creating the Round and telling the capTable "here you go, deal with this".
 //
-// TODO: let's create an addRoundToCapTable method.
-//
-// TODO: let's create a createTabForRound method.
-//
+
+
+
+
+// an addRoundToCapTable method.
+// see https://github.com/legalese-io/legalese-io.github.io/issues/73
+function addRound(capsheet) {
+  ctLog("we are now adding a round to the cap table!");
+  
+  var capSheet = new capTableSheet_(capsheet);
+  // Prompt for the new Round Name and create a new Term Sheet
+  var round = newTermSheet("Enter the Round Name: ");
+  if(!round) {
+    return;
+  }
+
+  // Set up a major column in the Cap Table for the new round
+  capSheet.addMajorColumn(round);
+
+  // Useful locators
+  var newInvestorsRow = capSheet.getCategoryRowCaptable("amount raised");
+  var roundColumn = capSheet.getRoundColumnByName(round);
+  var totalColumn = capSheet.getRoundColumnByName("TOTAL");
+  
+  // Enter basic values for new round
+  capSheet.setReference(round, round, "security type");
+  var dateRow = capSheet.getCategoryRowCaptable("approximate date");
+  var dateValue = Utilities.formatDate(new Date(), capSheet.captablesheet.getParent().getSpreadsheetTimeZone(), "yyyy-mm-dd");
+  capSheet.captablesheet.getRange(dateRow, roundColumn).setValue(dateValue);
+  capSheet.setReference(round, round, "pre-money");
+  capSheet.setReference("Cap Table", round, "price per share", 1);
+
+
+  // Get the last "Investor" row from the Entities sheet
+  var entitiesSheet = capSheet.captablesheet.getParent().getSheetByName("Entities");
+  var entitiesNumRows = entitiesSheet.getLastRow();
+  var entitiesRows = entitiesSheet.getSheetValues(1, 1, entitiesNumRows, 1);
+  var i = 0;
+  for(i=0; i<entitiesNumRows; i++) {
+    if(entitiesRows[i][0] == "Investor") {
+      for(i=i+1; i<=entitiesNumRows; i++) {
+	if(entitiesRows[i][0] != "Investor") {
+	  break;
+	}
+      }
+      break;
+    }
+  }
+
+  ctLog("Inserting 2 rows into Entities at row: " + i);
+  // Insert 2 investors into the Entities Sheet
+  if(i < entitiesNumRows) {
+    entitiesSheet.insertRowsAfter(i, 2);
+  }
+  // Enter fake investor names
+  entitiesSheet.getRange(i+1, 1, 2, 2).setValues([ ["Investor", "Investor 1"], ["Investor", "Investor 2"] ]);
+
+  // Insert 2 rows for new investors
+  capSheet.captablesheet.insertRowsAfter(newInvestorsRow-1, 2);
+
+  // Set new investors' names to Entities sheet references
+  capSheet.captablesheet.getRange(newInvestorsRow, 1).setFormula("=Entities!B" + (i+1));
+  capSheet.captablesheet.getRange(newInvestorsRow+1, 1).setFormula("=Entities!B" + (i+2));
+
+  // Set background for new investors' money to yellow
+  // and enter fake amounts
+  var newMoneyRange = capSheet.captablesheet.getRange(newInvestorsRow, roundColumn, 2, 3);
+  var newMoney;
+  var newShares;
+  var newPercent;
+  newMoneyRange.offset(0, 0, 2, 1).setBackground("yellow").setValues([ [12345], [123456] ]);
+
+  // Set formula for number of shares that new investors receive
+  // Example shares formula: =if('My April Round'!$B$16="equity",floor(K14/L$7),"")
+  var securityEssentialRow = capSheet.getCategoryRowTermSheet(round, "security essential");
+  var ppsRow = capSheet.getCategoryRowCaptable("price per share");
+  // Notation for "price per share" cell
+  var ppsNotation = capSheet.captablesheet.getRange(ppsRow, roundColumn+1).getA1Notation();
+  // Freeze row number in cell notation
+  ppsNotation = getFixedNotation(ppsNotation, "A$1");
+
+  // First new investor's numbers
+  var sharesFormula;
+  var postRow = capSheet.getCategoryRowCaptable("post");
+  var postShares = capSheet.captablesheet.getRange(postRow, roundColumn+1);
+  postShares = getFixedNotation(postShares.getA1Notation(), "A$1");
+  newMoney = newMoneyRange.getCell(1, 1);
+  newShares = newMoneyRange.getCell(1, 2);
+  newPercent = newMoneyRange.getCell(1, 3);
+  sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoney.getA1Notation() + "/" + ppsNotation + "),\"\")";
+  newShares.setFormula(sharesFormula);
+  newPercent.setFormula("=" + newShares.getA1Notation() + "/" + postShares);
+  // Second new investor's numbers
+  newMoney = newMoneyRange.getCell(2, 1);
+  newShares = newMoneyRange.getCell(2, 2);
+  newPercent = newMoneyRange.getCell(2, 3);
+  sharesFormula = "=if('" + round + "'!$B$" + securityEssentialRow + "=\"equity\",floor(" + newMoney.getA1Notation() + "/" + ppsNotation + "),\"\")";
+  newShares.setFormula(sharesFormula);
+  newPercent.setFormula("=" + newShares.getA1Notation() + "/" + postShares);
+  
+  // Update totals to reflect the new major column
+  capSheet.setTotal();
+
+  // let's create a createTabForRound method.
+  //
+}
+
+
+
+
+
 
 function importCapTableTemplate(ss_ToImportTo){
   var capTableTemplate = getSheetByURL_(DEFAULT_CAPTABLE_TEMPLATE);
@@ -1290,7 +1426,8 @@ function capTableSheet_(captablesheet){
   };
   
   this.addMajorColumn = function(round){//I think sending in a round makes more sense, but for now just pass in the name of the round
-    name = round.getName() || "Blank Round";
+    // name = round.getName() || "Blank Round";
+    name = round || "Blank Round";
     var CapSheet = this.captablesheet;
     var data = CapSheet.getDataRange().getValues();
     
@@ -1310,8 +1447,22 @@ function capTableSheet_(captablesheet){
       //For whatever reason, CapSheet loses its reference after performing this action
       
       var prevMajorColumn = CapSheet.getRange(1, roundNames.length - 6 + 1, CapSheet.getLastRow() , 3);
-      var destination = CapSheet.getRange(1, roundNames.length - 3 + 1);
+      var destination = CapSheet.getRange(1, roundNames.length - 3 + 1, CapSheet.getLastRow(), 3);
       prevMajorColumn.copyTo(destination);
+      // We want to copy only formulas, so we empty the non-formula cells
+      var numRows = destination.getNumRows();
+      var numCols = destination.getNumColumns();
+      var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
+      var investorEndRow = this.getCategoryRowCaptable("amount raised") - 1;
+      ctLog("Investor begin row: " + investorBeginRow + ", end row: " + investorEndRow);
+      for (var i = investorBeginRow; i <= investorEndRow; i++) {
+	for (var j = 1; j <= numCols; j++) {
+	  ctLog("Formula at " + i + ", " + j + " is " + destination.getCell(i,j).getFormula());
+	  if(destination.getCell(i,j).getFormula().charAt(0) != '=') {
+	    destination.getCell(i,j).setValue("");
+	  }
+	}
+      }
       //We can copy and paste the column to the RIGHT of newMajorColumn into newMajorColumn
       
       ctLog("finished the copy and paste");
@@ -1343,6 +1494,21 @@ function capTableSheet_(captablesheet){
     var investorBeginRow = this.getCategoryRowCaptable("discount") + 1;
     var investorEndRow = this.getCategoryRowCaptable("amount raised") -1;
     ctLog("investors exist beween rows " + investorBeginRow + " and " + investorEndRow);
+
+    // locate post row
+    var post;
+    try {
+      post = this.getCategoryRowCaptable("post");
+    } catch (e) {
+      throw("you need to be on a Cap Table tab to run this menu item -- " + e);
+    };
+    var postRange;
+    try {
+      postRange = sheet.getRange(post, TotalColumn);
+    } catch (e) {
+      throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
+    };
+    var postSharesRange = sheet.getRange(post, TotalColumn + 1);
     
     for (var row = investorBeginRow; row <= investorEndRow; row ++){
       var sumMoney = "=";
@@ -1361,22 +1527,14 @@ function capTableSheet_(captablesheet){
       
       var scell = sheet.getRange(row, TotalColumn + 1);
       scell.setFormula(sumShares);
+
+      var pcell = sheet.getRange(row, TotalColumn + 2);
+      var postSharesFixed = getFixedNotation(postSharesRange.getA1Notation(), "A$1");
+      var sumPercent = "=" + scell.getA1Notation() + "/" + postSharesFixed;
+      pcell.setFormula(sumPercent);
     }
     
     //update post, post should match
-	var post;
-	try {
-      post = this.getCategoryRowCaptable("post");
-	} catch (e) {
-	  throw("you need to be on a Cap Table tab to run this menu item -- " + e);
-	};
-	var postRange;
-	try {
-      postRange = sheet.getRange(post, TotalColumn);
-	} catch (e) {
-	  throw("unable to getRange(" + post + ", " + TotalColumn + ") -- " + e);
-	};
-	
     var postMoney = "=";
     var postShares = "=";
     
@@ -1384,16 +1542,15 @@ function capTableSheet_(captablesheet){
       var prange = sheet.getRange(post - 1, pcol);
       postMoney = postMoney + "+" + prange.getA1Notation();
       ctLog("sumMoney looks like this: " + postMoney);
-      
+
+      ctLog(["trying to getRange %s, %s", row, pcol+1],8);
       var srange = sheet.getRange(row, pcol + 1);
       postShares = postShares + "+" + srange.getA1Notation();
       ctLog("sumShares looks like this: " + postShares);
     }
     
     postRange.setFormula(postMoney);
-    postRange = sheet.getRange(post, TotalColumn + 1);
-    postRange.setFormula(postShares);
-    
+    postSharesRange.setFormula(postShares);
   }
   
   //checks all? functions in the cap table to make sure they are pointing in the right place
@@ -1466,7 +1623,7 @@ function capTableSheet_(captablesheet){
     for (var row = 1; row <= lastRow; row++){
       cell = termsheet.getRange(row, 1);
       ctLog("the cell value is " + cell.getValue());
-      if (cell.getValue() == termCategory){
+      if (cell.getValue().replace("(unused) ", "") == termCategory){
         ctLog("HURRAY FOUND IT, and it is row " + row);
         return row;
       }
@@ -1491,7 +1648,7 @@ function capTableSheet_(captablesheet){
     
   };
   
-  this.setReference = function(origin, round, category){
+  this.setReference = function(origin, round, category, columnOffset){
     var sheetModified;
     var categoryRow;
     var roundCol;
@@ -1500,25 +1657,33 @@ function capTableSheet_(captablesheet){
       sheetModified = this.spreadSheet.getSheetByName(round);
       categoryRow = this.getCategoryRowCaptable(category);
       roundCol = this.getRoundColumnByName(round);
+      if(!columnOffset) {
+	columnOffset = 0;
+      }
+      roundCol = roundCol + columnOffset;
       var termrow = this.getCategoryRowTermSheet(round, category);
-      
       var originCell = this.captablesheet.getRange(categoryRow, roundCol);
       var A1Notation = originCell.getA1Notation();
 
-	  var cell =                   round.getTermSheet().getRange("B" + termrow);
+      var cell = sheetModified.getRange("B" + termrow);
 //    var cell = this.spreadSheet.getSheetByName(round).getRange("B" + termrow);
-      cell.setFormula("= 'Cap Table'!" + A1Notation);
-      
+      cell.setFormula("= 'Cap Table'!" + A1Notation);	
       
     }
     else{
       sheetModified = this.captablesheet;
-      categoryRow = this.getCategoryRowTermSheet(round, category);
+      if(category.toLowerCase() === "security type") {
+	// Is there a better way to do this?
+	categoryRow = this.getCategoryRowTermSheet(round, "security type plural");
+      }
+      else {
+	categoryRow = this.getCategoryRowTermSheet(round, category);
+      }
       var capRow = this.getCategoryRowCaptable(category);
       roundCol = this.getRoundColumnByName(round);
       
-      ctLog("termrow is: %s, caprow is: %s, capcol is: %s", termrow, caprow, capcol);
-	  var cell = round.getTermSheet().getRange(capRow, roundCol);
+      ctLog("termrow is: %s, capRow is: %s, roundCol is: %s", termrow, capRow, roundCol);
+      var cell = sheetModified.getRange(capRow, roundCol);
 //    var cell = this.captablesheet.getRange(capRow, roundCol);
       ctLog("this is the fomula being set: " + "= '" + round + "' !B" + categoryRow);
       cell.setFormula("= '" + round + "' !B" + categoryRow);
@@ -1587,16 +1752,15 @@ function newTermSheet(prompt){
   var roundName = ui.prompt(prompt, ui.ButtonSet.OK_CANCEL);
   var round = roundName.getResponseText();
   ctLog("return round name: " + round);
-  var termTemplate = getSheetByURL(DEFAULT_TERM_TEMPLATE);
+  var termTemplate = getSheetByURL_(DEFAULT_TERM_TEMPLATE);
 
-  if (roundName.getSelectedButton() == ui.Button.OK){
-    
-	var newTermSheet = termTemplate.copyTo(spreadSheet);
-	spreadSheet.setActiveSheet(newTermSheet);
-	newTermSheet.setName(round);
+  if (roundName.getSelectedButton() == ui.Button.OK && round) {
+    var newTermSheet = termTemplate.copyTo(spreadSheet);
+    spreadSheet.setActiveSheet(newTermSheet);
+    newTermSheet.setName(round);
+    return round;
   };
   
-  return round;
 };
 
 
