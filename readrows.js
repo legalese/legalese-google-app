@@ -419,7 +419,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 		rrLog("WARNING: readRows(%s): found attributes.", this.sheetname);
 		for (var role_x = 2; role_x < row.length; role_x+=2) {
 		  if (row[role_x] && row[role_x+1] != undefined) {
-			forHandler.attrs[             asvar_(row[role_x])] = display[i][role_x+1];
+			forHandler.attrs[             asvar_(row[role_x])] = (row[role_x+1]===true || row[role_x+1]===false) ? row[role_x+1] : display[i][role_x+1];
 			forHandler.attrs["_format_" + asvar_(row[role_x])] = formats[i][role_x+1];
 			forHandler.attrs["_orig_"   + asvar_(row[role_x])] = row[role_x+1];
 		  }
@@ -471,7 +471,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
         if (ki < 1) { continue }
         var k = entityfields[ki];
         var v = entity_display[0][ki];
-        entity[k] = v;
+        entity[k] = (row[ki]===true||row[ki]===false)?row[ki]:v;
 		entity["_format_" + k] = entity_formats[0][ki];
 		entity["_orig_"   + k] = row[ki];
 		if (v && v.length) { entity["_"+k+"_firstline"] = v.replace(/\n.*/g, ""); }
@@ -565,6 +565,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  // build tree -- config.a.tree.b.c.d.e.f=g
 	  treeify_(config[columna].tree, descended.slice(1));
+	  rrLog("CONF: " + columna+".tree=%s", config[columna].tree);
 
 	  // build dict -- config.a.dict.b = [c,d,e]
 	  var columns_cde = config[columna].values.slice(1);
