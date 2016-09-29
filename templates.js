@@ -679,6 +679,11 @@ function include(name, data, _include, _include2) {
   var origInclude = data._include;
   var origInclude2 = data._include2;
   var filtered = data._availableTemplates.filter(function(t){return t.name == name});
+  teLog(["include(): after filtering, found template %s", filtered],6);
+  if (filtered.length > 1) {
+	teLog(["include(): after filtering, found %s templates named %s; picking the last one.", filtered.length, name],5);
+	filtered = [filtered.pop()];
+  }
   if (filtered.length == 1) {
 	var template = filtered[0];
 	var childTemplate = obtainTemplate_(template.url, template.nocache);
