@@ -472,7 +472,29 @@ function capTable_(termsheet, captablesheet) {
 	  toreturn.push(newRole);
 	}
 
-	  
+	// 
+	// we want to distinguish voting_shareholders and nonvoting_shareholders.
+	// Some classes of shares are voting (ordinary, etc)
+	// Some classes of shares are specifically designated as nonvoting (nonvoting ordinary, F-NV)
+	//
+	// throughout the history of rounds,
+	// any rounds which have a nonvoting security_type contribute their shareholders to the list of nonvoting shareholders
+	// any rounds which have a voting security type contribute their shareholders to the list of voting shareholders.
+	//
+	
+	for (var ni in round.old_investors) {
+	  if (ni == "ESOP" || // special case
+		  round.old_investors[ni].money  == undefined &&
+		  round.old_investors[ni].shares == undefined
+		 ) continue;
+
+	  var newRole = { relation: round.security_type.match(/non-?voting|\bnv\b/i) ? "nonvoting_shareholder" : "voting_shareholder",
+					  entityname:ni };
+	  newRole.attrs = { old_commitment:       round.old_investors[ni].money,             num_old_shares: round.old_investors[ni].shares,
+				        _orig_old_commitment: round.old_investors[ni]._orig_money,  orig_num_old_shares: round.old_investors[ni]._orig_shares };
+	  toreturn.push(newRole);
+	}
+
 	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, toreturn.map(function(nr){return nr.relation + ":" + nr.entityname})],5);
 	return toreturn;
   };
