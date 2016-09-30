@@ -25,7 +25,6 @@ function desiredTemplates_(config) {
   return toreturn;
 }
 
-// ---------------------------------------------------------------------------------------------------------------- suitableTemplates
 function suitableTemplates(readRows_, parties) {
   var availables = readRows_.availableTemplates;
   teLog(["suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name})],8);
@@ -314,6 +313,9 @@ var docsetEmails = function (sheet, readRows_, parties, suitables) {
 	  var entityName = all_to[ti];
 	  var entity = this.readRows.entitiesByName[entityName];
 
+	  if (! entity) { teLog(["Rcpts: XXX tried to find %s in entitiesByName but couldn't!",
+							 entityName],4); }
+
 	  if (this.readRows.config.email_override && this.readRows.config.email_override.values[0]
 		 &&
 		 email_to_cc(entity.email)[0] && email_to_cc(entity.email)[0]) {
@@ -370,7 +372,9 @@ var docsetEmails = function (sheet, readRows_, parties, suitables) {
 //	  teLog("parties[partytype] = %s", parties[partytype]);
 	  for (var parties_k in parties[partytype]) {
 		var entity = this.readRows.entitiesByName[parties[partytype][parties_k].name];
-		teLog("docsetEmails.explode(): working with %s %s %s", partytype, entity.name, sourceTemplate.name);
+		if (! entity) { teLog(["docsetEmails.explode(): XXX tried to find %s in entitiesByName but couldn't!",
+							   parties[partytype][parties_k].name],4); }
+		teLog(["docsetEmails.explode(): working with %s %s %s", partytype, entity.name, sourceTemplate.name],4);
 		if (entity.legalese_status
 			&& entity.legalese_status.match(/skip\s+explo\w+\s+[^;]+/) // skip exploding / skip exploder
 			&& entity.legalese_status.match(/skip\s+explo\w+\s+([^;]+)/)[1].match(sourceTemplate.name) // add \b, i think
@@ -426,7 +430,7 @@ function fillTemplates(sheet) {
 	templatedata._availableTemplates = readRows_.availableTemplates;
   }
 
-  var entityNames = []; for (var eN in readRows_.entityByName) { entityNames.push(eN) }
+  var entityNames = []; for (var eN in readRows_.entitiesByName) { entityNames.push(eN) }
   teLog("fillTemplates(%s): got back readRows_.entitiesByName=%s",
 		sheetname,
 		entityNames);
@@ -580,7 +584,12 @@ function fillTemplates(sheet) {
 //	teLog("FillTemplates: recv: templatedata.parties = %s", templatedata.parties);
 	if (entity) { newTemplate.data.party = newTemplate.data.party || {};
 				  newTemplate.data.party[sourceTemplate.explode] = entity; // do we really want this? it seems to clobber the previous array
-				  newTemplate.data      [sourceTemplate.explode] = entity; }
+				  newTemplate.data      [sourceTemplate.explode] = entity;
+				  teLog(["assigning newTemplate.data[%s] = %s", sourceTemplate.explode, entity],5);
+				}
+	else {
+	  teLog(["would have assigned newTemplate.data[%s] but entity is false!", sourceTemplate.explode],5);
+	}
 
 	newTemplate.rcpts = rcpts;
 	newTemplate.rcpts_to = rcpts[2];
