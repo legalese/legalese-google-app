@@ -159,7 +159,291 @@ In ~util.js~, change the log filter level for your desired module to 8. Don't do
 
 Reduce the log filter level of the other modules accordingly to mute them.
 
+* HOWTO write a new XML template
 
+You find yourself inside a text editor. An XML template lies before you. On the ground around you are angle brackets, letters from A to Z, and special characters like ? and =, ready to be placed in the template.
+
+A scroll appears. It reads: /Your mission, should you choose to accept it.../
+
+You open the scroll. It continues: /... produce an XML template which, when the user clicks "Generate PDFs", turns into a PDF that people can sign./
+
+A help desk appears. The sign above it says: "Useful Facilities for the Template Developer." /Good/, you think. /I should check this out./
+
+** Background and Terminology
+
+Legalese's v1 system helps investment deals get done.
+
+In Legalese lingo, a *deal* represents a state change in the history of a company.
+
+The first deal is usually /Incorporation/.
+
+The second deal is usually /Founder Vesting/.
+
+The third deal is usually /Angel Round/.
+
+The fourth deal is usually /Seed Round/.
+
+Legalese considers a corporation to be the sum of its contracts, notices, resolutions, and regulatory filings. 
+
+Legalese generates one or more of these kinds of documents per deal. After all the documents are signed, the deal is complete.
+
+Legalese uses Google Spreadsheets to record these deals.
+
+A Legalese Spreadsheet contains one sheet per deal.
+
+A Legalese Spreadsheet also contains special sheets which do not correspond to deals; instead, they describe other aspects of the company.
+
+** Standard Templates
+
+Legalese comes pre-loaded with many useful templates to help deals get done.
+
+For example, we have templates for SAFEs, KISSes, and convertible notes.
+
+Legalese also comes with utility templates, which get invoked as part of a bigger template. For example, we have a template that expands to a signature block. If your SAFE needs five people to sign it, the SAFE template will /include/ the signature template five times.
+
+All of these templates are listed in the Demo Master, in the Available Templates tab. There is a [[https://legalese.com/docs/6-developing-your-own-templates][tutorial on how to add your own template to the system]].
+
+This document explains what to put inside your template.
+
+** We assume you already have a working Legalese Spreadsheet
+
+If you have run the tutorial, then you have already cloned the Legalese Demo Master. You should have renamed that spreadsheet after your company: in this document, we assume you have a company called Frog Porridge, so you renamed your spreadsheet /Frog Porridge - Legalese/.
+
+Looking at the tabs at the bottom of the screen, you will notice a couple of special sheets, named /Entities/ and /Cap Table/.
+
+** Special Sheet: Entities
+
+Your corporation has relationships with many entities. It has directors. It has a corporate secretary. It may have employees, auditors, and creditors. It has shareholders, and it may have other kinds of investors who are not shareholders.
+
+All of these entities are recorded in the /Entities/ tab. You'll notice that the /Entities/ tab has a certain structure: the first few lines in the hseet are title and prelude; then a dark gray line begins with the section header *ENTITIES*. The rest of the line has column headings which define the attrbutes for each entity.
+
+Keep in mind that other sections may obey different syntax conventions, so don't expect every section to have column headings the way /Entities/ does.
+
+*** Section Definition: Entities
+
+Column A of an entity row is the Core Relation. It's not labeled as such in the section header line, because column A of the section header line is already taken up with the word *ENTITIES*. But trust me, it is the Core Relation.
+
+**** An Entity's Core Relation
+
+Think of the Core Relation as the default role for an entity. An entity may take on other roles, depending on the deal.
+
+In the future we may get rid of this Core Relation concept, because it tends to collide with other roles.
+
+For now, just keep in mind that if a Mister Moneybags puts money into the company, you should label them with the /Investor/ Core Relation.
+
+If you don't know what Core Relation to use (and there are quite a few available, in the pop-up menu) just type in Other.
+
+In the /Entities/ section, do NOT set the Core Relation to:
+- New Investor
+- Old Investor
+- Shareholder
+
+Those relations are reserved for system use. More about that later.
+
+**** Essential Attributes
+Each entity has the following essential attributes:
+- name
+- email
+- IDtype
+- ID
+- Address
+- State
+- Party Type
+- Short Name
+
+Legalese's standard templates assume that entities have these attributes. It's OK to leave the attribute values blank -- you can have blank cells -- but if you delete the attributes themselves, bad things will happen.
+
+The /Address/ attribute is expected to be a multiline value. Use shift-enter or option-enter to insert a newline within the address field.
+
+**** Additional Attributes
+If, in your world, your entities need to have attributes beyond the standard ones, that's fine; just add new attribute names in the section header line, directly following the other attribute names.
+
+Don't leave blank spaces in the section header line between attribute names. I don't know why I even have to say this.
+
+**** Integration With Google Forms
+
+I have a horror of humans typing in important data values, especially those not their own.
+
+How many times has somebody emailed you their phone number, and how many times have you manually transcribed it instead of clicking copy-and-paste? Don't bother denying it, I know you're guilty. If it isn't a phone number, it's an email address. Or a name. And how many times have you typed it in wrongly? Copy-and-paste, people. Use it.
+
+Google Spreadsheets integrates with Google Forms. And so does Legalese. If the end-user clicks *Add-Ons / Legalese / Create form*, Legalese will create a form that lets any entity submit attribute values. For instance, you could send out the Google Form URL to your investors, and ask them to fill in their address and other details. When they submit the form, the values automatically populate your Entities table. Don't type things in by hand, people.
+
+**** Configuring the Google Forms Integration
+
+"When I created the form," you say, "each attribute got its own form field, but it also got a bunch of extra metadata, like a helpful prompt and a field input type. Where did that metadata come from?"
+
+You'll notice a few hidden lines immediately above the *ENTITIES* section header. If you unhide those lines, you'll see:
+
+- PARTYFORM_ORDER
+- PARTYFORM_REQUIRED
+- PARTYFORM_DEFAULT
+- PARTYFORM_ITEMTYPE
+- PARTYFORM_HELPTEXT
+
+That's where the metadata comes from. If you added new attributes of your own, and you want those new attributes to appear on the form, you'll need to add the relevant bits of metadata above your new attributes, to match the metadata of the existing attributes.
+
+The form attribute metadata is not documented any further at this time, because you're smart and I'm sure you'll figure it out.
+
+*** Section Definition: Roles
+Further down the page, you come to the Roles section. The syntax for the /Roles/ section is NOT THE SAME as for the /Entities/ section!
+
+The point of this section is to say, hey, this entity that we already know about? Well, they're not just an employee; they're a shareholder too! This is how you tell Legalese that a given entity has multiple roles.
+
+Every entity in a Roles section must be already defined in an Entities section elsewhere.
+
+In column A: the role name.
+
+In column B: the entity name. Or a *[list expansion]*. If the value in column B is a role name in square brackets, then every entity with that role gets substituted in to have the new role.
+
+For example, if column A says "Director" and column B says "Founder", and if the /Entities/ section defined three founders, then you've just told Legalese that every founder is also a director; all three founders now also have the role of Director.
+
+Optionally, in columns C and D, you can have add new attribute name-and-value pairs to an existing entity. For example, if you want to record the company's date of incorporation, you can set column A to be "Company", column B to be "Frog Porridge Pte. Ltd.", column C to be "Date of Incorporation:" and column D to be the actual date.
+
+You can repeat the attribute name-and-value pairing in columns C/D, E/F, G/H, and so on. It is customary to right-align the name columns, and colorize them as well, to offer a bit more of a clue as to which is name and which is value.
+
+**** Legalese is strongly typed! Use cell formatting sensibly!                             :callout:
+Do please use Google Spreadsheet's built-in cell formatting functionality to make the date an actual date type, not just a string containing a date. Most programming errors are type errors. This advice applies to all other spreadsheet fields, too: please, please don't use a string when you mean to display a number or a currency.
+
+*** Section Definition: Lookups
+
+This is basically a scratchpad area for helper functions. Legalese ignores the content of a *LOOKUPS* section.
+
+** Special Sheet: Cap Table
+
+Legalese sees the history of your startup as a series of deals. Yeah, we know, there's blood, sweat, and tears, and when you read /The Hard Thing About Hard Things/ you saw yourself in the starring role, and you may have lovingly chronicled the life of your startup in a thousand late-night tweets.
+
+But Legalese is a FinTech/LegalTech app and we don't care about any of that. All we care about is your cap table. [[https://www.youtube.com/watch?v=FFrag8ll85w]["Show me the money!"]]
+
+Each deal (usually) modifies the cap table in some way.
+
+The /Cap Table/ tab contains only one section: the *CAP TABLE* section.
+
+The cap table displays all your deals on one sheet, and identifies the entities involved in each deal.
+
+Column A of the Cap Table must be the exact name of a known entity. The best way to do this is have an = formula that links back to the Entities tab. Do NOT type the names in manually. Why not? Because if you find yourself updating a name on Entities, you need "John Smith" to become "Jonathan Smith" everywhere, at once, correctly. And if you type names in by hand, you lose referential integrity, and you will have weird errors, and you will blame Legalese, when actually it's your fault, and it'll all end in tears. Don't let that happen. [[https://en.wikipedia.org/wiki/Don%2527t_repeat_yourself][Don't repeat yourself]]. Use an equals formula. Seriously.
+
+The cap table sheet is an authoritative source of truth for Legalese. All kinds of things flow from the cap table sheet. It has to be correct.
+
+I know, it's tempting to run what-if scenarios in your cap table. Heck, everybody does it. You can do it too -- as long as you do it in a /duplicate/ tab. Don't do it in the main cap table. Copy the tab and call it /Hypothetical Cap Table/. Knock yourself out. Just don't mess with the real /Cap Table/.
+
+*** How to add a new row to the cap table
+
+*** How to fill values in to the cap table
+
+*** How to add a new column to the cap table
+
+*** Things Need To Add Up
+
+the Total column should make sense.
+
+** Available Templates
+
+Looking at the tabs at the bottom of the screen, you may notice another special sheet, called /Available Templates/.
+
+The version of /Available Templates/ in your cloned Frog Porridge spreadsheet doesn't actually do anything. By default, every time the user runs /Generate PDFs/, the script goes off and reads the main Demo Master's /Available Templates/ sheet. The local copy in your spreadsheet is useful for reference, but don't bother changing anything in it, because those changes won't be picked up. It's just there for reference.
+
+Go look at your /Available Templates/ sheet. You will see that each template has a handful of attributes:
+- name
+- title
+- URL
+- To
+- CC
+- Explode
+- Nocache
+- Requires
+
+Other attributes like /baseURL/ and /urlPath/ are helper columns used to construct the URL, but they aren't read by the Google Apps system.
+
+*** Name, Title, and URL
+Each template has a *name* -- a short identifier, like "some_template_name".
+
+Each template has a *title* -- this is used as the filename for the generated XML and PDFs, and may be visible when the template gets pushed out to the e-signature system.
+
+Each template has a *URL* -- this is how Google Apps knows where to find the source XML in the first place. Usually the template URLs point to Legalese's Github repository. If you're running your own templates, or doing a dev version, the URL may be rooted somewhere else.
+
+*** To, CC, and Exploders
+When a template gets filled, some people have to sign it, and some people have to see it.
+
+Templates don't identify those people individually. Rather, we refer to them by role.
+
+If a document needs to be signed by all the directors, then under /To/, put /director/.
+
+If a document needs to be CC'ed to the corporate secretary -- who has to see it, but doesn't have to sign it -- then under /CC/, put /corporate_secretary/.
+
+If a document only needs to be signed by one director, not all the directors, then under /To/, put /director[0]/. This is array notation.
+
+If a document needs to be signed by multiple sets of roles, join those roles with commas. Don't use a space.
+
+**** Explode
+When you use the /To/ column, all the entities of all the roles get expanded inside the template, so you get a single document with multiple signature blocks.
+
+What if you instead want multiple documents, each with a single signature block?
+
+This might happen, for instance, if you are sending out a shareholder notice, requesting the courtesy of a signature; you want to send a separate message to each shareholder, rather than a single huge message to all the shareholders.
+
+This is what the /Explode/ column is for. Under the explode column you can only put one role; no commas. Every entity under that role will get their own copy of the document. Nobody sees anybody else's communications, and you get more privacy.
+
+** Sections In The Deal Spreadsheet
+*** Terms
+*** Roles
+*** Configuration
+** Inside the XML Template
+So far we've described the Legalese Spreadsheet largely from the point of view of an end-user filling in the entities, cap table, and terms.
+
+After the end-user has filled in the spreadsheet with all the details of their startup, in what form does that information become available to you, the template author?
+
+We assume basic familiarity with Google Apps Script's HTML Template service. If you don't know what <?= ?> means, go for [[https://developers.google.com/apps-script/guides/html/templates][a quick refresher]].
+
+*** The Data Structure
+
+Following the [[https://developers.google.com/apps-script/guides/html/templates#pushing_variables_to_templates]["Pushing variables to templates"]] example, most of the spreadsheet state, suitably digested, is available in the ~data.*~ object.
+
+**** data.parties
+
+
+
+**** data.<EXPLODE>
+
+If your template was defined with /Explode/ : /director/ then you can expect to see ~data.director~ available.
+
+**** data.company
+
+~data.company~ is always available.
+
+On the theory that a deal is always about your corporation, ~data.company~ is a syntactic-sugar alias to ~data.parties.company[0]~.
+
+**** data.<TERMS>
+
+
+
+*** Other top-level variables
+
+Besides ~data.*~ several other objects are available.
+
+**** rcpts_to
+
+rcpts_cc also
+
+*** Parties and Roles Synthesized from the Cap Table
+**** old_investor
+**** new_investor
+**** brand_new_investor
+**** shareholder
+*** The Round Object
+
+** Includes and Modules
+
+*** inc_enumerate_parties
+
+*** inc_enumerate_signatures
+** InDesign Templates
+Most of the documents generated by Legalese are /contracts/.
+
+Legalese also generates /notices/ and /resolutions/, which are not exactly contracts, but are similar to contract,s in that they require signatures.
+*** singlepage.indt
+*** other weird templates
+*** modifying the INDTs
+you need InDesign. Sorry.
 * About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 - Entities
