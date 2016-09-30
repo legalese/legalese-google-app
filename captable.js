@@ -422,21 +422,22 @@ function capTable_(termsheet, captablesheet) {
 	toreturn = toreturn.concat(chosen_shareholders);
 	ctLog(["newRoles(%s): role shareholder (after) = %s", round.name, chosen_shareholders.map(function(e) { return e.entityname })], 6);
 
-
+	//
 	// sit_out_shareholders are those old investors who are not new_investors -- they are sitting out of the current round.
-	ctLog(["newRoles(%s): constructing sit_out_shareholders.", round.name],8);
+	//
+	ctLog(["newRoles(%s): constructing sitout_shareholders.", round.name],8);
 	ctLog(["newRoles(%s): that should be old investors minus new investors", round.name],8);
 
 	var sitout_old_names = chosen_shareholders.map(function(e) { return e.entityname });
 	ctLog(["newRoles(%s): sitout old investors = %s", round.name, sitout_old_names],8);
-	
+
 	var sitout_new_names = toreturn.filter(function(tr){return tr.relation == "new_investor"})
 		.map(function(tr){return tr.entityname});
 	ctLog(["newRoles(%s): sitout new investors = %s", round.name, sitout_new_names],8);
 	if (sitout_new_names.length == 0) {
 	  ctLog(["newRoles(%s): wtf. toreturn=%s", round.name, JSON.stringify(toreturn)],8);
 	}
-
+	
 	var sitout_shareholders = chosen_shareholders
 		.filter(function(old){ return ( sitout_new_names.indexOf(old.entityname) < 0)} ) // not new_investor
 		.map   (function(old){ return { relation:"sitout_shareholder", entityname:old.entityname, attrs:old.attrs } });
@@ -448,7 +449,31 @@ function capTable_(termsheet, captablesheet) {
 	  round.sitout_shareholders[sitout_shareholders[siti].entityname] = round.old_investors[sitout_shareholders[siti].entityname];
 	}
 	
-	ctLog(["newRoles(%s): imputing %s roles: %s", round.name, toreturn.length, JSON.stringify(toreturn)]);
+	// 
+	// we want to distinguish voting_shareholders and nonvoting_shareholders.
+	// Some classes of shares are voting (ordinary, etc)
+	// Some classes of shares are specifically designated as nonvoting (nonvoting ordinary, F-NV)
+	//
+	// throughout the history of rounds,
+	// any rounds which have a nonvoting security_type contribute their shareholders to the list of nonvoting shareholders
+	// any rounds which have a voting security type contribute their shareholders to the list of voting shareholders.
+	//
+
+	for (var ni in round.old_investors) {
+	  if (ni == "ESOP" || // special case
+		  round.old_investors[ni].money  == undefined &&
+		  round.old_investors[ni].shares == undefined
+		 ) continue;
+
+	  var newRole = { relation: round.security_type.match(/non-?voting|\bnv\b/i) ? "nonvoting_shareholder" : "voting_shareholder",
+					  entityname:ni };
+	  newRole.attrs = { old_commitment:       round.old_investors[ni].money,             num_old_shares: round.old_investors[ni].shares,
+				        _orig_old_commitment: round.old_investors[ni]._orig_money,  orig_num_old_shares: round.old_investors[ni]._orig_shares };
+	  toreturn.push(newRole);
+	}
+
+	  
+	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, toreturn.map(function(nr){return nr.relation + ":" + nr.entityname})],5);
 	return toreturn;
   };
   
@@ -881,7 +906,7 @@ capTable_.prototype.parseCaptable = function() {
 
           for (var k = 0; k < j; k++) {
             if (! captableRounds[majorToRound[majorByNum[j-k]]]) { continue }
-            ctLog("captable/breakdown: looking for major column for %s", row[j]);
+//            ctLog("captable/breakdown: looking for major column for %s", row[j]);
             myRound = captableRounds[majorToRound[majorByNum[j-k]]];
             break;
           }
