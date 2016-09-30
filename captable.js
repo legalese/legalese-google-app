@@ -228,7 +228,7 @@ function capTable_(termsheet, captablesheet) {
 		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
 		}
 		else {
-		  ctLog("capTable: in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
+		  ctLog("in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);
 		}
 
 	    //preliminary attempt at ESOP running total.
@@ -255,7 +255,7 @@ function capTable_(termsheet, captablesheet) {
 	  round.brand_new_investors[ni] = round.new_investors[ni];
 	}
 	["new_investors", "old_investors", "brand_new_investors"].map(function (itype) {
-	  ctLog("capTable.new(): %s = %s", itype, Object.keys(round[itype]));
+	  ctLog("capTable.new(%s): %s = %s", round.name, itype, Object.keys(round[itype]));
 	});
 	
 //	ctLog("capTable.new(): we calculate that round \"%s\" has %s new shares", round.name, new_shares);
@@ -360,6 +360,7 @@ function capTable_(termsheet, captablesheet) {
 	// all the old investors are given "shareholder" roles
 	// all the new investors are given "new_investor" roles.
 	// all the brand new investors are given "brand_new_investor" roles.
+	// sit_out_investors are those old investors who are not new_investors -- they are sitting out of the current round.
 
 	var toreturn = [];
 	if (! round) { return toreturn }
@@ -373,6 +374,7 @@ function capTable_(termsheet, captablesheet) {
 	  newRole.attrs = { new_commitment:       round.new_investors[ni].money,             num_new_shares: round.new_investors[ni].shares,
 				        _orig_new_commitment: round.new_investors[ni]._orig_money,  orig_num_new_shares: round.new_investors[ni]._orig_shares };
 	  toreturn.push(newRole);
+	  ctLog(["newRoles(%s): pushing from new_investors: %s", round.name, ni],8);
 	}
 
 	for (var ni in round.brand_new_investors) {
@@ -389,6 +391,7 @@ function capTable_(termsheet, captablesheet) {
 	var tentative_shareholders = [];
 	for (var oi in round.old_investors) {
 	  if (oi == "ESOP" || // special case
+		  round.old_investors[oi].shares == 0 ||
 		  round.old_investors[oi].money  == undefined &&
 		  round.old_investors[oi].shares == undefined
 		 ) continue;
@@ -397,7 +400,7 @@ function capTable_(termsheet, captablesheet) {
 	}
 
 	// shareholders should exclude convertible noteholders.
-	ctLog(["capTable.newRoles(): role shareholder (before) = %s", tentative_shareholders.map(function(e) { return e.entityname })], 6);
+	ctLog(["newRoles(%s): role shareholder (before) = %s", round.name, tentative_shareholders.map(function(e) { return e.entityname })], 6);
 
 	var allInvestors_ = this.allInvestors();// side effect -- decorates investor with a .rounds attribute
 
@@ -417,9 +420,35 @@ function capTable_(termsheet, captablesheet) {
 	  }
 	}
 	toreturn = toreturn.concat(chosen_shareholders);
-	ctLog(["capTable.newRoles(): role shareholder (after) = %s", chosen_shareholders.map(function(e) { return e.entityname })], 6);
+	ctLog(["newRoles(%s): role shareholder (after) = %s", round.name, chosen_shareholders.map(function(e) { return e.entityname })], 6);
 
-	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, JSON.stringify(toreturn)]);
+
+	// sit_out_shareholders are those old investors who are not new_investors -- they are sitting out of the current round.
+	ctLog(["newRoles(%s): constructing sit_out_shareholders.", round.name],8);
+	ctLog(["newRoles(%s): that should be old investors minus new investors", round.name],8);
+
+	var sitout_old_names = chosen_shareholders.map(function(e) { return e.entityname });
+	ctLog(["newRoles(%s): sitout old investors = %s", round.name, sitout_old_names],8);
+	
+	var sitout_new_names = toreturn.filter(function(tr){return tr.relation == "new_investor"})
+		.map(function(tr){return tr.entityname});
+	ctLog(["newRoles(%s): sitout new investors = %s", round.name, sitout_new_names],8);
+	if (sitout_new_names.length == 0) {
+	  ctLog(["newRoles(%s): wtf. toreturn=%s", round.name, JSON.stringify(toreturn)],8);
+	}
+
+	var sitout_shareholders = chosen_shareholders
+		.filter(function(old){ return ( sitout_new_names.indexOf(old.entityname) < 0)} ) // not new_investor
+		.map   (function(old){ return { relation:"sitout_shareholder", entityname:old.entityname, attrs:old.attrs } });
+	ctLog(["newRoles(%s): sitout shareholders = %s", round.name, sitout_shareholders.map(function(e){return e.entityname})],8);
+	toreturn = toreturn.concat(sitout_shareholders);
+
+	round.sitout_shareholders = {};
+	for (var siti in sitout_shareholders) {
+	  round.sitout_shareholders[sitout_shareholders[siti].entityname] = round.old_investors[sitout_shareholders[siti].entityname];
+	}
+	
+	ctLog(["newRoles(%s): imputing %s roles: %s", round.name, toreturn.length, JSON.stringify(toreturn)]);
 	return toreturn;
   };
   
@@ -689,7 +718,7 @@ Round.prototype.getNewIssues = function(){
   for (var ni in this.new_investors) {
 	if (ni == "ESOP") { continue }
 	toreturn.holders[ni] = this.new_investors[ni];
-	var number_of_things;
+	var number_of_things = undefined;
 	if (this.new_investors[ni]._orig_shares > 0) {
 	  number_of_things = this.new_investors[ni]._orig_shares;
 	  toreturn.TOTAL._orig_shares = toreturn.TOTAL._orig_shares + this.new_investors[ni]._orig_shares;
@@ -1513,7 +1542,8 @@ function capTableSheet_(captablesheet){
       var prange = sheet.getRange(post - 1, pcol);
       postMoney = postMoney + "+" + prange.getA1Notation();
       ctLog("sumMoney looks like this: " + postMoney);
-      
+
+      ctLog(["trying to getRange %s, %s", row, pcol+1],8);
       var srange = sheet.getRange(row, pcol + 1);
       postShares = postShares + "+" + srange.getA1Notation();
       ctLog("sumShares looks like this: " + postShares);
