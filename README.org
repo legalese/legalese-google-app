@@ -293,9 +293,9 @@ Every entity in a Roles section must be already defined in an Entities section e
 
 In column A: the role name.
 
-In column B: the entity name. Or a *[list expansion]*. If the value in column B is a role name in square brackets, then every entity with that role gets substituted in to have the new role.
+In column B: the entity name. Or a *[List Expansion]*. If the value in column B is a role name in square brackets, then every entity with that role gets substituted in to have the new role.
 
-For example, if column A says "Director" and column B says "Founder", and if the /Entities/ section defined three founders, then you've just told Legalese that every founder is also a director; all three founders now also have the role of Director.
+For example, if column A says "Director" and column B says "[Founder]", and if the /Entities/ section defined three founders, then you've just told Legalese that every founder is also a director; all three founders now also have the role of Director.
 
 Optionally, in columns C and D, you can have add new attribute name-and-value pairs to an existing entity. For example, if you want to record the company's date of incorporation, you can set column A to be "Company", column B to be "Frog Porridge Pte. Ltd.", column C to be "Date of Incorporation:" and column D to be the actual date.
 
@@ -390,11 +390,13 @@ This is what the /Explode/ column is for. Under the explode column you can only 
 ** Inside the XML Template
 So far we've described the Legalese Spreadsheet largely from the point of view of an end-user filling in the entities, cap table, and terms.
 
-After the end-user has filled in the spreadsheet with all the details of their startup, in what form does that information become available to you, the template author?
+So. Now the the end-user has filled in the spreadsheet with all the details of their startup.
+
+How does that information become available to you, the template author?
 
 We assume basic familiarity with Google Apps Script's HTML Template service. If you don't know what <?= ?> means, go for [[https://developers.google.com/apps-script/guides/html/templates][a quick refresher]].
 
-*** The Data Structure
+*** The ~Data~ Structure
 
 Following the [[https://developers.google.com/apps-script/guides/html/templates#pushing_variables_to_templates]["Pushing variables to templates"]] example, most of the spreadsheet state, suitably digested, is available in the ~data.*~ object.
 
