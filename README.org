@@ -340,9 +340,9 @@ the Total column should make sense.
 
 Looking at the tabs at the bottom of the screen, you may notice another special sheet, called /Available Templates/.
 
-The version of /Available Templates/ in your cloned Frog Porridge spreadsheet doesn't actually do anything. By default, every time the user runs /Generate PDFs/, the script goes off and reads the main Demo Master's /Available Templates/ sheet. The local copy in your spreadsheet is useful for reference, but don't bother changing anything in it, because those changes won't be picked up. It's just there for reference.
+The version of /Available Templates/ in your cloned Frog Porridge spreadsheet doesn't actually do anything. By default, every time the user runs /Generate PDFs/, the script goes off and reads the main Demo Master's /Available Templates/ sheet. Don't bother changing anything in the local copy in your spreadsheet, because those changes won't be picked up. It's just there for reference.
 
-Go look at your /Available Templates/ sheet. You will see that each template has a handful of attributes:
+So refer to it. You will see that each template has a handful of attributes:
 - name
 - title
 - URL
@@ -366,11 +366,11 @@ When a template gets filled, some people have to sign it, and some people have t
 
 Templates don't identify those people individually. Rather, we refer to them by role.
 
-If a document needs to be signed by all the directors, then under /To/, put /director/.
+If a document needs to be signed by all the directors, then under *To*, put ~director~.
 
-If a document needs to be CC'ed to the corporate secretary -- who has to see it, but doesn't have to sign it -- then under /CC/, put /corporate_secretary/.
+If a document needs to be CC'ed to the corporate secretary -- who has to see it, but doesn't have to sign it -- then under *CC*, put ~corporate_secretary~.
 
-If a document only needs to be signed by one director, not all the directors, then under /To/, put /director[0]/. This is array notation.
+If a document only needs to be signed by one director, not all the directors, then under *To*, put ~director[0]~. This is array notation.
 
 If a document needs to be signed by multiple sets of roles, join those roles with commas. Don't use a space.
 
@@ -383,10 +383,119 @@ This might happen, for instance, if you are sending out a shareholder notice, re
 
 This is what the /Explode/ column is for. Under the explode column you can only put one role; no commas. Every entity under that role will get their own copy of the document. Nobody sees anybody else's communications, and you get more privacy.
 
+**** Skip Exploding
+Sometimes someone should be left out from the exploder list. If that's true, in a *ROLES* section somewhere, set their entity attribute to ~skip_exploder: true~. Or ~skip_exploding: true~. I could never keep them straight in my head, so both forms work.
+
 ** Sections In The Deal Spreadsheet
-*** Terms
-*** Roles
+We've talked about the two special tabs that describe the company as a whole: /Entities/ and /Cap Table/.
+
+Now it's time to deal a deal: to generate some paperwork that materially changes the state vector of your corporation.
+
+Go open up the /Seed Round/ tab. In there, you'll see sections named:
+*** Key Terms
+This is where you write down the details of the deal. In fancy lingo, you /parameterize/ the deal.
+
+Column A is the name of an attribute. For example, it might say ~Pre-Money Valuation~.
+
+Column B is the value of the attribute. For example, it might say ~S$2,250,000~.
+
+Column C and on are ignored.
+
+Inside the ~data~ structure, which we will get to in a moment, the internal representation is a little different:
+
+#+BEGIN_SRC
+data.pre_money_valuation = "S$2,250,000";
+data._orig_pre_money_valuation = 2250000;
+data._format_pre_money_valuation = "[$S$]#,##0.000";
+#+END_SRC
+
+Every row in the *TERMS* section of a spreadsheet turns into an attribute in the ~data.*~ object in a template.
+**** Note: we rely on Google Spreadsheet's cell formats.                                :callout:
+
+This is worth repeating, so I'll say it again:
+
+NOTE: WE RELY ON GOOGLE SPREADSHEET'S CELL FORMATS!
+
+What does this mean? Well, go into a cell that contains an amount of money. You'll see that the raw numerical value appears, absent any currency symbols or commas. Yes, this is as it should be. No, a literal dollar sign is not part of the /value/ of the cell. That dollar sign is part of the /format/ of the cell. 
+
+Formats in a spreadsheet are like units in science, or types in programming.
+
+What if you want to change the format of a cell? Click on the ~123~ icon and pick the appropriate representation. If you don't like the number of digits after the decimal point, click on the ~.0~ and ~.00~ icons.
+
+*An enormous class of Legalese errors arise from when a cell that should contain a number actually contains a string.* This will happen if you type in a number with commas. This will happen if you type in money with a dollar sign. You're putting a square peg into a round hole. You're committing what's called a /type error/. To avoid type errors, don't type in commas and dollar signs! Instead, change the cell format in the proper place.
+
+**** Attribute Normalization
+
+We convert attributes with names like ~Bob's Shack Address:~ to ~bobs_shack_address~. See ~format.js~, function ~asvar_~.
+
+*** Minor Terms
+
+This section is treated exactly the same as Key Terms. In fact, Legalese doesn't even bother to distinguish *MINOR TERMS* as a section header: that row just turns into the attribute ~data.minor_terms_specific_to~. LOL.
+
+Just because a row looks white-on-black doesn't mean it's special. We look not at the color of its skin, but at the content of the cell. Martin Luther King, dig?
+
 *** Configuration
+This is where things get technical. The config section tells Legalese how to go about turning spreadsheets into XML and XML into PDF. You're a Legalese developer, so you'll be spending a lot of time in the config section. (As opposed to your end-users, who will spend time in the *TERMS* and *CAP TABLE* sections.)
+
+Attributes from the *CONFIGURATION* section turn up in the ~data._config~ object. Note the underscore.
+
+Let's get some easy pleasantries out of the way.
+
+You might see a ~//~ cell. That explicitly means: ignore this cell, and everything to the right. This is usually a sign of a bunch of values used by helper functions.
+
+If Column A contains the word ~ignore:~ then the spreadsheet parser ignores that row.
+
+You'll observe that sometimes a row will have a blank Column A, but a nonblank Column B. That's because of the /ditto effect/: a blank Column A is assumed to take its value from the row above. That allows us to effectively have hanging indentation, which looks better than repeating Column A row after row, don't you think? In fact, the ditto rule may also work for columns B and onward, I'm not sure. Looking at the source code, I'm still not sure.
+
+You have to be careful, though, because if you want to set just one ~ignore:~ in the middle of a few ~template:~ rows, it's easy to accidentally not just that row but everything after it. To unignore the next line, explicitly say ~template:~.
+
+You'll observe that sometimes Column C is treated as a comment. Sometimes Columns C and D are treated as key/value pairs. All this dynamism is for your benefit, because we know that sometimes the world can be complicated, and describing its complexity requires complex data structures. As a developer, inside the XML template, Legalese breaks it down for you a whole bunch of ways.
+
+Suppose your config section has a row where Column A contains "A", Column B contains "B", and so on, yea, unto C, D, E, and F.
+
+#+BEGIN_SRC
+data._config.A.value = B
+data._config.A.values = [B,C,D,E,F]
+data._config.A.tree.B.C.D.E = F
+data._config.A.dict.B = [C,D,E,F]
+data._config.A.dict2.B.C = [D,E,F]
+#+END_SRC
+
+Which accessor you choose depends on what attribute you're trying to access.
+
+For example, to get a list of templates desired by the deal sheet, ~data._config.templates~ will contain an array of template names.
+
+A template may define Column C = "style", in which case D will be the name of a font.
+
+Here's how the ~inc_covertitle.xml~ helper template extracts that attribute:
+
+#+BEGIN_SRC
+var style = data._config.templates.tree[data._templateName] ? data._config.templates.tree[data._templateName].style : null;
+#+END_SRC
+
+I don't think columns B and onward get normalized.
+
+*** INCLUDE
+
+As one good turn deserves another, one Legalese sheet can include another.
+
+The most obvious example is the automatic and invisible inclusion of an /Available Templates/ sheet. If a deal sheet doesn't itself define an *Available Templates* section, then Legalese will automatically default in all the templates from the Demo Master's Available Templates sheet.
+
+A deal sheet can also include a different deal sheet; in that case, the *TERMS* will be read in. This is not a common situation, but may occur if there is a main deal and multiple sub-deals.
+
+There are a few complex rules around what happens in a chain of nested includes; the details are described in a comment at the top of ~readrows.js~ and we won't go into them right now. Some other time we should probably move that documentation into this file.
+
+
+*** You can have a *ROLES* section in a deal spreadsheet.
+
+You'll often need a way to say, for the purposes of this deal, Entity E has role R.
+
+If Entity E /always/ has role R, then you can put that relation directly into the /Entities/ tab's *ROLES* section.
+
+But if Entity E only /sometimes/ has role R, and it depends on what the deal is, then you should put that relation into a specific deal's *ROLES* section.
+
+If you look at the Demo Master's /ESOP and Vesting/ tab, you'll see that a hidden row *INCLUDE*s the Entities sheet, and then a *ROLES* section adds some attributes to a few entities.
+
 ** Inside the XML Template
 So far we've described the Legalese Spreadsheet largely from the point of view of an end-user filling in the entities, cap table, and terms.
 
@@ -394,16 +503,19 @@ So. Now the the end-user has filled in the spreadsheet with all the details of t
 
 How does that information become available to you, the template author?
 
-We assume basic familiarity with Google Apps Script's HTML Template service. If you don't know what <?= ?> means, go for [[https://developers.google.com/apps-script/guides/html/templates][a quick refresher]].
+We assume basic familiarity with Google Apps Script's HTML Template service. If you don't know what ~<?= ?>~ means, get [[https://developers.google.com/apps-script/guides/html/templates][a quick refresher]].
 
 *** The ~Data~ Structure
 
 Following the [[https://developers.google.com/apps-script/guides/html/templates#pushing_variables_to_templates]["Pushing variables to templates"]] example, most of the spreadsheet state, suitably digested, is available in the ~data.*~ object.
 
 **** data.parties
+Arguably we should move this out into a top-level ~parties~ object.
 
+**** data._config
+We talked about this above.
 
-
+Arguably we should move this out into a top-level ~config~ object.
 **** data.<EXPLODE>
 
 If your template was defined with /Explode/ : /director/ then you can expect to see ~data.director~ available.
@@ -415,9 +527,9 @@ If your template was defined with /Explode/ : /director/ then you can expect to 
 On the theory that a deal is always about your corporation, ~data.company~ is a syntactic-sugar alias to ~data.parties.company[0]~.
 
 **** data.<TERMS>
+Everything in the *TERMS* section shows up as a direct attribute of the ~data~ object.
 
-
-
+**** 
 *** Other top-level variables
 
 Besides ~data.*~ several other objects are available.
@@ -427,6 +539,7 @@ Besides ~data.*~ several other objects are available.
 rcpts_cc also
 
 *** Parties and Roles Synthesized from the Cap Table
+Arguably these things should be available in a ~captable~ object.
 **** old_investor
 **** new_investor
 **** brand_new_investor
