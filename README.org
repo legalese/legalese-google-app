@@ -173,7 +173,9 @@ A help desk appears. The sign above it says: "Useful Facilities for the Template
 
 Legalese's v1 system helps investment deals get done.
 
-In Legalese lingo, a *deal* represents a state change in the history of a company.
+In Legalese lingo, a *deal* represents a state change in the history of a company. Specifically, a change to the cap table.
+
+What's a cap table? The *Capitalization Table* records all the changes to the shareholding of the company. With each new round of investment, the cap table grows another column. With each new shareholder who joins the company's "register of members", with each new investor who subscribes for convertible debt, the cap table grows another row.
 
 The first deal is usually /Incorporation/.
 
@@ -410,13 +412,13 @@ data._format_pre_money_valuation = "[$S$]#,##0.000";
 #+END_SRC
 
 Every row in the *TERMS* section of a spreadsheet turns into an attribute in the ~data.*~ object in a template.
-**** Note: we rely on Google Spreadsheet's cell formats.                                :callout:
+**** Note: we rely on Google Spreadsheet's cell formats!                                   :callout:
 
 This is worth repeating, so I'll say it again:
 
-NOTE: WE RELY ON GOOGLE SPREADSHEET'S CELL FORMATS!
+WE RELY ON GOOGLE SPREADSHEET'S CELL FORMATS!
 
-What does this mean? Well, go into a cell that contains an amount of money. You'll see that the raw numerical value appears, absent any currency symbols or commas. Yes, this is as it should be. No, a literal dollar sign is not part of the /value/ of the cell. That dollar sign is part of the /format/ of the cell. 
+What does this mean? Well, take a look. Go into a cell that contains an amount of money. You'll see that the raw numerical value appears, absent any currency symbols or commas. Yes, this is as it should be. No, a literal dollar sign is not part of the /value/ of the cell. That dollar sign is part of the /format/ of the cell. 
 
 Formats in a spreadsheet are like units in science, or types in programming.
 
@@ -505,6 +507,8 @@ How does that information become available to you, the template author?
 
 We assume basic familiarity with Google Apps Script's HTML Template service. If you don't know what ~<?= ?>~ means, get [[https://developers.google.com/apps-script/guides/html/templates][a quick refresher]].
 
+In a deal sheet, under *CONFIGURATION*, you specify one or more templates. When the user hits "Generate PDFs", Legalese retrieves the templates, sets up a few objects -- most importantly the ~data~ object -- and evaluates each template, with those objects passed in to the template.
+
 *** The ~Data~ Structure
 
 Following the [[https://developers.google.com/apps-script/guides/html/templates#pushing_variables_to_templates]["Pushing variables to templates"]] example, most of the spreadsheet state, suitably digested, is available in the ~data.*~ object.
@@ -539,6 +543,45 @@ Besides ~data.*~ several other objects are available.
 rcpts_cc also
 
 *** Parties and Roles Synthesized from the Cap Table
+
+Suppose you're working a deal that's five rounds into the history of the company.
+
+For the sake of this example, let's say that in previous rounds,
+
+1. the company has formed (/Incorporation/)
+2. the founders have set up a vesting plan for themselves (/ESOP and Vesting/)
+3. a bunch of friends, family, and fools have bought non-voting shares (/FFF Round/)
+4. a bunch of angels have purchased convertible notes (/Angel Round/)
+5. a seed VC fund now wants to purchase a SAFE. (/Seed Round/)
+
+To make this deal happen, you're probably going to want an easy way to:
+- display the /before/ and /after/ cap table for the company
+- compute whether any existing securities convert
+- identify all the voting shareholders
+- identify all the nonvoting shareholders
+- identify all the equity holders
+- identify all the debt holders
+- identify all the investors who hold preemptive rights
+- identify all the investors who hold ratchet rights
+- compute the vesting progress of the company's ESOP plan
+
+Legalese makes it easy for you to do all these things.
+
+Why do these things need to happen? Let's look at a couple of case studies.
+
+**** Case Study: Preemptive Notices
+
+One of the most important parts of the deal has to do with existing shareholders' /pre-emptive rights/. Before the company can offer shares (or securities that are convertible to shares) to new investors, it must first offer existing shareholders the opportunity to purchase those shares. That's one of the things that makes a private company a /closely held/ entity: if existing members buy all the shares the company has to offer, then no new shareholders will be privy to the company's affairs.
+
+How does this rule go into action? When the company decides it wants to issue new securities, all shareholders who are eligible to purchase those securities need to receive formal notice of the offer. In Legalese, that means we need a template that's signed by a corporate representative -- typically a director -- that then explodes out to existing shareholders; and each existing shareholder can respond with a signature.
+
+That template is called the ~preemptive_waiver~, because most of the existing shareholders respond with a stock answer: they waive their preemptive rights and allow the new investor to purchase the shares. If any of the existing shareholders decide to participate in the round, they don't need to send back the waiver -- the fact of their subscription for the current securities is /prima facie/ evidence that they received the preemptive notice and are responding positively.
+
+In the /Available Templates/ sheet, the ~preemptive_waiver~ template has *To* = ~company~ and *Explode* = ~sitout_shareholder~. That means that the preemptive waiver goes to any shareholders who are sitting out of the current round.
+
+
+
+**** The CapTable object
 Arguably these things should be available in a ~captable~ object.
 **** old_investor
 **** new_investor
