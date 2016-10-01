@@ -312,7 +312,7 @@ This is basically a scratchpad area for helper functions. Legalese ignores the c
 
 ** Special Sheet: Cap Table
 
-Legalese sees the history of your startup as a series of deals. Yeah, we know, there's blood, sweat, and tears, and when you read /The Hard Thing About Hard Things/ you saw yourself in the starring role, and you may have lovingly chronicled the life of your startup in a thousand late-night tweets.
+Legalese sees your startup as a series of deals. Yeah, we know, there's blood, sweat, and tears, and when you read /The Hard Thing About Hard Things/ you see yourself in the starring role, and you may have lovingly chronicled the life of your startup in a thousand late-night tweets.
 
 But Legalese is a FinTech/LegalTech app and we don't care about any of that. All we care about is your cap table. [[https://www.youtube.com/watch?v=FFrag8ll85w]["Show me the money!"]]
 
@@ -322,7 +322,7 @@ The /Cap Table/ tab contains only one section: the *CAP TABLE* section.
 
 The cap table displays all your deals on one sheet, and identifies the entities involved in each deal.
 
-Column A of the Cap Table must be the exact name of a known entity. The best way to do this is have an = formula that links back to the Entities tab. Do NOT type the names in manually. Why not? Because if you find yourself updating a name on Entities, you need "John Smith" to become "Jonathan Smith" everywhere, at once, correctly. And if you type names in by hand, you lose referential integrity, and you will have weird errors, and you will blame Legalese, when actually it's your fault, and it'll all end in tears. Don't let that happen. [[https://en.wikipedia.org/wiki/Don%2527t_repeat_yourself][Don't repeat yourself]]. Use an equals formula. Seriously.
+Column A of the Cap Table must be the exact name of a known entity. The best way to do this is have an ~=~ formula that links back to the Entities tab. Do NOT type the names in manually. Why not? Because if you find yourself updating a name on Entities, you need "John Smith" to become "Jonathan Smith" everywhere, at once, correctly. And if you type names in by hand, you lose referential integrity, and you will have weird errors, and you will blame Legalese, when actually it's your fault, and it'll all end in tears. Don't let that happen. [[https://en.wikipedia.org/wiki/Don%2527t_repeat_yourself][Don't repeat yourself]]. Use an equals formula. Seriously.
 
 The cap table sheet is an authoritative source of truth for Legalese. All kinds of things flow from the cap table sheet. It has to be correct.
 
@@ -370,7 +370,7 @@ Templates don't identify those people individually. Rather, we refer to them by 
 
 If a document needs to be signed by all the directors, then under *To*, put ~director~.
 
-If a document needs to be CC'ed to the corporate secretary -- who has to see it, but doesn't have to sign it -- then under *CC*, put ~corporate_secretary~.
+If a document needs to be CC'ed to the corporate secretary -- who has to see it, but doesn't have to sign it -- then under *CC*, put ~corporate_secretary~. This tells the e-signature backend what to do.
 
 If a document only needs to be signed by one director, not all the directors, then under *To*, put ~director[0]~. This is array notation.
 
@@ -391,7 +391,7 @@ Sometimes someone should be left out from the exploder list. If that's true, in 
 ** Sections In The Deal Spreadsheet
 We've talked about the two special tabs that describe the company as a whole: /Entities/ and /Cap Table/.
 
-Now it's time to deal a deal: to generate some paperwork that materially changes the state vector of your corporation.
+Now it's time to look at a deal, that generates some paperwork that materially changes the state vector of your corporation.
 
 Go open up the /Seed Round/ tab. In there, you'll see sections named:
 *** Key Terms
@@ -445,7 +445,7 @@ Let's get some easy pleasantries out of the way.
 
 You might see a ~//~ cell. That explicitly means: ignore this cell, and everything to the right. This is usually a sign of a bunch of values used by helper functions.
 
-If Column A contains the word ~ignore:~ then the spreadsheet parser ignores that row.
+If Column A contains the word ~ignore:~ then the spreadsheet parser ignores that row. Well, it doesn't really; it's treated like anything else. It's up to you not to look at any config attributes called "ignore".
 
 You'll observe that sometimes a row will have a blank Column A, but a nonblank Column B. That's because of the /ditto effect/: a blank Column A is assumed to take its value from the row above. That allows us to effectively have hanging indentation, which looks better than repeating Column A row after row, don't you think? In fact, the ditto rule may also work for columns B and onward, I'm not sure. Looking at the source code, I'm still not sure.
 
@@ -526,7 +526,65 @@ Inside a template, you'll find a ~data.parties~ object, which contains all the p
 
 Here's what it looks like:
 
+#+BEGIN_SRC JSON
+{
+  "company": [
+    { // let's call this data structure a Party Structure
+       "_origin_spreadsheet_id": ...,
+       "_origin_sheet_id": ...,
+       "_spreadsheet_row": ...,
 
+       "name": ...,           "_format_name": ...,           "_orig_name": ...,           "_name_firstline": ...,
+       "email": ...,          "_format_email": ...,          "_orig_email": ...,          "_email_firstline": ...,
+       "idtype": ...,         "_format_idtype": ...,         "_orig_idtype": ...,         "_idtype_firstline": ...,
+       "id": ...,             "_format_id": ...,             "_orig_id": ...,             "_id_firstline": ...,
+       "address": ...,        "_format_address": ...,        "_orig_address": ...,        "_address_firstline": ...,
+       "state": ...,          "_format_state": ...,          "_orig_state": ...,          "_state_firstline": ...,
+       "party_type": ...,     "_format_party_type": ...,     "_orig_party_type": ...,     "_party_type_firstline": ...,
+       "short_name": ...,     "_format_short_name": ...,     "_orig_short_name": ...,     "_short_name_firstline": ...,
+       "description": ...,    "_format_description": ...,    "_orig_description": ...,    "_description_firstline": ...,
+       "bank_details": ...,   "_format_bank_details": ...,   "_orig_bank_details": ...,   "_bank_details_firstline": ...,
+       "signatory_name": ..., "_format_signatory_name": ..., "_orig_signatory_name": ..., "_signatory_name_firstline": ...,
+       "roles": {
+                "company": [ "Name 1" ],
+                "founder": [ "Name 2", "Name 3", ... ],
+                "employee": [ ... ],
+                "investor": [ ... ],
+                "esop": [ ... ],
+                "corporate_secretary": [ ... ],
+                "state_regulator": [ ... ],
+                "bank": [ ... ],
+                "director": [ ... ],
+                "accountant": [ ... ],
+                "new_investor": [ ... ],
+                "brand_new_investor": [ ... ],
+                "shareholder": [ ... ],
+                "voting_shareholder": [ ... ],
+                "nonvoting_shareholder": [ ... ],
+            "_unmailed": true
+        }
+    ],
+    "founder": [ 
+        { // Party Structure, as above, but with an interesting twist:
+            "_role": {
+                "Name 1": [
+                    "founder",
+                    "director",
+                    "shareholder"
+                ]
+            },
+            "_es_num": null,
+            "_to_email": ...,
+        },
+        { // Party Structure for second founder
+        }
+    ],
+    // and other explicit roles identified in the Entities tab and in a ROLES section
+#+END_SRC
+
+Note that ~data.parties.company[0].roles~ offers a list of all the roles, including synthesized roles, relevant to the current round.
+
+Note that ~data.parties.<EVERYBODY-ELSE>[N]._role~ offers a list of all the roles vis-a-vis the company, including roles synthesized for the current round.
 
 As template developer, you are responsible for making sure that a template's /To/ column, in its /Available Templates/ definition, corresponds to the use of ~data.parties~ inside the template's XML.
 
@@ -538,9 +596,87 @@ Arguably we should move this out into a top-level ~parties~ object.
 We talked about this above.
 
 Arguably we should move this out into a top-level ~config~ object.
-**** data.<EXPLODE>
 
-If your template was defined with /Explode/ : /director/ then you can expect to see ~data.director~ available.
+You can see how the values are arranged in different ways. Which is most convenient for you to access?
+
+#+BEGIN_SRC JSON
+{
+    "add_to_folder": {
+        "asRange": {},
+        "values": [
+            "https://drive.google.com/drive/folders/..."
+        ],
+        "dict": {},
+        "tree": {
+            "https://drive.google.com/drive/folders/...": null
+        },
+        "value": "https://drive.google.com/drive/folders/..."
+    },
+#+END_SRC
+
+If a config attribute is a simple key/value pair, go for ~.value~.
+
+#+BEGIN_SRC JSON
+
+
+   "templates" : {
+      "dict" : {
+         "debug" : []
+      },
+      "values" : [],
+      "tree" : {
+         "preemptive_waiver" : null,
+         "debug" : {
+            "style" : "sketchRockwell"
+         },
+         "dev_mr_issue_shares" : null
+      },
+      "asRange" : {},
+      "dict2" : {
+         "debug" : {
+            "style" : [
+               "sketchRockwell"
+            ]
+         }
+      }
+   },
+#+END_SRC
+
+To pull the list of templates, do ~Object.keys(data._config.templates.tree)~.
+
+A given template (in this case the /debug/ template0 may have further attributes of its own: ~data._config.templates.dict2.debug.style~ is ~"sketchRockwell"~. That's a font, by the way.
+
+#+BEGIN_SRC JSON
+
+    "echosign": {
+        "asRange": {},
+        "values": [
+            "title",
+            "Seed Round Investment"
+        ],
+        "dict": {
+            "message": [
+                "For review and signature."
+            ],
+            "title": [
+                "Seed Round Investment"
+            ]
+        },
+        "tree": {
+            "message": "For review and signature.",
+            "title": "Seed Round Investment"
+        },
+        "value": "title"
+    },
+}
+#+END_SRC
+
+Some dictionaries don't run that deep. To get the echosign title value, pull ~data._config.echosign.dict.title~.
+
+
+**** data.<EXPLODEE>
+
+If your template was defined with /Explode/ : /director/ then you can expect to see ~data.director~ available. They're always singletons so this is syntactic sugar for ~data.parties.director[0]~.
 
 **** data.company
 
@@ -550,6 +686,41 @@ On the theory that a deal is always about your corporation, ~data.company~ is a 
 
 **** data.<TERMS>
 Everything in the *TERMS* section shows up as a direct attribute of the ~data~ object.
+
+#+BEGIN_SRC
+data.pre_money_valuation: JSON: "S$3,000,000"
+data._orig_pre_money_valuation: JSON: 3000000
+data._format_pre_money_valuation: JSON: "[$S$]#,##0"
+
+data.amount_raising: JSON: "S$250,000"
+data._orig_amount_raising: JSON: 250000
+data._format_amount_raising: JSON: "[$S$]#,##0"
+
+data.security_type: JSON: "SAFE"
+data._orig_security_type: JSON: "SAFE"
+data._format_security_type: JSON: ""
+
+#+END_SRC
+
+There are a ton of terms so we're not going to display all of them.
+
+**** some special or default values
+
+These all have their place and purpose ... to be documented later.
+
+data._todays_date: JSON: "2 October 2016"
+data._todays_date_wdmy: JSON: "Sunday 2 October 2016"
+data.xml_declaration: JSON: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+data.whitespace_handling_use_tags: JSON: "<?whitespace-handling use-tags?>"
+data.whitespace_handling_use_characters: JSON: "<?whitespace-handling use-characters?>"
+data._timezone: JSON: "Asia/Singapore"
+data._entitiesByName: (skipping value)
+data._origparties: (skipping value)
+data._templateName: JSON: "debug"
+data.xmlRoot: JSON: undefined
+
+data._include: JSON: undefined
+data._include2: JSON: undefined
 
 **** 
 *** Other top-level variables
@@ -627,9 +798,6 @@ You do not need to explicitly define any of the above roles: they get computed b
 
 What does ~shareholder~ mean? I don't know. I don't think it's synthesized. It should be; it should describe anyone who owns shares in the company, and who appears on the register of members -- as opposed to an investor who owns debt. Debtholders don't have to attend annual general meetings and don't have to sign members' resolutions.
 
-**** The CapTable object
-Arguably these things should be accessble from a ~captable~ object.
-
 *** The capTable and Round Objects
 
 We've talked about roles. Roles are characteristic attributes of an entity: in relation to a company, at a given round, is someone an investor, a founder, a corporate secretary? In SQL, you might say: ~SELECT * FROM entity JOIN role JOIN entityrole WHERE entityrole.entity = entity.id AND entityrole.role = role.id~.
@@ -640,7 +808,7 @@ When you're dealing with a specific investment round, you often need quantitativ
 
 In the deal sheets, end-users provide enough information for Legalese to compute the answers to these questions. You access the details of the deal using two objects: the ~data.capTable~ object and the ~Round~ object.
 
-**** The capTable object
+**** Using the capTable object
 
 Here's a typical use of the capTable and Round objects:
 
@@ -650,10 +818,107 @@ Here's a typical use of the capTable and Round objects:
 
 #+END_HTML
 
+**** Detailing the ~data.capTable~ object
+Arguably these things should be accessble from a top-level ~captable~ object.
+
+#+BEGIN_SRC JSON
+{
+    "termsheet": {},
+    "captablesheet": {},
+    "isValid": true,
+    "activeRound": "Seed Round",
+    "rounds": [
+        {
+            "name": "Incorporation",
+            "new_investors": {
+                "A": {
+                    "money": "S$13,500",
+                    "_orig_money": 13500,
+                    "_format_money": "[$S$]#,##0",
+                    "shares": "13,500",
+                    "_orig_shares": 13500,
+                    "_format_shares": "#,##0",
+                    "percentage": "90%",
+                    "_orig_percentage": 0.9,
+                    "_format_percentage": "0%"
+                },
+                "B": {
+                    "money": "S$1,500",
+                    "_orig_money": 1500,
+                    "_format_money": "[$S$]#,##0",
+                    "shares": "1,500",
+                    "_orig_shares": 1500,
+                    "_format_shares": "#,##0",
+                    "percentage": "10%",
+                    "_orig_percentage": 0.1,
+                    "_format_percentage": "0%"
+                }
+            },
+            "ordered_investors": [
+                "A",
+                "B"
+            ],
+            "sheet": "__cycle__object[sheet]",
+            "captable": "__cycle__object[captable]",
+            "security_type": "Ordinary Shares",
+            "approximate_date": "2015-06-30T16:00:00.000Z",
+            "price_per_share": {
+                "shares": "$1.00",
+                "_orig_shares": 1,
+                "_format_shares": "\"$\"#,##0.00"
+            },
+            "amount_raised": {
+                "money": "$15,000",
+                "_orig_money": 15000,
+                "_format_money": "\"$\"#,##0",
+                "shares": "15,000",
+                "_orig_shares": 15000,
+                "_format_shares": "#,##0"
+            },
+            "post": {
+                "money": "$15,000",
+                "_orig_money": 15000,
+                "_format_money": "\"$\"#,##0",
+                "shares": "15,000",
+                "_orig_shares": 15000,
+                "_format_shares": "#,##0"
+            },
+            "old_investors": {},
+            "shares_pre": 0,
+            "by_security_type": {
+                "Ordinary Shares": {
+                    "TOTAL": 15000,
+                    "A": 13500,
+                    "B": 1500
+                }
+            },
+            "brand_new_investors": {
+                "A": "__cycle__object[A]",
+                "B": "__cycle__object[B]"
+            }
+        },
+        {
+            "name": "Seed Round",
+            "new_investors": {
+                "C": {
+                    "money": "S$125,000",
+                    "_orig_money": 125000,
+                    "_format_money": "[$S$]#,##0",
+                    "shares": "781",
+                    "_orig_shares": 781.25,
+                    "_format_shares": "#,##0",
+                    "percentage": "3.846%",
+                    "_orig_percentage": 0.038461538461538464,
+                    "_format_percentage": "0.000%"
+                },
+        }
+
+#+END_SRC
+
 
 
 **** The Round object
-
+We need a class definition here ... with methods, etc.
 
 
 ** Includes and Modules
