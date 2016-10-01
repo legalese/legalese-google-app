@@ -79,8 +79,15 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	  var cache = CacheService.getDocumentCache();
 	  var cached = cache.get(url);
 	  if (cached != null) {
+        teLog(["nocache is false; using cached copy of %s", url],7)
 		return HtmlService.createTemplate(cached);
 	  }
+      else {
+		teLog(["nocache is false but cache miss for %s", url],7)
+	  }
+	}
+    else {
+	  teLog(["nocache requested, forcing retrieve of %s", url],7);
 	}
 
 	try {
