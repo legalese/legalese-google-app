@@ -434,7 +434,7 @@ We convert attributes with names like ~Bob's Shack Address:~ to ~bobs_shack_addr
 
 This section is treated exactly the same as Key Terms. In fact, Legalese doesn't even bother to distinguish *MINOR TERMS* as a section header: that row just turns into the attribute ~data.minor_terms_specific_to~. LOL.
 
-Just because a row looks white-on-black doesn't mean it's special. We look not at the color of its skin, but at the content of the cell. Martin Luther King, dig?
+Just because a row looks white-on-black doesn't mean it's special. We look not at the color of its skin, but at the content of its characters.
 
 *** Configuration
 This is where things get technical. The config section tells Legalese how to go about turning spreadsheets into XML and XML into PDF. You're a Legalese developer, so you'll be spending a lot of time in the config section. (As opposed to your end-users, who will spend time in the *TERMS* and *CAP TABLE* sections.)
@@ -514,6 +514,24 @@ In a deal sheet, under *CONFIGURATION*, you specify one or more templates. When 
 Following the [[https://developers.google.com/apps-script/guides/html/templates#pushing_variables_to_templates]["Pushing variables to templates"]] example, most of the spreadsheet state, suitably digested, is available in the ~data.*~ object.
 
 **** data.parties
+The Legalese spreadsheet defines entities and roles generally.
+
+In the /To/ and /Exploder/ columns of the the /Available Templates/ sheet, you'll see specific roles identified for expansion into *parties*.
+
+What's the difference between roles and parties? Roles are just kind of hanging out on the bench: wide receivers, linebackers, safeties. A template beckons at some of those roles to come on to the field. Once they're in the game, running a specific play, they are parties, to a specific contract.
+
+A deal may be made up of multiple contracts, and each contract may specify a different set of parties.
+
+Inside a template, you'll find a ~data.parties~ object, which contains all the parties that were identified for that template.
+
+Here's what it looks like:
+
+
+
+As template developer, you are responsible for making sure that a template's /To/ column, in its /Available Templates/ definition, corresponds to the use of ~data.parties~ inside the template's XML.
+
+Technical Nit: Legalese also generates /notices/ and /resolutions/, which are not exactly contracts, but are similar to contracts, in that they require signatures. Can a document have only one kind of role? Parties with no counterparties? Sure.
+
 Arguably we should move this out into a top-level ~parties~ object.
 
 **** data._config
@@ -542,11 +560,13 @@ Besides ~data.*~ several other objects are available.
 
 rcpts_cc also
 
-*** Parties and Roles Synthesized from the Cap Table
+*** Roles Synthesized from the Cap Table
 
 Suppose you're working a deal that's five rounds into the history of the company.
 
-For the sake of this example, let's say that in previous rounds,
+There might be dozens of entities. How do you cope with the question of which entity has which role?
+
+For the sake of this example, let's say that in the company's rounds,
 
 1. the company has formed (/Incorporation/)
 2. the founders have set up a vesting plan for themselves (/ESOP and Vesting/)
@@ -554,20 +574,22 @@ For the sake of this example, let's say that in previous rounds,
 4. a bunch of angels have purchased convertible notes (/Angel Round/)
 5. a seed VC fund now wants to purchase a SAFE. (/Seed Round/)
 
+Note that in our Demo Master there is no /FFF Round/, but let's pretend.
+
 To make this deal happen, you're probably going to want an easy way to:
 - display the /before/ and /after/ cap table for the company
-- compute whether any existing securities convert
 - identify all the voting shareholders
 - identify all the nonvoting shareholders
 - identify all the equity holders
 - identify all the debt holders
 - identify all the investors who hold preemptive rights
 - identify all the investors who hold ratchet rights
-- compute the vesting progress of the company's ESOP plan
+
+These are all questions about *roles*.
 
 Legalese makes it easy for you to do all these things.
 
-Why do these things need to happen? Let's look at a couple of case studies.
+Wait, why do you need to do these things? Let's look at a couple of case studies.
 
 **** Case Study: Preemptive Notices
 
@@ -575,19 +597,64 @@ One of the most important parts of the deal has to do with existing shareholders
 
 How does this rule go into action? When the company decides it wants to issue new securities, all shareholders who are eligible to purchase those securities need to receive formal notice of the offer. In Legalese, that means we need a template that's signed by a corporate representative -- typically a director -- that then explodes out to existing shareholders; and each existing shareholder can respond with a signature.
 
-That template is called the ~preemptive_waiver~, because most of the existing shareholders respond with a stock answer: they waive their preemptive rights and allow the new investor to purchase the shares. If any of the existing shareholders decide to participate in the round, they don't need to send back the waiver -- the fact of their subscription for the current securities is /prima facie/ evidence that they received the preemptive notice and are responding positively.
+That template is called the ~preemptive_waiver~. Why /waiver/? Because most of the existing shareholders respond with a standard answer: they waive their preemptive rights and let the new investor purchase the shares. If any of the existing shareholders decide to participate in the round, they don't need to send back the waiver -- the fact of their subscription for the current securities is /prima facie/ evidence that they received the preemptive notice and are responding positively.
 
 In the /Available Templates/ sheet, the ~preemptive_waiver~ template has *To* = ~company~ and *Explode* = ~sitout_shareholder~. That means that the preemptive waiver goes to any shareholders who are sitting out of the current round.
 
+The cap table contains all the information needed to compute the ~sitout_shareholder~ role. Any entity which was previously a shareholder in the company, but is not re-upping -- not participating in the current round -- is a ~sitout_shareholder~. That's a good example of a /synthetic role/.
 
+A *synthetic role* is a role which Legalese computed on the fly, as opposed to an /explicit role/.
+
+If you explicitly labeled an entity with a role, maybe back in the *ENTITIES* section of the /Entities/ tab, or perhaps in a *ROLES* section (either in the /Entities/ tab or in your current deal sheet), then that entity has an /explicit role/.
+
+A /Director/ role is a good example of an explicit role: the only way Legalese can know who a director is, is if you tell it.
+
+But investor-type roles can be deduced from the cap table, and are prime candidates for /synthetic roles/.
+
+**** Synthetic Role definitions
+
+If an investor is showing up for the first time in the current round, then they're a ~brand_new_investor~.
+
+If an investor is participating in the current round, then they're a ~new_investor~, whether or not we've seen them before.
+
+If an investor participated in a previous round, then they're an ~old_investor~, whether or not they're re-upping in the current round.
+
+If an old investor is not participating in the current round, then they're a ~sitout_shareholder~.
+
+Sorry for the confusing nomenclature; it evolved organically.
+
+You do not need to explicitly define any of the above roles: they get computed by Legalese. Like any explicitly defined role, they may be used in /Available Templates/ and in your templates.
+
+What does ~shareholder~ mean? I don't know. I don't think it's synthesized. It should be; it should describe anyone who owns shares in the company, and who appears on the register of members -- as opposed to an investor who owns debt. Debtholders don't have to attend annual general meetings and don't have to sign members' resolutions.
 
 **** The CapTable object
-Arguably these things should be available in a ~captable~ object.
-**** old_investor
-**** new_investor
-**** brand_new_investor
-**** shareholder
-*** The Round Object
+Arguably these things should be accessble from a ~captable~ object.
+
+*** The capTable and Round Objects
+
+We've talked about roles. Roles are characteristic attributes of an entity: in relation to a company, at a given round, is someone an investor, a founder, a corporate secretary? In SQL, you might say: ~SELECT * FROM entity JOIN role JOIN entityrole WHERE entityrole.entity = entity.id AND entityrole.role = role.id~.
+
+But roles aren't the only thing Legalese can help you with.
+
+When you're dealing with a specific investment round, you often need quantitative values: how many shares does somebody own? What kinds of shares? Are they voting or nonvoting? What about a mix? If they have a convertible note instead of shares, what are the terms of the note? How does the note convert? Is there a cap? A discount? A fixed price per share? Preferred stock has other attributes as well: what's the liquidation preference? If we're using a class of shares to represent a vesting plan, what does the vesting schedule look like? At any given point in time how many shares have vested and how many remain restricted?
+
+In the deal sheets, end-users provide enough information for Legalese to compute the answers to these questions. You access the details of the deal using two objects: the ~data.capTable~ object and the ~Round~ object.
+
+**** The capTable object
+
+Here's a typical use of the capTable and Round objects:
+
+#+BEGIN_HTML
+
+<numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
+
+#+END_HTML
+
+
+
+**** The Round object
+
+
 
 ** Includes and Modules
 
@@ -597,9 +664,15 @@ Arguably these things should be available in a ~captable~ object.
 ** InDesign Templates
 Most of the documents generated by Legalese are /contracts/.
 
-Legalese also generates /notices/ and /resolutions/, which are not exactly contracts, but are similar to contract,s in that they require signatures.
+
 *** singlepage.indt
 *** other weird templates
+*** the structure of a typical document
+*** character styles
+*** paragraph styles
+*** cross-references
+*** default values
+**** output date
 *** modifying the INDTs
 you need InDesign. Sorry.
 * About the Company Spreadsheet
