@@ -412,9 +412,9 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  // TODO: do we need to ignore situations where row[0] !~ /:$/ ? subsection headings might be noisy.
 	  var asvar = asvar_(row[0]);
-      terms[            asvar] = (values[i][1] === true || values[i][1] === false ? values[i][1] : display[i][1]);
-	  terms["_orig_"  + asvar] = row[1];
-	  terms["_format" + asvar] = term_formats[i][0];
+      terms[             asvar] = (values[i][1] === true || values[i][1] === false ? values[i][1] : display[i][1]);
+	  terms["_orig_"   + asvar] = row[1];
+	  terms["_format_" + asvar] = term_formats[i][0];
 	  rrLog("(%s): TERMS: %s = %s --> %s (%s)", this.sheetName, asvar, row[1], terms[asvar], (terms[asvar]==undefined?"undef":terms[asvar].constructor.name));
     }
 	else if (section == "ROLES") { // principal relation entity. these are all strings. we attach other details
