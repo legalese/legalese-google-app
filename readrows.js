@@ -294,7 +294,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 	  }
 
 	  rrLog(["(%s): encountered INCLUDE %s", this.sheetName, row[1]], 6);
->>>>>>> capTable
+
 	  if (include_sheet == undefined) { throw("unable to fetch included sheet " + row[1]) }
 
 	  var includedReadRows = new readRows(include_sheet, entitiesByName, this.includeDepth+1);
@@ -400,7 +400,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 
 	  for (var ki in row) {
 		if (ki < 1 || row[ki] == undefined) { continue }
-        templatefields[ki] = asvar_(row[ki]);
+        templatefields[ki] = (row[ki]===true||row[ki]===false) ? row[ki] : asvar_(row[ki]);
 		rrLog("(%s): learned templatefields[%s]=%s", this.sheetName, ki, templatefields[ki]);
 	  }
 	  continue;
