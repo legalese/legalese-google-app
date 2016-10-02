@@ -386,7 +386,17 @@ This might happen, for instance, if you are sending out a shareholder notice, re
 This is what the /Explode/ column is for. Under the explode column you can only put one role; no commas. Every entity under that role will get their own copy of the document. Nobody sees anybody else's communications, and you get more privacy.
 
 **** Skip Exploding
-Sometimes someone should be left out from the exploder list. If that's true, in a *ROLES* section somewhere, set their entity attribute to ~skip_exploder: true~. Or ~skip_exploding: true~. I could never keep them straight in my head, so both forms work.
+Sometimes someone should be left out from the exploder list. If that's true, in a *ROLES* section somewhere, set their entity attribute to ~legalese status: skip_exploding <some_role>~. You can also say ~skip_exploding~. I could never keep them straight in my head, so both forms work.
+
+**** Nocache
+By default, Legalese will cache for five minutes any XML templates it fetches over HTTP. This is most beneficial for templates which are included several times per deal, e.g. ~inc_party~.
+
+If you're actively tweakign a template, turn off caching by setting ~nocache~ to ~TRUE~.
+
+**** Requires
+Usually blank.
+
+A template that defines a ~requires~ role will not be evaluated if that role is unpopulated by any entities.
 
 ** Sections In The Deal Spreadsheet
 We've talked about the two special tabs that describe the company as a whole: /Entities/ and /Cap Table/.
@@ -477,6 +487,44 @@ var style = data._config.templates.tree[data._templateName] ? data._config.templ
 
 I don't think columns B and onward get normalized.
 
+*** Configuration Items
+
+Config attribute names are case-insensitive.
+
+**** Templates
+
+A list of template names. The names must correspond to the names from the /Available Templates/ sheet.
+
+To turn off a template, set the first column to /ignore:/. And remember to set subsequent columns back to /Templates:/.
+
+/Templates/ and /Template/ are synonymous.
+
+**** Add To Folder
+
+The URL of a Google Drive parent folder where the output folders will go. Each time the end-user runs /Generate PDFs/, Legalese creates a new folder timestamped with the current time, and dumps output XMLs and PDFs into that folder.
+
+It's a good idea to organize those folders under a startup's Corporate Documents folder. Of course your startup already has a Corporate Documents folder, right?
+
+**** Save INDD
+
+default: false.
+
+Normally, Legalese deletes the XML file when it produces a PDF. Set this to TRUE if you want to see the XML and InDesign working files.
+
+**** Omit Date
+
+default: false.
+
+Legalese usually stamps every document it generates with dates, on the cover, in the margins, and in the text. If you set this to true, Legalese will leave out dates from the documents it generates.
+
+**** Show Investors On Cover
+
+List all the names of the investors on the front page.
+
+**** Echosign Expires
+
+Tell the e-signature backend that the document will expire after a few days.
+
 *** INCLUDE
 
 As one good turn deserves another, one Legalese sheet can include another.
@@ -524,7 +572,7 @@ A deal may be made up of multiple contracts, and each contract may specify a dif
 
 Inside a template, you'll find a ~data.parties~ object, which contains all the parties that were identified for that template.
 
-Here's what it looks like:
+~data.parties~ looks like this:
 
 #+BEGIN_SRC JSON
 {
@@ -582,9 +630,9 @@ Here's what it looks like:
     // and other explicit roles identified in the Entities tab and in a ROLES section
 #+END_SRC
 
-Note that ~data.parties.company[0].roles~ offers a list of all the roles, including synthesized roles, relevant to the current round.
+Note that ~data.parties.company[0].roles~ offers a list of all the roles, including imputed roles, relevant to the current round.
 
-Note that ~data.parties.<EVERYBODY-ELSE>[N]._role~ offers a list of all the roles vis-a-vis the company, including roles synthesized for the current round.
+Note that ~data.parties.<EVERYBODY-ELSE>[N]._role~ offers a list of all the roles vis-a-vis the company, including roles imputed for the current round.
 
 As template developer, you are responsible for making sure that a template's /To/ column, in its /Available Templates/ definition, corresponds to the use of ~data.parties~ inside the template's XML.
 
@@ -593,11 +641,13 @@ Technical Nit: Legalese also generates /notices/ and /resolutions/, which are no
 Arguably we should move this out into a top-level ~parties~ object.
 
 **** data._config
-We talked about this above.
+We talked about this above. Now we dive into detail.
 
 Arguably we should move this out into a top-level ~config~ object.
 
 You can see how the values are arranged in different ways. Which is most convenient for you to access?
+
+If a config attribute is a simple key/value pair, go for ~.value~.
 
 #+BEGIN_SRC JSON
 {
@@ -614,10 +664,11 @@ You can see how the values are arranged in different ways. Which is most conveni
     },
 #+END_SRC
 
-If a config attribute is a simple key/value pair, go for ~.value~.
+To pull the list of templates, do ~Object.keys(data._config.templates.tree)~.
+
+A given template (in this case the /debug/ template) may have further attributes of its own: ~data._config.templates.dict2.debug.style~ is ~"sketchRockwell"~. That's the name of a font, by the way.
 
 #+BEGIN_SRC JSON
-
 
    "templates" : {
       "dict" : {
@@ -642,9 +693,7 @@ If a config attribute is a simple key/value pair, go for ~.value~.
    },
 #+END_SRC
 
-To pull the list of templates, do ~Object.keys(data._config.templates.tree)~.
-
-A given template (in this case the /debug/ template0 may have further attributes of its own: ~data._config.templates.dict2.debug.style~ is ~"sketchRockwell"~. That's a font, by the way.
+Some dictionaries don't run that deep. To get the echosign title value, pull ~data._config.echosign.dict.title~.
 
 #+BEGIN_SRC JSON
 
@@ -671,8 +720,7 @@ A given template (in this case the /debug/ template0 may have further attributes
 }
 #+END_SRC
 
-Some dictionaries don't run that deep. To get the echosign title value, pull ~data._config.echosign.dict.title~.
-
+Generally a template developer should have little need to mess about with the ~data._config~ object inside a template.
 
 **** data.<EXPLODEE>
 
@@ -704,34 +752,33 @@ data._format_security_type: JSON: ""
 
 There are a ton of terms so we're not going to display all of them.
 
-**** some special or default values
+**** TODO some special or default values
 
 These all have their place and purpose ... to be documented later.
 
-data._todays_date: JSON: "2 October 2016"
-data._todays_date_wdmy: JSON: "Sunday 2 October 2016"
-data.xml_declaration: JSON: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-data.whitespace_handling_use_tags: JSON: "<?whitespace-handling use-tags?>"
-data.whitespace_handling_use_characters: JSON: "<?whitespace-handling use-characters?>"
-data._timezone: JSON: "Asia/Singapore"
-data._entitiesByName: (skipping value)
-data._origparties: (skipping value)
-data._templateName: JSON: "debug"
-data.xmlRoot: JSON: undefined
+- data._todays_date: JSON: "2 October 2016"
+- data._todays_date_wdmy: JSON: "Sunday 2 October 2016"
+- data.xml_declaration: JSON: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+- data.whitespace_handling_use_tags: JSON: "<?whitespace-handling use-tags?>"
+- data.whitespace_handling_use_characters: JSON: "<?whitespace-handling use-characters?>"
+- data._timezone: JSON: "Asia/Singapore"
+- data._entitiesByName: (skipping value)
+- data._origparties: (skipping value)
+- data._templateName: JSON: "debug"
+- data.xmlRoot: JSON: undefined
+- data._include: JSON: undefined
+- data._include2: JSON: undefined
 
-data._include: JSON: undefined
-data._include2: JSON: undefined
 
-**** 
 *** Other top-level variables
 
 Besides ~data.*~ several other objects are available.
 
-**** rcpts_to
+**** TODO rcpts_to
 
 rcpts_cc also
 
-*** Roles Synthesized from the Cap Table
+*** Roles Imputed from the Cap Table
 
 Suppose you're working a deal that's five rounds into the history of the company.
 
@@ -772,17 +819,19 @@ That template is called the ~preemptive_waiver~. Why /waiver/? Because most of t
 
 In the /Available Templates/ sheet, the ~preemptive_waiver~ template has *To* = ~company~ and *Explode* = ~sitout_shareholder~. That means that the preemptive waiver goes to any shareholders who are sitting out of the current round.
 
-The cap table contains all the information needed to compute the ~sitout_shareholder~ role. Any entity which was previously a shareholder in the company, but is not re-upping -- not participating in the current round -- is a ~sitout_shareholder~. That's a good example of a /synthetic role/.
+The cap table contains all the information needed to compute the ~sitout_shareholder~ role. Any entity which was previously a shareholder in the company, but is not re-upping -- not participating in the current round -- is a ~sitout_shareholder~. That's a good example of an /imputed role/.
 
-A *synthetic role* is a role which Legalese computed on the fly, as opposed to an /explicit role/.
+An *imputed role* is a role which Legalese computed on the fly, as opposed to an /explicit role/. We could have called it a /computed role/ but since we're a LegalTech application we use the fancier, more legal-sounding word.
 
 If you explicitly labeled an entity with a role, maybe back in the *ENTITIES* section of the /Entities/ tab, or perhaps in a *ROLES* section (either in the /Entities/ tab or in your current deal sheet), then that entity has an /explicit role/.
 
 A /Director/ role is a good example of an explicit role: the only way Legalese can know who a director is, is if you tell it.
 
-But investor-type roles can be deduced from the cap table, and are prime candidates for /synthetic roles/.
+But investor-type roles can be deduced from the cap table, and are prime candidates for /imputed roles/.
 
-**** Synthetic Role definitions
+**** TODO We could do a case study here of an ESOP
+
+**** Imputed Role definitions
 
 If an investor is showing up for the first time in the current round, then they're a ~brand_new_investor~.
 
@@ -792,11 +841,17 @@ If an investor participated in a previous round, then they're an ~old_investor~,
 
 If an old investor is not participating in the current round, then they're a ~sitout_shareholder~.
 
-Sorry for the confusing nomenclature; it evolved organically.
+If an investor (prior to the current round) owns voting shares, then they're a ~voting_shareholder~.
 
-You do not need to explicitly define any of the above roles: they get computed by Legalese. Like any explicitly defined role, they may be used in /Available Templates/ and in your templates.
+If an investor (prior to the current round) owns shares, and all the shares they own are nonvoting, then they're a ~nonvoting_shareholder~.
 
-What does ~shareholder~ mean? I don't know. I don't think it's synthesized. It should be; it should describe anyone who owns shares in the company, and who appears on the register of members -- as opposed to an investor who owns debt. Debtholders don't have to attend annual general meetings and don't have to sign members' resolutions.
+If an investor (prior to the current round) owns securities that are not shares, then they are neither a voting nor a nonvoting shareholder; they are a ~nonshare_investor~.
+
+Sorry for the confusing nomenclature; like the recurrent laryngeal nerve, it is [[https://en.wikipedia.org/wiki/Recurrent_laryngeal_nerve#Evidence_of_evolution][evidence]] that Legalese is not necessarily the product of intelligent design.
+
+You do not need to explicitly define any of the above roles. They get computed by Legalese, and imputed to the relevant entities in the relevant round. Like any explicitly defined role, they may be used in /Available Templates/ and in your templates. They appear in the ~data.parties~ object, and under each entity's ~_role~ attribute.
+
+What does ~shareholder~ mean? I don't know. I don't think it's imputed. It should be; it should describe anyone who owns shares in the company, and who appears on the register of members -- as opposed to an investor who owns debt. Debtholders don't have to attend annual general meetings and don't have to sign members' resolutions.
 
 *** The capTable and Round Objects
 
@@ -817,9 +872,14 @@ Here's a typical use of the capTable and Round objects:
 <numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getRound("Bridge Round").by_security_type["Series AA Shares"].TOTAL) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
 
 #+END_HTML
+**** Constructing the capTable object
+
+A little internals documentation. The format of a /Cap Table/ is different enough to every other sheet that it has its own parser. The parser breaks the cap table down into an array of *Rounds*. Because rounds build on one another, in sequence, the parser maintains state, such as a running total of different numbers of shares, from one round to the next.
 
 **** Detailing the ~data.capTable~ object
 Arguably these things should be accessble from a top-level ~captable~ object.
+
+Most of the meat of the capTable object is in its ~.rounds~ array.
 
 #+BEGIN_SRC JSON
 {
@@ -917,16 +977,21 @@ Arguably these things should be accessble from a top-level ~captable~ object.
 
 
 
-**** The Round object
+**** TODO The Round object
 We need a class definition here ... with methods, etc.
 
 
-** Includes and Modules
+
+
+** Best Practices
+
+*** TODO conversion immediately prior to a round is modeled as a separate round
+** TODO Includes and Modules
 
 *** inc_enumerate_parties
 
 *** inc_enumerate_signatures
-** InDesign Templates
+** TODO InDesign Templates
 Most of the documents generated by Legalese are /contracts/.
 
 

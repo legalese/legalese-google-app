@@ -19,6 +19,7 @@
  * then we set up a bunch of methods which interpret the data structure as needed for the occasion.
  *
  * Maybe in future the argument to the constructor should be a readRows_ object, not a sheet.
+ * but the format of the cap table is different enough from everything else that we can easily justify implementing a totally different parser in this module.
  *
  * @constructor
  * @param {Sheet} termsheet - the currently active sheet which we're filling templates for
@@ -153,7 +154,7 @@ function capTable_(termsheet, captablesheet) {
 		round.old_investors[ai][attr] = totals.all_investors[ai][attr];
 	  }
 	  for (var attr in totals.all_investors[ai]) {
-		if (attr.match(/^_orig_/)) continue;
+		if (  attr.match(/^_orig_/)) continue;
 		round.old_investors[ai][attr] = formatify_(totals.all_investors[ai]["_format_" + attr], totals.all_investors[ai]["_orig_" + attr], termsheet, attr);
 	  }
 	}
@@ -199,7 +200,7 @@ function capTable_(termsheet, captablesheet) {
 
 	round.by_security_type = {};
 	for (var bst in totals.by_security_type) {
-	  round.by_security_type[bst] = { TOTAL: 0};
+	  round.by_security_type[bst] = { TOTAL: 0 };
 	  for (var inv in totals.by_security_type[bst]) {
 		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
 		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
@@ -335,20 +336,28 @@ function capTable_(termsheet, captablesheet) {
     
   /**
 	* @method
-	* @return {String} holdings - "3 Ordinary Shares and 200 Class F Shares"
+	* @return [Object] holdings - a list
 	*/
-  this.investorHoldingsInRound = function(investorName, round) {
-	ctLog([".investorHoldingsInRound(%s,%s): starting", investorName, round == undefined ? "<undefined round>" : round.getName()], 6);
+  this.investorHoldingsInRound_raw = function(investorName, round) {
+	ctLog([".investorHoldingsInRound_raw(%s,%s): starting", investorName, round == undefined ? "<undefined round>" : round.getName()], 8);
 	round = round || this.getActiveRound();
-	ctLog([".investorHoldingsInRound: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 6);
+	ctLog([".investorHoldingsInRound_raw: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 8);
 	var pre = [];
 	for (var bst in round.by_security_type) {
-	  ctLog(["investorHoldingsInRound: trying to singularize shares to share: in bst=%s", bst], 8);
+	  ctLog(["investorHoldingsInRound_raw: trying to singularize shares to share: in bst=%s", bst], 8);
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName],
 																 bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]
 															   ) }
 	}
-	return round.inWords(pre);
+	return pre;
+  };
+
+  /**
+	* @method
+	* @return {String} holdings - "3 Ordinary Shares and 200 Class F Shares"
+	*/
+  this.investorHoldingsInRound = function(investorName, round) {
+	return round.inWords(this.investorHoldingsInRound_raw(investorName, round));
   };
 
   /** return new roles for imputation by readRows_.handleNewRoles()
@@ -454,10 +463,6 @@ function capTable_(termsheet, captablesheet) {
 	// Some classes of shares are voting (ordinary, etc)
 	// Some classes of shares are specifically designated as nonvoting (nonvoting ordinary, F-NV)
 	//
-	// throughout the history of rounds,
-	// any rounds which have a nonvoting security_type contribute their shareholders to the list of nonvoting shareholders
-	// any rounds which have a voting security type contribute their shareholders to the list of voting shareholders.
-	//
 
 	for (var ni in round.old_investors) {
 	  if (ni == "ESOP" || // special case
@@ -465,33 +470,44 @@ function capTable_(termsheet, captablesheet) {
 		  round.old_investors[ni].shares == undefined
 		 ) continue;
 
-	  var newRole = { relation: round.security_type.match(/non-?voting|\bnv\b/i) ? "nonvoting_shareholder" : "voting_shareholder",
-					  entityname:ni };
-	  newRole.attrs = { old_commitment:       round.old_investors[ni].money,             num_old_shares: round.old_investors[ni].shares,
-				        _orig_old_commitment: round.old_investors[ni]._orig_money,  orig_num_old_shares: round.old_investors[ni]._orig_shares };
-	  toreturn.push(newRole);
-	}
+	  var pre = this.investorHoldingsInRound_raw(ni, round);
+	  var security_classifications = pre.map(function(pp){
+		var num_securities = pp[0];
+		var security_type  = pp[1];
 
-	// 
-	// we want to distinguish voting_shareholders and nonvoting_shareholders.
-	// Some classes of shares are voting (ordinary, etc)
-	// Some classes of shares are specifically designated as nonvoting (nonvoting ordinary, F-NV)
-	//
-	// throughout the history of rounds,
-	// any rounds which have a nonvoting security_type contribute their shareholders to the list of nonvoting shareholders
-	// any rounds which have a voting security type contribute their shareholders to the list of voting shareholders.
-	//
-	
-	for (var ni in round.old_investors) {
-	  if (ni == "ESOP" || // special case
-		  round.old_investors[ni].money  == undefined &&
-		  round.old_investors[ni].shares == undefined
-		 ) continue;
+		if      (security_type.match(/non-?voting|\bnv\b/i)) { return "nonvoting share" }
+		else if (security_type.match(/class f|esop/i))       { return "esop share"      } // may be voting depending on vesting
+		else if (security_type.match(/share/i))              { return "voting share"    }
+		else                                                 { return "nonshare"        }
+		// XXX: it would be good to go to the original sheet and look at the ~security_essential~ term, but for now we reinvent the wheel. this violates DRY.
+	  });
 
-	  var newRole = { relation: round.security_type.match(/non-?voting|\bnv\b/i) ? "nonvoting_shareholder" : "voting_shareholder",
-					  entityname:ni };
-	  newRole.attrs = { old_commitment:       round.old_investors[ni].money,             num_old_shares: round.old_investors[ni].shares,
-				        _orig_old_commitment: round.old_investors[ni]._orig_money,  orig_num_old_shares: round.old_investors[ni]._orig_shares };
+	  var newRoleRelation = 
+
+		  // If an investor (prior to the current round) owns voting shares,
+		  // then they're a ~voting_shareholder~.
+		  (security_classifications.indexOf("voting share") >= 0)                        ? "voting_shareholder" :
+
+		  // If an investor (prior to the current round) owns shares,
+		  // and all the shares they own are nonvoting,
+		  // then they're a ~nonvoting_shareholder~.
+		  (security_classifications.every(function(sc){return sc == "nonvoting share"})) ? "nonvoting_shareholder" :
+
+		  // If an investor (prior to the current round) owns only esop shares,
+		  // then we assume that none of the shares have vested
+		  // and deem them nonvoting.
+		  (security_classifications.every(function(sc){return sc == "esop share"}))      ? "nonvoting_shareholder" :
+
+		  // If an investor (prior to the current round) owns securities that are not shares,
+		  // then they are neither a voting nor a nonvoting shareholder;
+		  // they are a ~nonshare_investor~.
+                                                                                 		   "nonshare_investor";
+	  
+	  var newRole = { relation: newRoleRelation,
+					  entityname:ni,
+					  attrs: {}
+					};
+	  ctLog(["determined that %s, who has %s, is a %s", ni, this.investorHoldingsInRound(ni, round), newRoleRelation],6);
 	  toreturn.push(newRole);
 	}
 
