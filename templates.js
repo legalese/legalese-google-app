@@ -415,6 +415,7 @@ function fillTemplates(sheet) {
   }
   sheet = sheet || SpreadsheetApp.getActiveSheet();
   var sheetname = sheet.getSheetName();
+  var sheet_id = sheet.getParent().getId();
   teLog(["fillTemplates(%s) called; will call readRows(%s)", sheetname, sheetname], 6);
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName,0);
@@ -425,6 +426,7 @@ function fillTemplates(sheet) {
   templatedata._availableTemplates = readRows_.availableTemplates;
   templatedata._todays_date = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "d MMMM YYYY");
   templatedata._todays_date_wdmy = Utilities.formatDate(new Date(), sheet.getParent().getSpreadsheetTimeZone(), "EEEE d MMMM YYYY");
+  templatedata.sheet_id = sheet_id.substr(sheet_id.length-8);
 
   // if the person is running this in Demo Mode, and there is no User entity defined, then we create one for them.
   // then we have to reload.
