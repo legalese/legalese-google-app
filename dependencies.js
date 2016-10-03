@@ -21,7 +21,7 @@ function computeDependencies() {
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName,0);
 
-  teLog(["computeDependencies calling depGraph()",5]);
+  deLog(["computeDependencies calling depGraph()",5]);
   var dg = new depGraph(readRows_);
   
   // output to Execution sheet
@@ -130,15 +130,5 @@ depGraph.prototype.as_array = function(depth) {
   mya.push("");
   return mya;
 };
-
-
-
-function deLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  if (loglevel == undefined) { loglevel = 7 }
-  myLog(params,"dependencies", loglevel, logconfig);
-}
 
 

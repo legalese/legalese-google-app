@@ -197,59 +197,19 @@ function email_to_cc(email) {
   return [to, emails];
 }
 
-var myLogStats = {};
-var myLogConfig = { readrows: 6,
-					templates: 6,
-					XXX: 8,  // raise to 8 when you are frustrated. reduce to 6 when you stop caring. 7 is obviously the threshold.
-				  };
-
-// README: a more elegant way to change debug verbosity,
-// rather than edit the global legaleseMain or development legaleseMain,
-// is to add a line at the top of the local spreadsheet's script editor
-//   legaleseMain.myLogConfig.readrows = 8;
-
-function myLog(params, module, loglevel, logconfig) {
-  logconfig = logconfig || myLogConfig;
-  params[0] = module + " " + params[0];
-
-  // by default, display INFO and above but not DEBUG
-  var logfilter = logconfig[module] == undefined ? 6 : logconfig[module];
-
-  if (myLogStats[module] == undefined) { myLogStats[module] = { displayed: [], discarded: [] } };
-  if (loglevel <= logfilter) {
-	myLogStats[module].displayed[loglevel] = myLogStats[module].displayed[loglevel] || 0;
-	myLogStats[module].displayed[loglevel]++;
-	Logger.log.apply(Logger, params);
-  }
-  else {
-	myLogStats[module].discarded[loglevel] = myLogStats[module].discarded[loglevel] || 0;
-	myLogStats[module].discarded[loglevel]++;
-  }
-}
-
-function dumpMyLogStats() {
-  Logger.log("myLog stats: %s", myLogStats);
-  Logger.log("myLog to view DEBUG level output, set util.js's myLog logconfig per-module level to 7.");
-}
-
-function utLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  if (loglevel == undefined) { loglevel = 7 }
-  myLog(params,"util", loglevel, logconfig);
-}
-
-function xxLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  if (loglevel == undefined) { loglevel = 7 }
-  myLog(params,"XXX", loglevel, logconfig);
-}
-
-function getFixedNotation(address, notation) {
-  var newString = notation.split("$").join("$$").replace("1", "$2").replace("A", "$1");
-  var regex = /([A-Z]+)(\d+)/;
-  return address.replace(regex, newString);
-}
+var jsonify = function(obj){
+    var seen = {};
+    var counter = 0;
+    var json = JSON.stringify(obj, function(key, value){
+        if (typeof value === 'object') {
+            if ( value != null && seen.hasOwnProperty(value) ) {
+                return '__cycle__' + (typeof value) + '[' + key + '(' + seen[value] + ')]'; 
+            }
+            seen[value] = counter;
+            counter++;
+            Logger.log("seen["+counter+"] is the value of %s", key);
+        }
+        return value;
+    }, 4);
+    return json;
+};

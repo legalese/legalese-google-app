@@ -13,6 +13,8 @@
   */
 
 // ---------------------------------------------------------------------------------------------------------------- desiredTemplates_
+var currentTemplate;
+
 function desiredTemplates_(config) {
   var toreturn = [];
   if (! config.templates) return toreturn;
@@ -664,6 +666,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   clausetext2num = {};
   newTemplate.data.signature_comment = null;
   newTemplate.data._templateName = sourceTemplate.name;
+  currentTemplate = sourceTemplate.name;
 
   // make this handle templatespec etc correctly. see inc_plain_letterhead.
   var xmlRootExtras = [];
@@ -752,10 +755,3 @@ function muteTemplateActiveSheetWarnings_(setter) {
   }
 }
 
-function teLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  if (loglevel == undefined) { loglevel = 7 }
-  myLog(params,"templates", loglevel, logconfig);
-}

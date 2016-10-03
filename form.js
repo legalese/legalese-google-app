@@ -10,7 +10,7 @@ function setupForm(sheet) {
 						  ||
 						  SpreadsheetApp.getActiveSheet().getSheetName().toLowerCase() == "controller")
 						 ) {
-	Logger.log("in controller mode, switching to setupOtherForms_()");
+	fmLog("in controller mode, switching to setupOtherForms_()");
 	setupOtherForms_();
 	return;
   }
@@ -20,12 +20,12 @@ function setupForm(sheet) {
   var entitiesByName = {};
   var readRows_ = new readRows(sheet, entitiesByName);
 
-//  Logger.log("setupForm: readRows complete: %s", readRows_);
+//  fmLog("setupForm: readRows complete: %s", readRows_);
 
   if (readRows_.principal
 	  && readRows_.principal._origin_sheet_id
 	  && readRows_.principal._origin_sheet_id != sheet.getSheetId()) {
-	Logger.log("setupForm: switching target of the form to the %s sheet.", sheet.getSheetName());
+	fmLog("setupForm: switching target of the form to the %s sheet.", sheet.getSheetName());
 	sheet = getSheetById_(ss, readRows_.principal._origin_sheet_id);
 	entitiesByName = {};
 	readRows_ = new readRows(sheet, entitiesByName);
@@ -66,28 +66,28 @@ function setupForm(sheet) {
 	var triggers = ScriptApp.getUserTriggers(ss);
 	if (triggers.length > 0 && // is there already a trigger for onFormSubmit?
 		triggers.filter(function(t) { return t.getEventType() == ScriptApp.EventType.ON_FORM_SUBMIT }).length > 0) {
-	  Logger.log("we already have an onFormSubmit trigger, so no need to add a new one.");
+	  fmLog("we already have an onFormSubmit trigger, so no need to add a new one.");
 	}
 	else {
 	  ScriptApp.newTrigger('onFormSubmit').forSpreadsheet(ss).onFormSubmit().create();
-	  Logger.log("setting onFormSubmit trigger");
+	  fmLog("setting onFormSubmit trigger");
 	}
   }
 
   // Create the form and add a multiple-choice question for each timeslot.
   form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
-  Logger.log("setting form destination to %s", ss.getId());
+  fmLog("setting form destination to %s", ss.getId());
   PropertiesService.getUserProperties().setProperty("legalese."+ss.getId()+".formActiveSheetId", sheet.getSheetId().toString());
-  Logger.log("setting formActiveSheetId to %s", sheet.getSheetId().toString());
+  fmLog("setting formActiveSheetId to %s", sheet.getSheetId().toString());
 
   var origentityfields = readRows_._origentityfields;
-  Logger.log("origentityfields = " + origentityfields);
+  fmLog("origentityfields = " + origentityfields);
   for (var i in origentityfields) {
 	if (i == undefined) { continue }
 	var entityfield = origentityfields[i];
 	if (entityfield == undefined) { continue }
-	Logger.log("entityfield "+i+" = " + entityfield.fieldname);
-	if (i == "undefined") { Logger.log("that's, like, literally the string undefined, btw."); continue; } // yes, this actually happens.
+	fmLog("entityfield "+i+" = " + entityfield.fieldname);
+	if (i == "undefined") { fmLog("that's, like, literally the string undefined, btw."); continue; } // yes, this actually happens.
 	if (entityfield.itemtype.match(/^list/)) {
 	  var enums = entityfield.itemtype.split(' ');
 	  enums.shift();
@@ -138,7 +138,7 @@ function setupForm(sheet) {
   var legalese_root = legaleseRootFolder_();
   legalese_root.addFile(DriveApp.getFileById(form.getId()));
   legalese_root.addFile(DriveApp.getFileById(ss.getId()));
-  Logger.log("added to legalese root folder");
+  fmLog("added to legalese root folder");
 
   DriveApp.getRootFolder().removeFile(DriveApp.getFileById(form.getId()));
   DriveApp.getRootFolder().removeFile(DriveApp.getFileById(ss.getId()));
@@ -212,17 +212,17 @@ function setupForm(sheet) {
  *     see https://developers.google.com/apps-script/understanding_events
  */
 function onFormSubmit(e, legaleseSignature) {
-  Logger.log("onFormSubmit: beginning");
+  fmLog("onFormSubmit: beginning");
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheetId = PropertiesService.getUserProperties().getProperty("legalese."+ss.getId()+".formActiveSheetId");
 
   if (sheetId == undefined) { // uh-oh
-	Logger.log("onFormSubmit: no formActiveSheetId property, so I don't know which sheet to record party data into. bailing.");
+	fmLog("onFormSubmit: no formActiveSheetId property, so I don't know which sheet to record party data into. bailing.");
 	return;
   }
   else {
-	Logger.log("onFormSubmit: formActiveSheetId property = %s", sheetId);
+	fmLog("onFormSubmit: formActiveSheetId property = %s", sheetId);
   }
 
   var sheet = getSheetById_(SpreadsheetApp.getActiveSpreadsheet(), sheetId);
@@ -238,7 +238,7 @@ function onFormSubmit(e, legaleseSignature) {
 	if (parties.user) {
 	  for (var pui = parties.user.length - 1; pui >=0; pui--) {
 		var party = parties.user[pui];
-		Logger.log("onFormSubmit: demo_mode = true, so deleting existing party %s on row %s", party.name, party._spreadsheet_row);
+		fmLog("onFormSubmit: demo_mode = true, so deleting existing party %s on row %s", party.name, party._spreadsheet_row);
 		sheet.deleteRow(party._spreadsheet_row);
 	  }
 
@@ -252,18 +252,18 @@ function onFormSubmit(e, legaleseSignature) {
   }
   
   // add a row and insert the received fields
-  Logger.log("onFormSubmit: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
+  fmLog("onFormSubmit: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
   sheet.insertRowAfter(readRows_._last_entity_row+1); // might need to update the commitment sum range
   var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
 //  newrow.getCell(0,0).setValue("bar");
 
   // loop through the origentityfields inserting the new data in the right place.
   for (names in e.namedValues) {
-	Logger.log("onFormSubmit: e.namedValues = " + names + ": "+e.namedValues[names][0]);
+	fmLog("onFormSubmit: e.namedValues = " + names + ": "+e.namedValues[names][0]);
   }
 
   var origentityfields = readRows_._origentityfields;
-  Logger.log("onFormSubmit: origentityfields = " + origentityfields);
+  fmLog("onFormSubmit: origentityfields = " + origentityfields);
 
   for (var i = 0; i < origentityfields.length; i++) {
 	var entityfield = origentityfields[i];
@@ -272,17 +272,17 @@ function onFormSubmit(e, legaleseSignature) {
 	if (i == 0 && entityfield == undefined) {
 	  entityfield = { fieldname: "_party_role", column: 1 };
 	  e.namedValues["_party_role"] = [ config.default_party_role ? config.default_party_role.value : "" ];
-	  Logger.log("setting default party row in column 1 to %s", e.namedValues["_party_role"]);
+	  fmLog("setting default party row in column 1 to %s", e.namedValues["_party_role"]);
 	}
 	  
-	else if (entityfield == undefined) { Logger.log("entityfield %s is undefined!", i); continue; }
+	else if (entityfield == undefined) { fmLog("entityfield %s is undefined!", i); continue; }
 	
 	// fill in any fields which are hidden and have a default value configured. maybe in future we should extend the default-filling to all blank submissions
 	else if (e.namedValues[entityfield.fieldname] == undefined) {
-	  Logger.log("did not receive form submission for %s", entityfield.fieldname);
+	  fmLog("did not receive form submission for %s", entityfield.fieldname);
 
 	  if (entityfield["default"] != undefined) {
-		Logger.log("filling with default value %s", entityfield["default"]);
+		fmLog("filling with default value %s", entityfield["default"]);
 		e.namedValues[entityfield.fieldname] = [ entityfield["default"] ];
 	  }
 	  else {
@@ -292,30 +292,30 @@ function onFormSubmit(e, legaleseSignature) {
 
 	// TODO: set the time and date of submission if there is a timestamp
 	
-	Logger.log("onFormSubmit: entityfield "+i+" (" + entityfield.fieldname+") (column="+entityfield.column+") = " + e.namedValues[entityfield.fieldname][0]);
+	fmLog("onFormSubmit: entityfield "+i+" (" + entityfield.fieldname+") (column="+entityfield.column+") = " + e.namedValues[entityfield.fieldname][0]);
 
 	var newcell = newrow.getCell(1,parseInt(entityfield.column));
-	Logger.log("onFormSubmit: setting value of cell to " + e.namedValues[entityfield.fieldname]);
+	fmLog("onFormSubmit: setting value of cell to " + e.namedValues[entityfield.fieldname]);
 	newcell.setValue(e.namedValues[entityfield.fieldname][0]);
   }
 
   if (config.demo_mode) {
-	Logger.log("onFormSubmit: demo_mode = TRUE ... will proceed to create templates and mail out");
+	fmLog("onFormSubmit: demo_mode = TRUE ... will proceed to create templates and mail out");
 	fillTemplates(sheet);
-	Logger.log("onFormSubmit: demo_mode = TRUE ... fillTemplates() completed. next we should inject into echosign.");
+	fmLog("onFormSubmit: demo_mode = TRUE ... fillTemplates() completed. next we should inject into echosign.");
 
 	SpreadsheetApp.flush();
 	
 	if (legaleseSignature) {
-	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign. but first we will sleep for 3 minutes.");
+	  fmLog("onFormSubmit: demo_mode = TRUE ... injecting into echosign. but first we will sleep for 3 minutes.");
 	  // we might have to move this to a separate run loop
 	  // because sometimes the InDesign script is busy and will take more than 3 minutes to produce results.
 	  Utilities.sleep(1000*60*3);
-	  Logger.log("onFormSubmit: demo_mode = TRUE ... injecting into echosign by calling uploadAgreement().");
+	  fmLog("onFormSubmit: demo_mode = TRUE ... injecting into echosign by calling uploadAgreement().");
 	  legaleseSignature.uploadAgreement(sheet, false);
 	}
 	else {
-	  Logger.log("onFormSubmit: demo_mode = TRUE ... but the legaleseSignature library is not available, so no echosign.");
+	  fmLog("onFormSubmit: demo_mode = TRUE ... but the legaleseSignature library is not available, so no echosign.");
 	}
   }
 }
@@ -351,7 +351,7 @@ function setupOtherForms_() {
 	var sheet = sheets[i];
 	var shortUrl = setupForm(sheet);
 	var myRow = SpreadsheetApp.getActiveRange().getSheet().getRange(SpreadsheetApp.getActiveRange().getRow()+i, 1, 1, 10);
-	Logger.log("smoochy says setupOtherForms_: sheet %s is on row %s", i.toString(), myRow.getRowIndex().toString());
+	fmLog("smoochy says setupOtherForms_: sheet %s is on row %s", i.toString(), myRow.getRowIndex().toString());
 	myRow.getCell(1,7).setValue(shortUrl);
   }
 }

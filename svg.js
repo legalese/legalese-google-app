@@ -19,7 +19,7 @@ function drawSVG() {
 //    .setAttribute("svg","http://www.w3.org/2000/svg", xmlns)
 //    .setAttribute("xlink","http://www.w3.org/1999/xlink", xmlns)
   ;
-  Logger.log("ohai, i did a mySVGroot: %s", mySVGroot);
+  svLog("ohai, i did a mySVGroot: %s", mySVGroot);
 
   mySVGroot.addContent(
     XmlService.createElement("circle")
