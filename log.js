@@ -14,8 +14,10 @@ function myLog(params, module, loglevel, logconfig) {
   if (loglevel == undefined) { loglevel = 7 }
   params[0] = module + " " + params[0];
 
+  // If we're logging from an xml file, check logconfig's "xml" property
+  var logkey = (module.toUpperCase().indexOf("XML") !== -1) ? "xml" : module;
   // by default, display INFO and above but not DEBUG
-  var logfilter = logconfig[module] == undefined ? 6 : logconfig[module];
+  var logfilter = logconfig[logkey] == undefined ? 6 : logconfig[logkey];
 
   if (myLogStats[module] == undefined) { myLogStats[module] = { displayed: [], discarded: [] } };
   if (loglevel <= logfilter) {
@@ -53,105 +55,105 @@ function cdLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"code.js", loglevel, logconfig);
+  myLog(params,"code", loglevel, logconfig);
 }
 
 function crLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"controller.js", loglevel, logconfig);
+  myLog(params,"controller", loglevel, logconfig);
 }
 
 function esLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"esop.js", loglevel, logconfig);
+  myLog(params,"esop", loglevel, logconfig);
 }
 
 function ctLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"captable.js", loglevel, logconfig);
+  myLog(params,"captable", loglevel, logconfig);
 }
 
 function deLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"dependencies.js", loglevel, logconfig);
+  myLog(params,"dependencies", loglevel, logconfig);
 }
 
 function fmLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"form.js", loglevel, logconfig);
+  myLog(params,"form", loglevel, logconfig);
 }
 
 function ftLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"format.js", loglevel, logconfig);
+  myLog(params,"format", loglevel, logconfig);
 }
 
 function liLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"lingua.js", loglevel, logconfig);
+  myLog(params,"lingua", loglevel, logconfig);
 }
 
 function lmLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"legaleseMain.js", loglevel, logconfig);
+  myLog(params,"legaleseMain", loglevel, logconfig);
 }
 
 function lsLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"legaleseSignature.js", loglevel, logconfig);
+  myLog(params,"legaleseSignature", loglevel, logconfig);
 }
 
 function rlLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"robot-legalese.js", loglevel, logconfig);
+  myLog(params,"robot-legalese", loglevel, logconfig);
 }
 
 function rrLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"readrows.js", loglevel, logconfig);
+  myLog(params,"readrows", loglevel, logconfig);
 }
 
 function svLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"svg.js", loglevel, logconfig);
+  myLog(params,"svg", loglevel, logconfig);
 }
 
 function teLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"templates.js", loglevel, logconfig);
+  myLog(params,"templates", loglevel, logconfig);
 }
 
 function utLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
   }
-  myLog(params,"util.js", loglevel, logconfig);
+  myLog(params,"util", loglevel, logconfig);
 }
 
 function xmLog(params, loglevel, logconfig) {
