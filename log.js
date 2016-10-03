@@ -121,13 +121,6 @@ function lsLog(params, loglevel, logconfig) {
   myLog(params,"legaleseSignature", loglevel, logconfig);
 }
 
-function rlLog(params, loglevel, logconfig) {
-  if (params.constructor.name != "Array") { // allow backward compatibility
-	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
-  }
-  myLog(params,"robot-legalese", loglevel, logconfig);
-}
-
 function rrLog(params, loglevel, logconfig) {
   if (params.constructor.name != "Array") { // allow backward compatibility
 	params = Array.prototype.slice.call(arguments); loglevel = null; logconfig = null;
