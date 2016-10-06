@@ -127,6 +127,10 @@ function readRows(sheet, entitiesByName, includeDepth) {
 	  var entity = this.entitiesByName[entityname];
 	  // this may not be valid because we have entity aliases like [Founder].
 
+	  if (entity == undefined) {
+		rrLog(["handleNewRoles(%s): not found in entitiesByName", entityname],3);
+	  }
+	  
 	  // skip role: legalese status: skip role shareholder
 	  // means pretend that this entity is not a shareholder.
 	  // cognate with legalese status: skip exploding sometemplatename
@@ -202,7 +206,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
 		rrLog("(%s):         ROLES: learning party role %s = %s", this.sheetName, relation, entityname);
 		rrLog("(%s):         ROLES: this.roles[%s]=%s", this.sheetName, relation, this.roles[relation]);
 
-		rrLog("(%s):         ROLES: entityname = %s; entity object has %s keys", this.sheetName, entityname, Object.keys(entity).length);
+		rrLog("(%s):         ROLES: entityname = %s; entity object has %s keys", this.sheetName, entityname, entity ? Object.keys(entity).length : "(undefined)");
 		
 		for (var k in attrs) { entity[k] = attrs[k];
 							   rrLog("(%s):         ROLES: learning %s attribute %s = %s", this.sheetName, entityname, k, attrs[k]);
