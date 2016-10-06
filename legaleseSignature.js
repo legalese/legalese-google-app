@@ -67,11 +67,11 @@ function getEchoSignService() {
   
   if (esApps[ssid] != undefined) { ssname = ssid }
   if (esApps[ssname] == undefined) {
-	lsLog("unable to identify EchoSign OAuth credentials for this spreadsheet / project.");
+	legaleseMain.lsLog("unable to identify EchoSign OAuth credentials for this spreadsheet / project.");
 	return null;
   }
 
-  lsLog("ssname has become %s", ssname);
+  legaleseMain.lsLog("ssname has become %s", ssname);
 
   toreturn
       // Set the client ID and secret
@@ -106,9 +106,9 @@ function showSidebar(sheet) {
   // but not for Send to EchoSign.
 
   if (echosignService.hasAccess()) {
-	lsLog("showSidebar: we have access. doing nothing.");
+	legaleseMain.lsLog("showSidebar: we have access. doing nothing.");
   } else {
-	lsLog("showSidebar: we lack access. showing sidebar");
+	legaleseMain.lsLog("showSidebar: we lack access. showing sidebar");
     var authorizationUrl = echosignService.getAuthorizationUrl();
 
 	var myTemplate = '<p><a href="<?= authorizationUrl ?>" target="_blank">Authorize EchoSign</a>. ' +
@@ -173,7 +173,7 @@ function fauxMegaSign(sheet) {
   var libTemplateName = config.echosign.tree.libTemplateName != undefined ? config.echosign.tree.libTemplateName : undefined;
 
   if (libTemplateName == undefined) {
-	lsLog("libTemplateName not defined in README. not uploading agreement.");
+	legaleseMain.lsLog("libTemplateName not defined in README. not uploading agreement.");
 	return;
   }
 
@@ -192,7 +192,7 @@ function fauxMegaSign(sheet) {
 	  cc2_list = cc2_list.concat(to_cc[1]);
 	}
   }
-  lsLog("we shall be emailing to %s", to_list.join(", "));
+  legaleseMain.lsLog("we shall be emailing to %s", to_list.join(", "));
 
   if (to_list.length == 0) {
 	SpreadsheetApp.getUi().alert("There doesn't seem to be anybody for us to mail this to! Check the Legalese Status column.");
@@ -207,8 +207,8 @@ function fauxMegaSign(sheet) {
   cc_list = cc_list.map(function(party){return party.email});
   cc_list = cc_list.concat(cc2_list);
 
-  lsLog("To: %s", to_list.join(", "));
-  lsLog("CC: %s", cc_list.join(", "));
+  legaleseMain.lsLog("To: %s", to_list.join(", "));
+  legaleseMain.lsLog("CC: %s", cc_list.join(", "));
 
   var ss = sheet.getParent();
 
@@ -227,9 +227,9 @@ function fauxMegaSign(sheet) {
 							);
 	
 	party._commit_update_to.legalese_status.setValue("mailed echosign " + now);
-	lsLog("fauxMegaSign: well, that seems to have worked!");
+	legaleseMain.lsLog("fauxMegaSign: well, that seems to have worked!");
   }
-  lsLog("fauxMegaSign: that's all, folks!");
+  legaleseMain.lsLog("fauxMegaSign: that's all, folks!");
 }
 
 function templateTitles(templates) {
@@ -254,7 +254,7 @@ function uploadAgreement(sheet, interactive) {
 	return "echosign fail";
   }
   else {
-	lsLog("uploadAgreement: we have echosignService hasAccess = true");
+	legaleseMain.lsLog("uploadAgreement: we have echosignService hasAccess = true");
   }
 
   var sheetPassedIn = ! (sheet == undefined);
@@ -268,7 +268,7 @@ function uploadAgreement(sheet, interactive) {
   }
   
   if (! sheetPassedIn && SpreadsheetApp.getActiveSpreadsheet().getName().toLowerCase() == "legalese controller") {
-	lsLog("in controller mode, switching to uploadOtherAgreements()");
+	legaleseMain.lsLog("in controller mode, switching to uploadOtherAgreements()");
 	uploadOtherAgreements_(false);
 	return;
   }
@@ -289,7 +289,7 @@ function uploadAgreement(sheet, interactive) {
   var parties = legaleseMain.roles2parties(readRows_);
 
   var suitables = legaleseMain.suitableTemplates(readRows_, parties);
-  lsLog("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
+  legaleseMain.lsLog("resolved suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   var docsetEmails = new legaleseMain.docsetEmails(sheet, readRows_, parties, suitables);
 
@@ -312,7 +312,7 @@ function uploadAgreement(sheet, interactive) {
 	o.method = "post";
 	var folderId   = legaleseMain.getDocumentProperty(sheet, "folder.id");
 	var folderName = legaleseMain.getDocumentProperty(sheet, "folder.name");
-	lsLog("uploadTransientDocument: folder.id = %s", folderId);
+	legaleseMain.lsLog("uploadTransientDocument: folder.id = %s", folderId);
 	if (folderId == undefined) {
 	  throw("can't find folder for PDFs. try Generate PDFs.");
 	}
@@ -331,37 +331,37 @@ function uploadAgreement(sheet, interactive) {
 	  "Mime-Type": pdfdoc.getMimeType(), // hope that's application/pdf
 	};
 
-	lsLog("uploadTransientDocument: uploading to EchoSign: %s %s", pdfdoc.getId(), pdfdoc.getName());
+	legaleseMain.lsLog("uploadTransientDocument: uploading to EchoSign: %s %s", pdfdoc.getId(), pdfdoc.getName());
 	if (o.payload['Mime-Type'] != "application/pdf") {
-	  lsLog("WARNING: mime-type of document %s (%s) is not application/pdf ... weird, eh.", pdfdoc.getId(), pdfdoc.getName());
+	  legaleseMain.lsLog("WARNING: mime-type of document %s (%s) is not application/pdf ... weird, eh.", pdfdoc.getId(), pdfdoc.getName());
 	}
 
 	var response = UrlFetchApp.fetch(api.APIbaseUrl + '/transientDocuments', o);
 	var r = JSON.parse(response.getContentText());
-	lsLog("uploadTransientDocument: %s has transientDocumentId=%s", pdfdoc.getName(), r.transientDocumentId);
+	legaleseMain.lsLog("uploadTransientDocument: %s has transientDocumentId=%s", pdfdoc.getName(), r.transientDocumentId);
 
 	transientDocumentIds[filename] = r.transientDocumentId;
 
-	lsLog("uploadTransientDocument: recipients for %s = %s", pdfdoc.getName(), rcpts);
+	legaleseMain.lsLog("uploadTransientDocument: recipients for %s = %s", pdfdoc.getName(), rcpts);
   };
 
   var multiTitles = function(templates, entity) { var ts = templates.constructor.name == "Array" ? templates : [templates];
 												  return ts.map(function(t){return legaleseMain.filenameFor(t, entity)+".pdf"}).join(",") };
 
   var createAgreement = function(templates, entity, rcpts) {
-	lsLog("at this point we would call postAgreement for %s to %s",
+	legaleseMain.lsLog("at this point we would call postAgreement for %s to %s",
 			   multiTitles(templates, entity),
 			   rcpts);
 
 	if (entity && entity.skip_echosign) {
-	  lsLog("entity %s wants to skip echosign. so, not creating agreement.", entity.name);
+	  legaleseMain.lsLog("entity %s wants to skip echosign. so, not creating agreement.", entity.name);
 	  return "skipping echosign as requested by entity";
 	}
 	
 	var tDocIds = templates.map(function(t){return transientDocumentIds[legaleseMain.filenameFor(t,entity)+".pdf"]});
 
 	if (tDocIds == undefined || tDocIds.length == 0) {
- 	  lsLog("transient documents were not uploaded to EchoSign. not uploading agreement.");
+ 	  legaleseMain.lsLog("transient documents were not uploaded to EchoSign. not uploading agreement.");
  	  readmeDoc.getBody().appendParagraph("nothing uploaded to EchoSign. not uploading agreement.");
  	  return "no docs found!";
 	}
@@ -375,8 +375,8 @@ function uploadAgreement(sheet, interactive) {
 	}
 	
 
-	lsLog("To: %s", emailInfo.map(function(party){return party.email}));
-	lsLog("CC: %s", cc_list);
+	legaleseMain.lsLog("To: %s", emailInfo.map(function(party){return party.email}));
+	legaleseMain.lsLog("CC: %s", cc_list);
  
 	readmeDoc.appendHorizontalRule();
 	readmeDoc.appendParagraph("To: " + emailInfo.map(function(party){return party.email}).join(", "));
@@ -397,25 +397,25 @@ function uploadAgreement(sheet, interactive) {
  								null
  							);
 
- 	lsLog("createAgreement: well, that seems to have worked!");
+ 	legaleseMain.lsLog("createAgreement: well, that seems to have worked!");
   };
   
-  lsLog("uploadAgreements(): we upload the non-exploded normal templates as transientDocuments");
+  legaleseMain.lsLog("uploadAgreements(): we upload the non-exploded normal templates as transientDocuments");
   docsetEmails.normal(uploadTransientDocument);
 
-  lsLog("uploadAgreements(): we upload the exploded templates as a transientDocument");
+  legaleseMain.lsLog("uploadAgreements(): we upload the exploded templates as a transientDocument");
   docsetEmails.explode(uploadTransientDocument);
 
   // TODO: does this do the right thing when the constituent documents each have different to and cc parties?
   
-  lsLog("uploadAgreements(): we post the non-exploded normal transientDocuments as Agreements");
+  legaleseMain.lsLog("uploadAgreements(): we post the non-exploded normal transientDocuments as Agreements");
   if (config.concatenate_pdfs && config.concatenate_pdfs.values[0] == true) {
-	docsetEmails.normal(function(){lsLog("individual callback doing nothing")}, createAgreement );
+	docsetEmails.normal(function(){legaleseMain.lsLog("individual callback doing nothing")}, createAgreement );
   } else {
-	docsetEmails.normal(createAgreement, function(){lsLog("group callback doing nothing")});
+	docsetEmails.normal(createAgreement, function(){legaleseMain.lsLog("group callback doing nothing")});
   }
 
-  lsLog("uploadAgreements(): we post the exploded transientDocuments as Agreements");
+  legaleseMain.lsLog("uploadAgreements(): we post the exploded transientDocuments as Agreements");
   docsetEmails.explode(createAgreement);
 
   return "sent";
@@ -467,7 +467,7 @@ function postAgreement_(fileInfos, recipients, message, name, cc_list, terms, co
 	   && terms.expiry_date != undefined) {
 	  
 	  var days_until = ((new Date(terms._orig_expiry_date)).getTime() - (new Date()).getTime()) / (24 * 60 * 60 * 1000);
-	  lsLog("expiry date is %s days in the future. will give an extra day for leeway", days_until);
+	  legaleseMain.lsLog("expiry date is %s days in the future. will give an extra day for leeway", days_until);
 	  agreementCreationInfo.daysUntilSigningDeadline = days_until + 1;
 	}
   }
@@ -490,19 +490,19 @@ function postAgreement_(fileInfos, recipients, message, name, cc_list, terms, co
 // in postTransientDocument I don't have to. what a huge mystery!
 // https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app
 
-  lsLog("about to dump %s", JSON.stringify(o));
+  legaleseMain.lsLog("about to dump %s", JSON.stringify(o));
 
   if (config.skip_echosign && config.skip_echosign.values[0] == true) {
- 	lsLog("skipping the sending to echosign");
+ 	legaleseMain.lsLog("skipping the sending to echosign");
   } else {
- 	lsLog("actually posting to echosign");
+ 	legaleseMain.lsLog("actually posting to echosign");
 	var response = UrlFetchApp.fetch(api.APIbaseUrl + '/agreements', o);
 	if (response.getResponseCode() >= 400) {
-	  lsLog("got response %s", response.getContentText());
-	  lsLog("dying");
+	  legaleseMain.lsLog("got response %s", response.getContentText());
+	  legaleseMain.lsLog("dying");
 	  return;
 	}
-	lsLog("got back %s", response.getContentText());
+	legaleseMain.lsLog("got back %s", response.getContentText());
 	return JSON.parse(response.getContentText());
   }
 }
