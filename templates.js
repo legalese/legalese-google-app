@@ -631,7 +631,7 @@ function fillTemplates(sheet) {
 	var folderValues = [];
 	for (var i in config.add_to_folder.tree) {
 	  var matches;
-	  if (matches = i.match(/folders.*\/([^\/]+)/)) { // we want the rightmost folderid
+	  if (matches = i.match(/folders.*\/([^\/\?]+)/)) { // we want the rightmost folderid
 		folderValues.push(matches[1]);
 	  }
 	}
