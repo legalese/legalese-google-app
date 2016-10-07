@@ -34,6 +34,8 @@ function suitableTemplates(readRows_, parties) {
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
 
+
+  
   suitables = suitables.filter(function (aT) {
 	if (! aT.requires || ! aT.requires.length) {
 	  return true;
@@ -51,7 +53,7 @@ function suitableTemplates(readRows_, parties) {
 	  }
 	}
   });
-  teLog("filtered suitables = %s", suitables.map(function(e){return e.name}).join(", "));
+  teLog("filtered suitables = %s", suitables.map(function(e){return e.url}).join(", "));
 
   return suitables;
 }
@@ -95,7 +97,7 @@ function obtainTemplate_(url, nocache, readmeDoc) {
 	try {
 	  var result = UrlFetchApp.fetch(url, { headers: { "Accept-Encoding": "identity" } } );
 	} catch (e) {
-	  teLog("ERROR: caught error (%s) while fetching %s", e, url);
+	  teLog(["ERROR: caught error (%s) while fetching %s", e, url],3);
 	}
 	if (result == undefined) {
 	  try {
@@ -593,16 +595,15 @@ function fillTemplates(sheet) {
 	  }
 	}
 	//	teLog("buildTemplate: assigning newTemplate.data = %s", templatedata);
-//	teLog("buildTemplate: newTemplate.data.parties has length = %s", templatedata.data.parties.length);
-//	teLog("FillTemplates: recv: templatedata.parties = %s", templatedata.parties);
+	//	teLog("buildTemplate: newTemplate.data.parties has length = %s", templatedata.data.parties.length);
+	//	teLog("FillTemplates: recv: templatedata.parties = %s", templatedata.parties);
+
+	// entity is only true here if we're running in an exploder context, so it's ok for entity to be undefined when not in an exploder context.
 	if (entity) { newTemplate.data.party = newTemplate.data.party || {};
 				  newTemplate.data.party[sourceTemplate.explode] = entity; // do we really want this? it seems to clobber the previous array
 				  newTemplate.data      [sourceTemplate.explode] = entity;
 				  teLog(["assigning newTemplate.data[%s] = %s", sourceTemplate.explode, entity],5);
 				}
-	else {
-	  teLog(["would have assigned newTemplate.data[%s] but entity is false!", sourceTemplate.explode],5);
-	}
 
 	newTemplate.rcpts = rcpts;
 	newTemplate.rcpts_to = rcpts[2];
@@ -669,6 +670,7 @@ function fillTemplate_(newTemplate, sourceTemplate, mytitle, folder, config, to_
   newTemplate.data.signature_comment = null;
   newTemplate.data._templateName = sourceTemplate.name;
   currentTemplate = sourceTemplate.name;
+  teLog(["fillTemplate: starting %s (%s)", currentTemplate, mytitle],6);
 
   // make this handle templatespec etc correctly. see inc_plain_letterhead.
   var xmlRootExtras = [];
@@ -710,6 +712,7 @@ function include(name, data, _include, _include2) {
   if (filtered.length > 1) {
 	teLog(["include(): found multiple (%s) %s templates; picking the last one.", filtered.length, name],5);
 	filtered = [filtered.pop()];
+	teLog(["include(): template url = %s", filtered[0].url],5);
   }
   if (filtered.length == 1) {
 	var template = filtered[0];
