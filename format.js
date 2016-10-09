@@ -382,6 +382,7 @@ function asCurrency_(currency, amount, chop) {
 
   
   var mycurrency = currency;
+  if (mycurrency == undefined) { ftLog(["WARNING: asCurrency_() given an undefined currency. amount=%s", amount],3) }
 
   // a custom number format could be as complex as [>9999999][$₹]##\,##\,##\,##0;[>99999][$₹]##\,##\,##0;[$₹]##,##0
   // quick hack to handle a complex custom number format; FIXME! respect the full logic.

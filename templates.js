@@ -651,7 +651,7 @@ function fillTemplates(sheet) {
 	}
   }
 
-  teLog("that's all folks!");
+  teLog(["that's all folks!"],6);
 }
 
 // ---------------------------------------------------------------------------------------------------------------- fillTemplate_

@@ -167,8 +167,8 @@ function capTable_(termsheet, captablesheet) {
 	var new_shares = 0, new_money = 0;
 	for (var ni in round.new_investors) {
 	  if (! round.new_investors[ni]._orig_shares && ! round.new_investors[ni]._orig_money) {
-		ctLog("deleting new_investor %s from round %s because no money or shares; only attrs are %s",
-				   ni, round.name, Object.keys(round.new_investors[ni]));
+		ctLog(["deleting new_investor %s from round %s because no money or shares; only attrs are %s",
+			   ni, round.name, Object.keys(round.new_investors[ni])],9);
 		delete round.new_investors[ni];
 		continue;
 	  }
@@ -344,7 +344,7 @@ function capTable_(termsheet, captablesheet) {
 	ctLog([".investorHoldingsInRound_raw: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 8);
 	var pre = [];
 	for (var bst in round.by_security_type) {
-	  ctLog(["investorHoldingsInRound_raw: trying to singularize shares to share: in bst=%s", bst], 8);
+	  ctLog(["investorHoldingsInRound_raw: trying to singularize shares to share: in bst=%s", bst], 9);
 	  if (round.by_security_type[bst][investorName]) { pre.push([round.by_security_type[bst][investorName],
 																 bst.replace(/(share)(s)/i,function(match,p1,p2){return p1})]
 															   ) }
@@ -551,7 +551,7 @@ Round.prototype.getName = function(){
 // holdings is an array of arrays: [ [ N, round.security_type ], ... ]
 Round.prototype.inWords = function(holdings) {
   var that = this;
-  ctLog("inWords(%s): starting", holdings);
+  ctLog("inWords(%s): starting. this round = %s", holdings, that.getName());
   return commaAnd(holdings.map(function(bst_count){
 	ctLog("inWords(): bst_count = %s", bst_count);
 	if (bst_count[1].match(/note|debt|kiss|safe/i)) {
@@ -760,6 +760,7 @@ Round.prototype.getSecurityType = function(){
 }
 
 Round.prototype.getCurrency = function(){
+  ctLog(["getCurrency: this.amount_raised = %s", this.amount_raised],7);
   return ((this.amount_raised && this.amount_raised._format_money) ? this.amount_raised._format_money : this.post._format_money);
 }
 
