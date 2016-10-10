@@ -219,12 +219,22 @@ function capTable_(termsheet, captablesheet) {
 	  for (var oi in round.ordered_investors) {
 		var inv = round.ordered_investors[oi];
 		ctLog("ESOP: considering investor %s", inv);
+
+		if (round.new_investors[inv] == undefined
+			||
+			! round.new_investors[inv].shares
+		   ) {
+		  ctLog("ESOP: %s doesn't seem to be involved in the round; skipping.", inv);
+		  continue;
+		}		  
+		
 		if (inv == "ESOP") { seen_ESOP_investor = true;
 							 round.ESOP.createHolder(inv);
 							 round.ESOP.holderGains(inv, round.new_investors[inv]._orig_shares);
 							 continue;
 						   }
 		else if ( seen_ESOP_investor ) {
+		  ctLog("ESOP: we take it that %s is a participant in the ESOP, because it appears below the ESOP line", inv);
 		  round.ESOP.createHolder(inv);
 		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
 		}
