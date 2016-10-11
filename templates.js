@@ -447,7 +447,7 @@ function fillTemplates(sheet) {
 		entityNames);
 
   if (config.templates == undefined) {
-	throw("sheet doesn't specify any templates ... are you on a Entities sheet perhaps?");
+	throw("sheet doesn't specify any templates ... are you on the right sheet?");
 	return;
   }
 

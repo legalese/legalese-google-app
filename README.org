@@ -201,7 +201,7 @@ Legalese comes pre-loaded with many useful templates to help deals get done.
 
 For example, we have templates for SAFEs, KISSes, and convertible notes.
 
-Legalese also comes with utility templates, which get invoked as part of a bigger template. For example, we have a template that expands to a signature block. If your SAFE needs five people to sign it, the SAFE template will /include/ the signature template five times.
+Legalese also comes with utility templates, which get invoked as part of a bigger template. For example, we have a template that expands to a signature block. If your SAFE needs five people to sign it, the SAFE template will /include/ the signature template five times, with different parameters each time. So you can think of a template as a function, with type ~parameters -> XML~.
 
 All of these templates are listed in the Demo Master, in the Available Templates tab. There is a [[https://legalese.com/docs/6-developing-your-own-templates][tutorial on how to add your own template to the system]].
 
@@ -217,7 +217,7 @@ Looking at the tabs at the bottom of the screen, you will notice a couple of spe
 
 Your corporation has relationships with many entities. It has directors. It has a corporate secretary. It may have employees, auditors, and creditors. It has shareholders, and it may have other kinds of investors who are not shareholders.
 
-All of these entities are recorded in the /Entities/ tab. You'll notice that the /Entities/ tab has a certain structure: the first few lines in the hseet are title and prelude; then a dark gray line begins with the section header *ENTITIES*. The rest of the line has column headings which define the attrbutes for each entity.
+All of these entities are recorded in the /Entities/ tab. You'll notice that the /Entities/ tab has a certain structure: the first few lines in the sheet are title and prelude; then a dark gray line begins with the section header *ENTITIES*. The rest of the line has column headings which define the attrbutes for each entity.
 
 Keep in mind that other sections may obey different syntax conventions, so don't expect every section to have column headings the way /Entities/ does.
 
@@ -228,6 +228,10 @@ Column A of an entity row is the Core Relation. It's not labeled as such in the 
 **** An Entity's Core Relation
 
 Think of the Core Relation as the default role for an entity. An entity may take on other roles, depending on the deal.
+
+The relation is, of course, with respect to the Company, which the principal entity. All the roles in Entities are with respect to the Company: for example, *Founder*.
+
+Later you may find roles which are with respect to the company /within the scope of a particular deal/; for example, *New Investor*.
 
 In the future we may get rid of this Core Relation concept, because it tends to collide with other roles.
 
@@ -260,7 +264,7 @@ The /Address/ attribute is expected to be a multiline value. Use shift-enter or 
 **** Additional Attributes
 If, in your world, your entities need to have attributes beyond the standard ones, that's fine; just add new attribute names in the section header line, directly following the other attribute names.
 
-Don't leave blank spaces in the section header line between attribute names. I don't know why I even have to say this.
+Don't leave blank cells in the section header line between attribute names. I don't know why I even have to say this.
 
 **** Integration With Google Forms
 
@@ -980,7 +984,15 @@ Most of the meat of the capTable object is in its ~.rounds~ array.
 **** TODO The Round object
 We need a class definition here ... with methods, etc.
 
+#+BEGIN_SRC PHP
+<? var activeRound = data.captable.getActiveRound(); ?>
+<? var newIssues = data.capTable.getActiveRound().getNewIssues(); ?>
+<? var oldInvestors  = data.capTable.getActiveRound().getOldInvestors(); ?>
+<? var previousRound = data.capTable.getActiveRound().getPreviousRound(); ?>
+<? if (previousRound != undefined && oldInvestors != undefined) { ?>
+#+END_SRC
 
+*** Working with ESOPs
 
 
 ** Best Practices
