@@ -1050,18 +1050,21 @@ At present this only works for Meng's account to insert things into EchoSign. It
 ** Makefile
 the Makefile inserts Meng's application keys into the actual built legaleseSignature.js.
 
-* Parsing Spreadsheets
-Getting data from a spreadsheet into an internal Javascript representation is the job of a bunch of parsing modules.
-** captable.js
-** readrows.js
-** templates.js
+* Internals Documentation
+Be prepared: have you got your boots on? Because you're about to wade into a [[http://www.laputan.org/mud/][Big Ball of Mud]].
 
-* User Interface Sugar
+** Parsing Spreadsheets
+Getting data from a spreadsheet into an internal Javascript representation is the job of a bunch of parsing modules.
+*** captable.js
+*** readrows.js
+*** templates.js
+
+** User Interface Sugar
 We make it easy for parties to fill in their details.
 
-** form.js
+*** form.js
 
-* The Controller
+** The Controller
 End-users usually run commands like *Add-Ons / Legalese / Generate PDFs* directly from the relevant tab of the spreadsheet.
 
 But an administrator who manages several deals or companies at the same time may find it easier to use the Controller interface.
@@ -1070,18 +1073,18 @@ In the Controller, all tabs are listed on a single spreadsheet.
 
 When a command is run, and the current sheet is a controller sheet, the command operates on whatever row is selected. More than one row may be selected.
 
-** controller.js
+*** controller.js
 
-* Utilities
-** util.js
-** format.js
-** lingua.js
-** owl.js
+** Utilities
+*** util.js
+*** format.js
+*** lingua.js
+*** owl.js
 
-* Unused or under development
-** dependencies.js
-** unused.js
-** drawCompany.s
-** svg.js
-** esop.js
+** Unused or under development
+*** dependencies.js
+*** unused.js
+*** drawCompany.s
+*** svg.js
+*** esop.js
 
