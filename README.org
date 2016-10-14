@@ -1125,6 +1125,7 @@ A ~Round~ object has the following attributes:
 - ordered_investors
 - sheet
 - captable
+- by_security_type :: 2-level object keyed by security type name from the captable, and by investorName
 
 **** The Round object: Methods
 #+BEGIN_SRC PHP
@@ -1182,6 +1183,31 @@ Given that you presently hold <?= data.capTable.getActiveRound().sitout_sharehol
 #+END_SRC
 
 That needs more thinking through to match the logic defined in the [[*Case Study: Preemptive Notices][case study]] above.
+
+data.capTable.getActiveRound().pre_money.shares is obviously too general.
+
+It should be:
+
+- class F unrestricted, as at the time of the expected closing
+- preference shares which hold voting rights, counted on an as-if-converted basis, which means we need to evaluate a conversion scenario
+- ordinary shares that have been issued and fully paid
+- ordinary shares that will be issued prior to the round, due to previously agreed conversion of debt or convertible shares (both fully paid)
+- ordinary shares that would exist if, prior to the round, warrants that carry the right of such notices, and could be exercised, were exercised
+
+How do we get that?
+
+***** class F unrestricted, as at the time of the expected closing
+***** preference shares which hold voting rights, counted on an as-if-converted basis, which means we need to evaluate a conversion scenario
+***** ordinary shares that have been issued and fully paid
+***** ordinary shares that will be issued prior to the round, due to previously agreed conversion of debt or convertible shares (both fully paid)
+***** ordinary shares that would exist if, prior to the round, warrants that carry the right of such notices, and could be exercised, were exercised
+
+#+BEGIN_SRC js
+  data.capTable.getActiveRound().ESOP.dynamicTotal(subclass: "F unrestricted",
+												   atTime: data.capTable.getActiveRound().approximate_date);
+#+END_SRC
+
+
 
 #+BEGIN_SRC PHP
 <? var activeRound = data.capTable.getActiveRound(); ?>

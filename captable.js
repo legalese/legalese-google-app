@@ -237,6 +237,8 @@ function capTable_(termsheet, captablesheet) {
 		  ctLog("ESOP: we take it that %s is a participant in the ESOP, because it appears below the ESOP line", inv);
 		  round.ESOP.createHolder(inv);
 		  round.ESOP.holderGains(inv, round.new_investors[inv].shares);
+
+		  // TODO: readRows the ESOP round and load in the ESOP particulars so we can compute the restricted/unrestricted etc dynamically.
 		}
 		else {
 		  ctLog("in constructing the ESOP object for round %s we ignore any rows above the ESOP line -- %s", round.name, inv);

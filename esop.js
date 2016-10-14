@@ -36,8 +36,12 @@ function ESOP_(security_type, initial_num_shares) {
 	}
 	return toreturn;
   };
+
+  // TODO: at any given round the ESOP should be able to tell us how many restricted and unrestricted shares there are
+  // based on the periodic vesting data available under ROLES in the termsheet in which those shares were first allotted.
+  this.dynamicTotal = function () { }
+  
+  
   esLog("instantiating ESOP object. security_type=%s, initial_num_shares=%s", security_type, initial_num_shares);
 }
 
-// TODO: at any given round the ESOP should be able to tell us how many restricted and unrestricted shares there are
-// based on the periodic vesting data available under ROLES in the termsheet in which those shares were first allotted.
