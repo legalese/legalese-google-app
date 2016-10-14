@@ -806,12 +806,27 @@ To make this deal happen, you're probably going to want an easy way to:
 - identify all the debt holders
 - identify all the investors who hold preemptive rights
 - identify all the investors who hold ratchet rights
+- which investors have been in prevous rounds?
+- which investors are in the current round?
+- which investors are coming up in a future round (this hasn't happened yet, but we're including it for completeness; one could easily imagine evaluating an old round's securities in the context of a new round that has been fixed, or a possible new round being assessed as a scenario.)
+
+For a given pair of ~(shareholder, round)~:
+- what securities do they currently hold?
+- and what are the details of those securities?
+- what is their history of holding their securities? (in other words, in which round did they acquire the securities, and how much did they pay?)
+- for each security held prior to the current round, what interaction arises with the current round
+  - in terms of preemptive rights
+  - in terms of EGM approval resolutions as a member
+  - in terms of required notices
+  - in terms of conversion
+- some classes of shares, like ESOP shares, may be dynamically calculated
+  - at a given time, how many shares are restricted, and how many shares are unrestricted?
 
 These are all questions about *roles*.
 
-Legalese makes it easy for you to do all these things.
+Legalese makes it easy for you to do all these things, and more. If you're here looking desperately for a solution because you're doing this for reals, you can skip to the answers in [[*The Captable Cookbook, with a side of ESOPs][The Captable Cookbook]].
 
-Wait, why do you need to do these things? Let's look at a couple of case studies.
+Or you can understand the theory, with a couple of case studies.
 
 **** Case Study: Preemptive Notices
 
@@ -833,9 +848,90 @@ A /Director/ role is a good example of an explicit role: the only way Legalese c
 
 But investor-type roles can be deduced from the cap table, and are prime candidates for /imputed roles/.
 
+***** Who should receive (and who should respond to) preemptive notices?
+
+In the preemptive notices, entitlements are described: "You own X% of the company, and we are raising $Y. If you want to partake, let's suppose you have $Z burning a hole in your pocket. Now, you are entitled to put in $E, so if $Z < $E then no problem. If $Z == $E, perfect. But if $Z > $E, then we'll have to wait and see what the other investors do."
+
+How are these numbers filled in? We explore that question in the next section.
+
+***** How are preemptive entitlements calculated?
+
+Let's break down that sentence into multiple steps.
+
+****** You own X% of the company.
+
+What are the numerator and denominators of the fraction X?
+
+The denominator is the fully-diluted shareholding of the company, which is to say the sum of:
+- class F unrestricted, as at the time of the expected closing
+- preference shares which hold voting rights, counted on an as-if-converted basis, which means we need to evaluate a conversion scenario
+- ordinary shares that have been issued and fully paid
+- ordinary shares that will be issued prior to the round, due to previously agreed conversion of debt or convertible shares (both fully paid)
+- ordinary shares that would exist if, prior to the round, warrants that carry the right of such notices, and could be exercised, were exercised
+
+However, for purposes of computing the entitlements for the round, fully-diluted capitalization does not include the conversion of notes that specify that they convert after the round.
+
+The numerator is the same as the above calculation, but filtered for securities owned by you.
+
+****** TODO We are raising $Y.
+
+The company pulls a number out of a hat which is either equal to, or slightly larger than, the amount of money they actually plan to raise.
+
+In Legalese, this is the ~Amount Raising~ term.
+
+****** TODO If you want to partake, let's suppose you have $Z burning a hole in your pocket.
+
+When something in a shop window catches my fancy, before I go in, I stop and ask myself: "what would I be willing to pay for that?"
+
+I set my reserve price /before/ walking in the shop, because I know that my easily fooled brain will, left to its own devices, anchor to the price tag and start rationalizing in favour of buying it. (Afterwards, of course, I will have buyer's remorese. (If it is returnable.))
+
+I know, I know, the reserve price that I set is still influenced by the totally irrelevant numbers I was previously exposed to, like the price of the Tesla at the showroom next door. But trying to set a price first has got to be better than just going in defenseless before the full might of the machinery of commerce.
+
+Similarly, when somebody decides whether to buy a stock, they should first make up their mind whether the stock is undervalued or overvalued; they should decide how diversified their portfolio is, and how their exposure to various asset classes would be affected by a given trade.
+
+So, the ideal investor would decide "I want $100,000 more of this stock". If the preemptive notice says, "we are raising $10,000, of which you are ratably entitled to buy another $320," the ideal investor would say, "i'll take all $10,000".
+
+Or the ideal investor would say, "this stock is a dud. I want out." And they would decide not to join the round no matter what.
+
+Do most investors actually do that? No. They say, "okay, I don't have as much information about this stock as I would like, so I'm going to go with the status quo fallacy and neither increase nor decrease my proportional holding in the stock." So they check the box that says, "I will stay in for $320."
+
+****** TODO Now, you are entitled to put in $E.
+
+Anyway, that thinking is not our problem. Our problem is big enough: compute ~Y/X = E~ and tell the investor that $320 would maintain their pro-rata.
+
+They can put in exactly that, or more or less than that. It's just a number.
+
+They give these indications in their response to the preemptive notice.
+
+Some investors will say, "I want to put $640 in. I might only be entitled to $320. Find a way."
+
+Other investors will say, "I only have $160. What can I buy for that?"
+
+Most investor will either say, "I'm tapped out" or "OK, $320 sounds good."
+
+Then it's up to us to figure out what to do with their responses.
+
+****** TODO If $Z < $E then no problem.
+****** TODO If $Z == $E, perfect.
+****** TODO But if $Z > $E, then we'll have to wait and see what the other investors do.
+
+Share offers are computed over multiple iterations. You may have come across the notion of "Excess Rights" -- that's the second round runoff after the first round wasn't fully subscribed by existing investors, but some existing investors would like to take more than their entitlement.
+
+[[http://gotmoneygothoney.blogspot.com/2015/11/applying-for-rights-and-excess-rights.html][This blog post]] should give you the flavour of it, though not every aspect of that case translates to our situation.
+
+In a runoff iteration, it is possible that part of the pro-rata entitlements came from convertible instruments which *could* convert. But in the first iteration, it is possible that the company ascertains, through dialogue with the investor, that the investor declines to convert. In that case, the convertible instrument no longer becomes part of the pro rata denominator. The takeaway: ratios might change from iteration to iteration.
+
 **** TODO We could do a case study here of an ESOP
 
-**** Imputed Role definitions
+**** Case Study: Who should sign members' resolutions?
+
+Easy: every entity who, prior to the current round, holds any equity security which carries voting rights, either in general, or with respect to the members' resolutions in question.
+
+Because sometimes a shareholder may hold a class of stock which is generally nonvoting -- it only votes on certain resolutions that affect that class of stock. So, the "voting" characteristic of a shareholder is not so simple that it can just be a boolean that you set-and-forget; it is a function that returns a boolean; and the input to that function includes the resolution.
+
+We probably need to expand the range of key/value pairs defined in a deal sheet to provide sufficient information to completely specify the security. This has been recorded as [[https://github.com/legalese/legalese.com/issues/230][issue 230]].
+
+**** Definitions of Imputed Roles
 
 If an investor is showing up for the first time in the current round, then they're a ~brand_new_investor~.
 
@@ -865,7 +961,7 @@ But roles aren't the only thing Legalese can help you with.
 
 When you're dealing with a specific investment round, you often need quantitative values: how many shares does somebody own? What kinds of shares? Are they voting or nonvoting? What about a mix? If they have a convertible note instead of shares, what are the terms of the note? How does the note convert? Is there a cap? A discount? A fixed price per share? Preferred stock has other attributes as well: what's the liquidation preference? If we're using a class of shares to represent a vesting plan, what does the vesting schedule look like? At any given point in time how many shares have vested and how many remain restricted?
 
-In the deal sheets, end-users provide enough information for Legalese to compute the answers to these questions. You access the details of the deal using two objects: the ~data.capTable~ object and the ~Round~ object.
+In the deal sheets, end-users provide enough information for Legalese to compute the answers to these questions. You access those answers using two objects: the ~data.capTable~ object and the ~Round~ object.
 
 **** Using the capTable object
 
@@ -880,7 +976,7 @@ Here's a typical use of the capTable and Round objects:
 
 A little internals documentation. The format of a /Cap Table/ is different enough to every other sheet that it has its own parser. The parser breaks the cap table down into an array of *Rounds*. Because rounds build on one another, in sequence, the parser maintains state, such as a running total of different numbers of shares, from one round to the next.
 
-**** Detailing the ~data.capTable~ object
+**** The ~data.capTable~ Object: Data Structure
 Arguably these things should be accessble from a top-level ~captable~ object.
 
 Most of the meat of the capTable object is in its ~.rounds~ array.
@@ -980,10 +1076,57 @@ Most of the meat of the capTable object is in its ~.rounds~ array.
 #+END_SRC
 
 
+**** The ~data.capTable~ Object: Methods
+***** ~capTable.getSheet()~
+***** ~capTable.getUrl()~
+***** ~capTable.activeRound()~
+***** ~capTable.getAllRounds()~
+***** ~capTable.getRound()~
+***** ~capTable.getActiveRound()~
+***** ~capTable.columnNames()~
+***** ~capTable.rewireAllRounds()~
+***** ~capTable.allInvestors()~
+***** ~capTable.investorHoldingsInRound()~
+***** ~capTable.investorHoldingsInRound_raw()~
+helper function
+***** ~capTable.newRoles()~
 
-**** TODO The Round object
-We need a class definition here ... with methods, etc.
+**** The ~capTableSheet_()~ object
+contains utility functions for manipulating the Cap Table sheet.
 
+Notethat there is some duplication with the ~capTable~ object, e.g. ~rewire~.
+
+****** ~capTableSheet_.addMajorColumn()~
+****** ~capTableSheet_.setTotal()~
+****** ~capTableSheet_.rewireColumns()~
+****** ~capTableSheet_.getCategoryRowCaptable()~
+****** ~capTableSheet_.getCategoryRowTermSheet()~
+****** ~capTableSheet_.getRoundColumnByName()~
+****** ~capTableSheet_.setReference()~
+
+**** other functions defined in captable.js
+I'm not sure if these are still in use, or if they have been superseded by the capTableSheet methods.
+
+***** ~capTable.parseCaptable()~
+***** ~addRound()~
+***** ~importCapTableTemplate()~
+***** ~createCaptable()~
+***** ~insertNewRound()~
+***** ~regenerateTermSheet()~
+***** ~newTermSheet()~
+***** ~addColumn()~
+***** ~updateTotal()~
+
+**** The Round object: Data Structure
+
+A ~Round~ object has the following attributes:
+- name
+- new_investors
+- ordered_investors
+- sheet
+- captable
+
+**** The Round object: Methods
 #+BEGIN_SRC PHP
 <? var activeRound = data.captable.getActiveRound(); ?>
 <? var newIssues = data.capTable.getActiveRound().getNewIssues(); ?>
@@ -992,7 +1135,98 @@ We need a class definition here ... with methods, etc.
 <? if (previousRound != undefined && oldInvestors != undefined) { ?>
 #+END_SRC
 
-*** Working with ESOPs
+***** ~Round.inWords()~
+
+***** ~Round.getTermSheet()~
+***** ~Round.getPreviousRound()~
+***** ~Round.rewire()~
+***** ~Round.getOldInvestors()~
+***** ~Round.getSecurityType()~
+***** ~Round.getCurrency()~
+***** ~Round.getNewIssues()~
+***** ~Round.getRedemptions()~
+***** ~Round.getCategoryCellRange()~
+***** ~Round.getCategoryCellA1Notation()~
+***** ~Round.getCategoryCellValue()~
+**** The Investor Object: Data Structure
+
+~Round.getOldInvestors()~ returns a list of Investors.
+
+~Round.new_investors~ is an array of Investors.
+
+~Round.ordered_investors~ is an array of Investors.
+
+**** The Entity Object: Data Structure
+This is what ~data.parties~ contains.
+
+
+*** The Captable Cookbook, with a side of ESOPs
+Whew. That was a lot of theory. But sometimes you just have a simple question and want a quick answer.
+
+**** display the /before/ and /after/ cap table for the company
+**** identify all the voting shareholders
+**** identify all the nonvoting shareholders
+**** identify all the equity holders
+**** identify all the debt holders
+**** identify all the investors who hold preemptive rights
+**** identify all the investors who hold ratchet rights
+**** which investors have been in prevous rounds?
+**** which investors are in the current round?
+**** which investors are coming up in a future round (this hasn't happened yet, but we're including it for completeness; one could easily imagine evaluating an old round's securities in the context of a new round that has been fixed, or a possible new round being assessed as a scenario.)
+**** compute the preemptive entitlement for a given shareholder
+
+Go look at the source of the ~preemptive_waiver~ template:
+
+#+BEGIN_SRC PHP
+Given that you presently hold <?= data.capTable.getActiveRound().sitout_shareholders[data.sitout_shareholder.name].shares ?> out of <?= data.capTable.getActiveRound().pre_money.shares ?> existing shares, you have the right to subscribe for up to <?= pro_rata ?>% of this new issue: <?
+#+END_SRC
+
+That needs more thinking through to match the logic defined in the [[*Case Study: Preemptive Notices][case study]] above.
+
+#+BEGIN_SRC PHP
+<? var activeRound = data.capTable.getActiveRound(); ?>
+<? var newIssues = data.capTable.getActiveRound().getNewIssues(); ?>
+<para_1><b>Issuance of New Shares in <?= data.company.name ?> (the "Company")</b></para_1>
+<? var totalCommitments = data.amount_raising || newIssues.TOTAL.money; ?>
+<? var totalShares = newIssues.TOTAL._orig_shares ? newIssues.TOTAL.shares : null; ?>
+<? // if we are issuing an equity instrument then we can count the number of shares. debt instrument get denominated in dollar amounts. ?>
+<para_1>Notice is hereby given to all members of the Company that the Directors intend to issue up to <?= totalShares ? totalShares : totalCommitments+" of" ?> <?= data.security_type_plural ?> ("<?= data.security_type_short_plural ?>")<? if(data.price_per_share){?>, at a price of <?= data.price_per_share ?> per share<?}?><? if (totalShares) { ?>, for a total of <?= totalCommitments ?><? } ?>.</para_1>
+<? if (data.explanation) { ?><para_2><?= data.explanation ?></para_2><? } ?>
+<para_2>As a member of the Company, you possess the right under the Company's Constitution to participate in this issue.
+<?if(data.preemptive_formality){?>We request that you waive this right, as your waiver is a necessary formality required for the Company to issue securities to <?=commaAnd(data.parties.new_investor,"name")?>.
+<?}else{?>
+<? xmLog("attempting to calculate percentage for sitout_shareholder %s", data.sitout_shareholder.name); ?>
+<? var percentage = data.capTable.getActiveRound().sitout_shareholders[data.sitout_shareholder.name]._orig_shares / data.capTable.getActiveRound().pre_money._orig_shares; ?>
+<? var pr_tf = 2;
+  var pro_rata = (100*percentage).toFixed(pr_tf);
+  while (pro_rata == 0) { pr_tf++; pro_rata = (100*percentage).toFixed(pr_tf); }
+?>
+<? xmLog("preemptive_waiver: percentage=%s; pro_rata=%s",percentage, pro_rata); ?>
+Given that you presently hold <?= data.capTable.getActiveRound().sitout_shareholders[data.sitout_shareholder.name].shares ?> out of <?= data.capTable.getActiveRound().pre_money.shares ?> existing shares, you have the right to subscribe for up to <?= pro_rata ?>% of this new issue: <?
+if (data.security_essential == "equity") {
+  var num_securities = percentage * newIssues.TOTAL._orig_shares;
+?>
+<?= digitCommas_(num_securities, 0) ?> <?= plural(num_securities.toFixed(0), data.security_type_short_singular, data.security_type_short_plural) ?><?
+  if (data.price_per_share) { ?> for <?= asCurrency_(currencyFor_(data.price_per_share), (percentage * newIssues.TOTAL._orig_money).toFixed(2)) ?><?}?>.
+<? } else { ?>
+<?= asCurrency_(currencyFor_(data.capTable.getActiveRound().amount_raised.money), (percentage * (data._orig_amount_raising || newIssues.TOTAL._orig_money)).toFixed(2)) ?> worth of <?= data.security_type_short_plural ?>.
+<? } ?>
+<? if (data._orig_amount_raising || newIssues.TOTAL._orig_money) { ?>You may also have excess rights to subscribe beyond that amount -- if other shareholders do not take up their pro rata allotments, you may participate beyond yours, up to the total amount of <?= totalCommitments ?>.
+<? } ?>
+#+END_SRC
+
+**** For a given pair of ~(shareholder, round)~:
+***** what securities do they currently hold?
+***** and what are the details of those securities?
+***** what is their history of holding their securities? (in other words, in which round did they acquire the securities, and how much did they pay?)
+***** for each security held prior to the current round, what interaction arises with the current round
+****** in terms of preemptive rights
+****** in terms of EGM approval resolutions as a member
+****** in terms of required notices
+****** in terms of conversion
+***** some classes of shares, like ESOP shares, may be dynamically calculated
+****** at a given time, how many shares are restricted, and how many shares are unrestricted?
+
 
 
 ** Best Practices
@@ -1017,7 +1251,11 @@ Most of the documents generated by Legalese are /contracts/.
 **** output date
 *** modifying the INDTs
 you need InDesign. Sorry.
-* About the Company Spreadsheet
+
+* Internals Documentation
+Be prepared: have you got your boots on? Because you're about to wade into a [[http://www.laputan.org/mud/][Big Ball of Mud]].
+
+** About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 - Entities
 - Cap Table
@@ -1026,33 +1264,6 @@ A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 - More Rounds
 
 If you cloned the Legalese Demo Master, you will have something that looks like this.
-
-** The Bound Legalese Script
-In any Legalese Company Spreadsheet, if you go to *Tools / Script Editor*, you will see a bunch of code. This code references the LegaleseMain Library.
-
-*** In the future we will release Legalese as a Google Add-On proper.
-
-Then the script won't be bound.
-
-** legaleseMain.js
-https://script.google.com/a/jfdi.asia/d/1CaOAsbTSaLPxh2X2CBmSyKhgOw4lVs8f_YoIPDqQp_5YHnsMG2gOgNdD/edit?usp=drive_web
-
-Every time you update a component, you will need to copy that component from your local editor into the Google App.
-
-** Library Version Management
-If you make a significant change, you will need to, under Manage Versions, save a new version of the LegaleseMain library.
-
-Then you MUST go to the Legalese Demo Master and in its *Tools / Script Editor* update the lirbray version.
-
-** legaleseSignature.js
-At present this only works for Meng's account to insert things into EchoSign. It contains his application keys and is therefore not really public.
-
-** Makefile
-the Makefile inserts Meng's application keys into the actual built legaleseSignature.js.
-
-* Internals Documentation
-Be prepared: have you got your boots on? Because you're about to wade into a [[http://www.laputan.org/mud/][Big Ball of Mud]].
-
 ** Parsing Spreadsheets
 Getting data from a spreadsheet into an internal Javascript representation is the job of a bunch of parsing modules.
 *** captable.js
@@ -1087,4 +1298,27 @@ When a command is run, and the current sheet is a controller sheet, the command 
 *** drawCompany.s
 *** svg.js
 *** esop.js
+
+** The Bound Legalese Script
+In any Legalese Company Spreadsheet, if you go to *Tools / Script Editor*, you will see a bunch of code. This code references the LegaleseMain Library.
+
+*** In the future we will release Legalese as a Google Add-On proper.
+
+Then the script won't be bound.
+
+** legaleseMain.js
+https://script.google.com/a/jfdi.asia/d/1CaOAsbTSaLPxh2X2CBmSyKhgOw4lVs8f_YoIPDqQp_5YHnsMG2gOgNdD/edit?usp=drive_web
+
+Every time you update a component, you will need to copy that component from your local editor into the Google App.
+
+** Library Version Management
+If you make a significant change, you will need to, under Manage Versions, save a new version of the LegaleseMain library.
+
+Then you MUST go to the Legalese Demo Master and in its *Tools / Script Editor* update the lirbray version.
+
+** legaleseSignature.js
+At present this only works for Meng's account to insert things into EchoSign. It contains his application keys and is therefore not really public.
+
+** Makefile
+the Makefile inserts Meng's application keys into the actual built legaleseSignature.js.
 
