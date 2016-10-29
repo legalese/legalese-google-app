@@ -29,13 +29,41 @@
 var DEFAULT_TERM_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=1632229599";
 var DEFAULT_CAPTABLE_TEMPLATE = "https://docs.google.com/spreadsheets/d/1rBuKOWSqRE7QgKgF6uVWR9www4LoLho4UjOCHPQplhw/edit#gid=827871932";
 
-function capTable_(termsheet, captablesheet) {
+function Holder(round, holderName, readrows) {
+  ctLog(["new Holder object %s, round %s", holderName, round.name], 9);
+  this.round = round;
+  this.name = holderName;
+  this.readrows = readrows;
+}
+
+function eligible_securities(securityName) {
+
+  // here we list ineligible securities; if not found, then we assume the input security name is eligible.
+  // this logic properly belongs in each security's term sheet, where we can pull it out as an attribute of the security.
+  // TODO refactor so we refer to each sheet's readrows terms to extract characteristic.
+    return (["Class F Shares", "Convertible Note", "Class F-NV", "SAFE"]
+		  .indexOf(securityName) < 0);
+}
+
+Holder.prototype.preemptiveShares = function() {
+  ctLog(["Holder(): %s has %s shares. how many are eligible for preemptive calculation?", this.name, this.shares], 8);
+
+  var myeligible = this.round.preemptivelyEligibleSecurities(this.name);
+  var myunrestricted = this.readrows.entitiesByName[this.name]._orig_remaining_unrestricted || 0;
+  var toreturn = myeligible + myunrestricted;
+  ctLog(["Holder(): existingly eligible shares=%s; unrestricted shares=%s; total=%s",myeligible,myunrestricted,toreturn], 8);
+
+  return toreturn;
+}
+
+function capTable_(termsheet, captablesheet, readrows) {
   ctLog(["instantiating capTable object"], 6);
   termsheet     = termsheet     || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   captablesheet = captablesheet || termsheet.getParent().getSheetByName("Cap Table");
 
   this.termsheet = termsheet;
   this.captablesheet = captablesheet;
+  this.readrows = readrows;
   
   if (captablesheet == undefined) {
 	ctLog(["there is no Cap Table sheet for %s.%s, returning .isValid=false", termsheet.getParent().getName(), termsheet.getSheetName()],3);
@@ -135,18 +163,19 @@ function capTable_(termsheet, captablesheet) {
   var totals = { shares_pre: 0,
 				 money_pre: 0,
 				 all_investors: {},
-		                 by_security_type: {},
-		                 ESOP: {},
+		         by_security_type: {},
+		         ESOP: {},
 			   };
 
   for (var cn = 0; cn < this.rounds.length; cn++) {
 	var round = this.rounds[cn];
+	if (round.name == "TOTAL") { continue }
 	ctLog("capTable.new(): embroidering column %s", round.name);
 
 	// if only we had some sort of native deepcopy method... oh well.
-	round.old_investors = {};
+	round.old_investors = {}; // indexed by name
 	for (var ai in totals.all_investors) {
-	  round.old_investors[ai] = {};
+	  round.old_investors[ai] = new Holder(round, ai, readrows);
 
 	  // handle the _orig_ first, then formatify to produce the actual attribute
 	  for (var attr in totals.all_investors[ai]) {
@@ -158,7 +187,7 @@ function capTable_(termsheet, captablesheet) {
 		round.old_investors[ai][attr] = formatify_(totals.all_investors[ai]["_format_" + attr], totals.all_investors[ai]["_orig_" + attr], termsheet, attr);
 	  }
 	}
-	ctLog("capTable.new(): %s.old_investors = %s", round.name, round.old_investors);
+//	ctLog("capTable.new(): %s.old_investors = %s", round.name, round.old_investors);
 
 	totals.by_security_type[round.security_type] = totals.by_security_type[round.security_type] || {};
 
@@ -173,6 +202,7 @@ function capTable_(termsheet, captablesheet) {
 		continue;
 	  }
 	  // handle the _orig_ first, then formatify to produce the actual attribute
+	  // TODO: turn this into a proper Holder.copy() method.
 	  if (round.new_investors[ni]._orig_money)  new_money  += round.new_investors[ni]._orig_money;
 	  if (round.new_investors[ni]._orig_shares) {
 		new_shares += round.new_investors[ni]._orig_shares;
@@ -188,7 +218,7 @@ function capTable_(termsheet, captablesheet) {
 		if (round.new_investors[ni] == undefined) { continue } // sometimes an old investor doesn't re-up, so they're excused from action.
 		if (attr == "percentage") { continue } // percentages don't need to add
 		if (round.new_investors[ni][attr] == undefined) { continue } // money and shares do, but we don't always get new ones of those.
-		totals.all_investors[ni] = totals.all_investors[ni] || {};
+		totals.all_investors[ni] = totals.all_investors[ni] || {}; // TODO: turn this into a proper Holder.copy() method.
 		totals.all_investors[ni][attr] = totals.all_investors[ni][attr] || 0;
 		if (attr.match(/^_orig_/)) {
 		  totals.all_investors[ni][attr] += round.new_investors[ni][attr];
@@ -204,6 +234,8 @@ function capTable_(termsheet, captablesheet) {
 	  for (var inv in totals.by_security_type[bst]) {
 		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
 		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
+		ctLog(["round %s: %s contributes %s %s to total, which is now %s",
+			   round.name, inv, totals.by_security_type[bst][inv], bst, round.by_security_type[bst].TOTAL],6);
 	  }
 	}
 	ctLog("round.by_security_type = %s", JSON.stringify(round.by_security_type));
@@ -212,25 +244,37 @@ function capTable_(termsheet, captablesheet) {
 	// also, only unrestricted shares count toward their premptive rights so we need to compute those separately.
 	
 	if (round.new_investors["ESOP"] != undefined && round.new_investors["ESOP"].shares) {
-	  ctLog("ESOP: round %s has a new_investor ESOP with value %s", round.name, round.new_investors["ESOP"]);
+	  ctLog("ESOP: round %s has a new_investor ESOP with shares=%s", round.name, round.new_investors["ESOP"].shares);
 	  round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);
-	  ctLog("ESOP: establishing ESOP object for round %s", round.name);
+
+	  // TODO: if an ESOP was previously instantiated for the given security type, then reuse that object instead of doing a new instance.
+	  
+	  ctLog(["ESOP: establishing ESOP object for round %s", round.name],7);
 	  var seen_ESOP_investor = false;
 	  for (var oi in round.ordered_investors) {
 		var inv = round.ordered_investors[oi];
-		ctLog("ESOP: considering investor %s", inv);
+		ctLog(["ESOP: considering investor %s", inv],9);
 
 		if (round.new_investors[inv] == undefined
 			||
 			! round.new_investors[inv].shares
 		   ) {
-		  ctLog("ESOP: %s doesn't seem to be involved in the round; skipping.", inv);
+		  ctLog(["ESOP: %s doesn't seem to be involved in the round; skipping.", inv],9);
 		  continue;
 		}		  
 		
 		if (inv == "ESOP") { seen_ESOP_investor = true;
-							 round.ESOP.createHolder(inv);
+							 var esopHolder = round.ESOP.createHolder(inv);
+							 // TODO: set detail params for the holder so we can later compute their vesting schedule
+							 ctLog(["ESOP: we have access to a bunch of role information for the esop holder."],8);
+							 ctLog(["ESOP: but is that information available under round.new_investors?..."],8);
+							 ctLog(["ESOP: ... or do we have to go look under data.parties to find f_restricted and f_unrestricted?"],8);
 							 round.ESOP.holderGains(inv, round.new_investors[inv]._orig_shares);
+
+							 // how to get back to the parties and role attributes from here?
+//							 esopHolder
+//							 .set(initial_f_unrestricted, readrows.roles2parties.new_investor[inv].f_unrestricted)
+							 
 							 continue;
 						   }
 		else if ( seen_ESOP_investor ) {
@@ -266,6 +310,7 @@ function capTable_(termsheet, captablesheet) {
 	  if (! round.new_investors[ni]._orig_shares && ! round.new_investors[ni]) continue;
 	  if (round.old_investors[ni]              != undefined) continue;
 	  round.brand_new_investors[ni] = round.new_investors[ni];
+	  // TODO: turn this into a proper Holder.copy() method.
 	}
 	["new_investors", "old_investors", "brand_new_investors"].map(function (itype) {
 	  ctLog("capTable.new(%s): %s = %s", round.name, itype, Object.keys(round[itype]));
@@ -351,9 +396,9 @@ function capTable_(termsheet, captablesheet) {
 	* @return [Object] holdings - a list
 	*/
   this.investorHoldingsInRound_raw = function(investorName, round) {
-	ctLog([".investorHoldingsInRound_raw(%s,%s): starting", investorName, round == undefined ? "<undefined round>" : round.getName()], 8);
+	ctLog([".investorHoldingsInRound_raw(%s,%s): starting", investorName, round == undefined ? "<undefined round>" : round.getName()], 9);
 	round = round || this.getActiveRound();
-	ctLog([".investorHoldingsInRound_raw: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 8);
+	ctLog([".investorHoldingsInRound_raw: resolved round = %s", round == undefined ? "<undefined round>" : round.getName()], 9);
 	var pre = [];
 	for (var bst in round.by_security_type) {
 	  ctLog(["investorHoldingsInRound_raw: trying to singularize shares to share: in bst=%s", bst], 9);
@@ -447,7 +492,7 @@ function capTable_(termsheet, captablesheet) {
 	// sit_out_shareholders are those old investors who are not new_investors -- they are sitting out of the current round.
 	//
 	ctLog(["newRoles(%s): constructing sitout_shareholders.", round.name],8);
-	ctLog(["newRoles(%s): that should be old investors minus new investors", round.name],8);
+	ctLog(["newRoles(%s): that should be old investors minus new investors, and also excluding anyone who's not got unrestricted at the time", round.name],8);
 
 	var sitout_old_names = chosen_shareholders.map(function(e) { return e.entityname });
 	ctLog(["newRoles(%s): sitout old investors = %s", round.name, sitout_old_names],8);
@@ -461,6 +506,11 @@ function capTable_(termsheet, captablesheet) {
 	
 	var sitout_shareholders = chosen_shareholders
 		.filter(function(old){ return ( sitout_new_names.indexOf(old.entityname) < 0)} ) // not new_investor
+		.filter(function(old){ 
+		  ctLog(["newRoles(%s): computing sitout shareholders: %s is of type %s",
+				 round.name, old.entityname, round.old_investors[old.entityname].constructor.name, round.old_investors[old.entityname]]
+				,7);
+		  return (round.old_investors[old.entityname].preemptiveShares() >= 1 ) } ) // has some kind of preemptive eligibility
 		.map   (function(old){ return { relation:"sitout_shareholder", entityname:old.entityname, attrs:old.attrs } });
 	ctLog(["newRoles(%s): sitout shareholders = %s", round.name, sitout_shareholders.map(function(e){return e.entityname})],8);
 	toreturn = toreturn.concat(sitout_shareholders);
@@ -546,6 +596,23 @@ function Round(params) {
   this.captable = params.captable;
 };
 
+Round.prototype.preemptivelyEligibleSecurities = function(holderName) {
+  var eligibleSecurities = Object.keys(this.by_security_type).filter(eligible_securities);
+
+  var that = this;
+  // how many non-class F shares do i have?
+  var myeligible = eligibleSecurities
+	  .map(function(es){
+		ctLog(["preemptivelyEligibleSecurities: --- %s has %s %s securities, which are eligible",
+			   holderName, that.by_security_type[es][holderName], es],8);
+		return that.by_security_type[es][holderName] || 0})
+	  .reduce(function(a, b) { return a + b; }, 0);
+
+  ctLog(["preemptivelyEligibleSecurities: subtotal: %s has %s eligible securities", holderName, myeligible],8);
+  
+  return myeligible;
+}
+
 /**
  * @method
  * @return {string} name - round name
@@ -563,9 +630,9 @@ Round.prototype.getName = function(){
 // holdings is an array of arrays: [ [ N, round.security_type ], ... ]
 Round.prototype.inWords = function(holdings) {
   var that = this;
-  ctLog("inWords(%s): starting. this round = %s", holdings, that.getName());
+  ctLog(["inWords(%s): starting. this round = %s", holdings, that.getName()],9);
   return commaAnd(holdings.map(function(bst_count){
-	ctLog("inWords(): bst_count = %s", bst_count);
+	ctLog(["inWords(): bst_count = %s", bst_count],9);
 	if (bst_count[1].match(/note|debt|kiss|safe/i)) {
 	  return asCurrency_(that.getCurrency(), bst_count[0]) + "&#160;of " + plural(2, bst_count[1]);
 	} else {
@@ -973,10 +1040,12 @@ capTable_.prototype.parseCaptable = function() {
       }
 	  // LEARN ABOUT THE ROUND MINOR ATTRIBUTES
       else if (row[0] == "pre-money" ||
-          row[0] == "price per share" ||
-          row[0] == "discount" ||
-          row[0] == "amount raised" ||
-          row[0] == "post"
+			   row[0] == "pre-money unrestricted f" ||
+			   row[0] == "pre-money restricted f" ||
+			   row[0] == "price per share" ||
+			   row[0] == "discount" ||
+			   row[0] == "amount raised" ||
+			   row[0] == "post"
       ) {
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
@@ -991,10 +1060,10 @@ capTable_.prototype.parseCaptable = function() {
           myRound[asvar0][             minorByNum[j].minor] = display[i][j]; // this will give us %% -- see #94
           myRound[asvar0]["_orig_"   + minorByNum[j].minor] = row[j];
           myRound[asvar0]["_format_" + minorByNum[j].minor] = formats[i][j];
-		  ctLog("learned column attribute %s.%s.%s = %s (_orig=%s) (_format=%s) (manually formatted=%s)",
+		  ctLog(["learned column attribute %s.%s.%s = %s (_orig=%s) (_format=%s) (manually formatted=%s)",
 				myRound.name, asvar0, minorByNum[j].minor, myRound[asvar0][minorByNum[j].minor], row[j],
 				formats[i][j], formatify_(formats[i][j], row[j], sheet, minorByNum[j].minor)
-					);
+				],8	);
         }
       }
 	  // WE MUST BE DEALING WITH AN INVESTOR!
@@ -1002,13 +1071,13 @@ capTable_.prototype.parseCaptable = function() {
 		if (row[0] == "") { continue }
         for (var j = 1; j<= row.length; j++) {
           if (! row[j]) { continue }
-          ctLog("captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
-                     row[0],                           j,    minorByNum[j].minor,    row[j]);
+          ctLog(["captable/investor: the investor is %s, and we're looking at row[%s], which is a %s %s",
+                 row[0],                           j,    minorByNum[j].minor,    row[j]],8);
           // learn something useful. er. where do we put the value?
           var myRound = minorByNum[j].round;
 		  if (myRound.new_investors[row[0]] == undefined) {
 			myRound.ordered_investors.push(row[0]);
-			myRound.new_investors[row[0]] = {};
+			myRound.new_investors[row[0]] = {}; // make this a Holder object, except fix all the above holder-to-holder copy operations to not just dumbly copy all attributes -- sometimes the attributes are functions and shouldn't get copied over. we need a Holder.copy() method.
 		  }
           myRound.new_investors[row[0]][minorByNum[j].minor] = display[i][j];
           myRound.new_investors[row[0]]["_orig_"+minorByNum[j].minor] = row[j];

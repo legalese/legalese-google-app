@@ -639,7 +639,7 @@ function readRows(sheet, entitiesByName, includeDepth) {
   }
   else {
 	rrLog(["instantiating capTable object against sheet %s.%s", sheet.getParent().getName(), this.sheetname], 6);
-	this.capTable = new capTable_(sheet);
+	this.capTable = new capTable_(sheet, null, this);
 	// if there is no Cap Table sheet then templatedata.capTable.isValid == false
 
 	// the cap table may impute new_investor and shareholder roles to the current sheet that has previously been read by readRows.

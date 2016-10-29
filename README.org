@@ -550,7 +550,7 @@ But if Entity E only /sometimes/ has role R, and it depends on what the deal is,
 
 If you look at the Demo Master's /ESOP and Vesting/ tab, you'll see that a hidden row *INCLUDE*s the Entities sheet, and then a *ROLES* section adds some attributes to a few entities.
 
-** Inside the XML Template
+** Accessing the Deal from inside the XML Template
 So far we've described the Legalese Spreadsheet largely from the point of view of an end-user filling in the entities, cap table, and terms.
 
 So. Now the the end-user has filled in the spreadsheet with all the details of their startup.
@@ -955,7 +955,7 @@ What does ~shareholder~ mean? I don't know. I don't think it's imputed. It shoul
 
 *** The capTable and Round Objects
 
-We've talked about roles. Roles are characteristic attributes of an entity: in relation to a company, at a given round, is someone an investor, a founder, a corporate secretary? In SQL, you might say: ~SELECT * FROM entity JOIN role JOIN entityrole WHERE entityrole.entity = entity.id AND entityrole.role = role.id~.
+We've talked about roles. Roles are characteristic attributes of an entity: in relation to a company, at a given round, is someone an investor, a founder, a corporate secretary? In SQL, you might phrase the question: ~SELECT * FROM entity JOIN role JOIN entityrole WHERE entityrole.entity = entity.id AND entityrole.role = role.id~.
 
 But roles aren't the only thing Legalese can help you with.
 
@@ -1086,7 +1086,10 @@ Most of the meat of the capTable object is in its ~.rounds~ array.
 ***** ~capTable.columnNames()~
 ***** ~capTable.rewireAllRounds()~
 ***** ~capTable.allInvestors()~
+~[ { name: investorName, rounds: { name:, shares:, money:, percentage: } } ]~
 ***** ~capTable.investorHoldingsInRound()~
+
+
 ***** ~capTable.investorHoldingsInRound_raw()~
 helper function
 ***** ~capTable.newRoles()~
@@ -1117,30 +1120,67 @@ I'm not sure if these are still in use, or if they have been superseded by the c
 ***** ~addColumn()~
 ***** ~updateTotal()~
 
+**** The Holder object
+a utility object type, found in Round, representing a specific entity's holdings in that round, which is to say the two cells *money* and *shares* in the cap table's major column.
+
+Attribute Keys:
+| money         | shares         | percentage         |
+| _orig_money   | _orig_shares   | _orig_percentage   |
+| _format_money | _format_shares | _format_percentage |
+
+The ~percentage~ attribute is sometimes there, sometimes it isn't; it is best not to rely on it.
+
+~Round.getOldInvestors()~ returns a dict of Holders.
+
+~Round.old_investors~ is a dict of Holders.
+
+~Round.new_investors~ is a dict of objects, keyed by name, but should in future become a dict of Holders.
+
+~Round.ordered_investors~ is a dict of objects, keyed by name, but should in future become a dict of Holders.
+
+***** Holder Methods
+
+****** ~Holder.preemptiveShares()~
+
+returns the number of shares which are eligible for pro-rata calculations. This number is used in the ~preemptive_waiver~ template, as the numerator of a fraction.
+
+***** The "TOTAL" Holder
+Captable maintains running totals by share type, using a special ~Holder~ named "TOTAL".
+
+
 **** The Round object: Data Structure
 
 A ~Round~ object has the following attributes:
-- name
-- new_investors
-- ordered_investors
+- name :: string, name of round as given in the cap table. should exactly match the tab title of the corresponding deal term sheet.
+- new_investors :: a dict of Holders, keyed by name
+- old_investors :: a dict of Holders, keyed by name
+- ordered_investors :: a list of names ordered by appearance in the cap table, from top to bottom
 - sheet
 - captable
 - by_security_type :: 2-level object keyed by security type name from the captable, and by investorName
 
 **** The Round object: Methods
-#+BEGIN_SRC PHP
-<? var activeRound = data.captable.getActiveRound(); ?>
-<? var newIssues = data.capTable.getActiveRound().getNewIssues(); ?>
-<? var oldInvestors  = data.capTable.getActiveRound().getOldInvestors(); ?>
-<? var previousRound = data.capTable.getActiveRound().getPreviousRound(); ?>
-<? if (previousRound != undefined && oldInvestors != undefined) { ?>
+
+#+BEGIN_SRC js
+var activeRound = data.captable.getActiveRound();
+var newIssues = data.capTable.getActiveRound().getNewIssues();
+var oldInvestors  = data.capTable.getActiveRound().getOldInvestors();
+var previousRound = data.capTable.getActiveRound().getPreviousRound();
 #+END_SRC
 
+***** ~Round = data.capTable.getActiveRound()~
+primary accessor; retrieves the round corresponding to the current deal sheet
+
+***** ~Round = data.capTable.Round()~
+alternative accessor; retrieves the round with the given name
+
+***** ~Round.getPreviousRound~
+returns the Round object for the prior round, or undefined if there was no prior round.
 ***** ~Round.inWords()~
 
 ***** ~Round.getTermSheet()~
-***** ~Round.getPreviousRound()~
-***** ~Round.rewire()~
+returns the Google Apps Spreadsheet Sheet object for the given round
+
 ***** ~Round.getOldInvestors()~
 ***** ~Round.getSecurityType()~
 ***** ~Round.getCurrency()~
@@ -1149,22 +1189,113 @@ A ~Round~ object has the following attributes:
 ***** ~Round.getCategoryCellRange()~
 ***** ~Round.getCategoryCellA1Notation()~
 ***** ~Round.getCategoryCellValue()~
-**** The Investor Object: Data Structure
+***** ~Round.rewire()~
+mutator that resets some of the formulas in the cap table sheetn, linking between major columns.
 
-~Round.getOldInvestors()~ returns a list of Investors.
-
-~Round.new_investors~ is an array of Investors.
-
-~Round.ordered_investors~ is an array of Investors.
+This function is useful because when end-users manually edit the cap table sheet they might move columns around or add rows, breaking the formulas; this function resets the formulas back to a good state.
+***** ~Round.preemptivelyEligibleSecurities()~
+returns the total number of shares eligible for pro-rata calculations.
+***** TODO ~Round.getReadRows()~
+returns the readrows object for the deal term sheet for the given round
 
 **** The Entity Object: Data Structure
 This is what ~data.parties~ contains.
 
 
 *** The Captable Cookbook, with a side of ESOPs
-Whew. That was a lot of theory. But sometimes you just have a simple question and want a quick answer.
+Whew. That was a lot of theory. But sometimes you just have a simple question and want a quick answer -- a little something suitable for copy-and-pasting.
 
-**** display the /before/ and /after/ cap table for the company
+This section shows Javascript. In actual use, this Javascript would be embedded within an XML template. The code snippets below use the notional ~output?=~ and ~output?!=~ functions to stand in for ~<?= ?>~ and ~<?!= ?>~ in the actual template.
+
+If you really must copy and paste (I'm looking at you, brogrammers), go to the "See this in action" templates to see how they're used in anger.
+
+**** outline the /before/ cap table
+
+Don't enumerate the investors, but just summarize the number of shares of different classes:
+
+/See this in action:/ ~AA-SG-SPA~
+
+#+BEGIN_SRC html
+<numbered_3_para>Immediately prior to the Initial Closing, the fully diluted capital of the Company will consist of <?= digitCommas_(data.capTable.getActiveRound().by_security_type["Ordinary Shares"].TOTAL) ?> ordinary shares, <?= digitCommas_(data.capTable.getActiveRound().by_security_type["Class F Shares"].TOTAL) ?> Class F Redeemable Convertible Preference Shares both issued and reserved, and <?= digitCommas_(data.capTable.getActiveRound().by_security_type["Series YC-AA Shares"] ? data.capTable.getActiveRound().by_security_type["Series YC-AA Shares"].TOTAL : 0) ?> YC-AA Preferred Shares. These shares shall have the rights, preferences, privileges and restrictions set forth in <xref to="articles_of_association" />.</numbered_3_para>
+#+END_SRC
+
+/Takeaway:/ a ~data.capTable.getActiveRound()~ object contains a ~by_security_type~ object, which is keyed by security type, and has a special sub-key called "TOTAL", which is dynamically maintained by Legalese as a running total.
+
+**** display the /before/ cap table
+
+Who was an investor prior to the current deal? For the purposes of the cap table, both shareholders and noteholders are considered investors, as are any participants in the ESOP plan.
+
+/See this in action:/ ~dora~
+
+#+BEGIN_SRC js
+  var oldInvestors  = data.capTable.getActiveRound().getOldInvestors();
+  var previousRound = data.capTable.getActiveRound().getPreviousRound();
+
+  for (var hh in oldInvestors.holders) {
+	with(data._entitiesByName[hh]) {
+	  output?= ( hh );
+	  output?= ( address );
+	  output?!=( data.capTable.investorHoldingsInRound(hh, previousRound) );
+	}
+  }
+#+END_SRC
+
+There's more than one way to do it!
+
+/See this in action:/ ~ordinary_share_subscription_agreement~ pulls its list of shareholders from a different source:
+
+#+BEGIN_SRC js
+  for (var i = 0; i < data.parties.shareholder.length; i++) {
+	var myShareholder = data.parties.shareholder[i];
+	if (! data.capTable.investorHoldingsInRound(myShareholder.name)) { continue }
+	output?= ( newlinesToCommas(myShareholder.name) )
+	output   ( " holds " )
+	output?!=( data.capTable.investorHoldingsInRound(myShareholder.name) )
+  }
+#+END_SRC
+
+The latter approach gets its data from ~data.parties.shareholder~; it does consult the ~capTable~ object because someone may have been an investor in the past, and then gotten out, so they shouldn't be listed. And it uses ~investorHoldingsInRound~ to display the values.
+
+Why do both approaches work? Because if someone's under ~data.parties.shareholder~, that means they aren't in ~data.parties.new_investor~, which means their investment didn't change between the previous round and the current round.
+
+Which approach is better?
+
+If you're writing new code, use the former approach. But know how to read the latter.
+
+**** display the new investors in the current round
+
+Who put money in, as part of this deal?
+
+/See this in action:/ ~dora~
+
+#+BEGIN_SRC js
+  var newIssues = data.capTable.getActiveRound().getNewIssues();
+
+  for (var hh in newIssues.holders) {
+	with(data._entitiesByName[hh]) {
+	  output?= ( hh );
+	  output?= ( address );
+	  output?!=( data.capTable.getActiveRound().new_investors[hh]._inWords );
+	}
+  }
+#+END_SRC
+
+**** display the /after/ cap table for the company
+
+/See this in action:/ ~AA-SG-SPA.xml~
+
+#+BEGIN_SRC js
+  var activeRound = data.capTable.getActiveRound();
+
+  for (var hh in activeRound.ordered_investors) {
+	with(data._entitiesByName[hh]) {
+	  output?= ( hh );
+	  output?= ( address );
+	  output?!=( data.capTable.investorHoldingsInRound(hh) );
+	}
+  }
+#+END_SRC
+
 **** identify all the voting shareholders
 **** identify all the nonvoting shareholders
 **** identify all the equity holders
@@ -1194,9 +1325,95 @@ It should be:
 - ordinary shares that will be issued prior to the round, due to previously agreed conversion of debt or convertible shares (both fully paid)
 - ordinary shares that would exist if, prior to the round, warrants that carry the right of such notices, and could be exercised, were exercised
 
-How do we get that?
+How do we get that? We have to compute a sort of instantaneous as-if-converted ordinary-shares equivalent.
 
 ***** class F unrestricted, as at the time of the expected closing
+
+the formula is:
+
+#+BEGIN_SRC haskell
+  import qualified Data.Time          as Time
+  import qualified Data.Time.Calendar as Calendar
+
+  data Period = Daily
+              | Monthly
+              | Quarterly
+              | Yearly
+              | NDays Int
+
+  ymd = Calendar.fromGregorian
+
+  type Date = Calendar.Day
+
+  data PeriodBC = Business | Calendar
+
+  type UnrestrictedCount = Int
+  type RestrictedCount = Int
+
+  type URpair = (UnrestrictedCount, RestrictedCount)
+
+  newtype VestingParams = VestingSpec { effectiveDate :: Date
+                                      , unrestricted  :: Integer
+                                      , restricted    :: Integer
+                                      , cliffDate     :: Date
+                                      , periodLength  :: Period
+                                      , periodVestNum :: Int
+                                      }
+
+  eoPeriod :: Period -> PeriodBC -> Date -> Date
+
+  pairOnDate :: VestingParams -> Date -> URpair
+
+  pair2restricted   :: URpair -> RestrictedCount
+  pair2restricted = snd
+
+  pair2unrestricted :: URpair -> UnrestrictedCount
+  pair2unrestricted = fst
+  data Period = Daily
+              | Monthly
+              | Quarterly
+              | Yearly
+              | NDays Int
+
+  data PeriodBC = Business | Calendar
+
+  type UnrestrictedCount = Int
+  type RestrictedCount = Int
+
+  type URpair = (UnrestrictedCount, RestrictedCount)
+
+  data VestingParams = VestingSpec { EffectiveDate :: Date
+                                   , Unrestricted  :: Integer
+                                   , Restricted    :: Integer
+                                   , CliffDate     :: Date
+                                   , PeriodLength  :: Period
+                                   , PeriodVestNum :: Int
+                                   }
+
+  eoPeriod :: Period -> PeriodBC -> Date -> Date
+
+  pairOnDate :: VestingParams -> Date -> URpair
+
+  pair2restricted   :: URpair -> RestrictedCount
+  pair2restricted = snd
+
+  pair2unrestricted :: URpair -> UnrestrictedCount
+  pair2unrestricted = fst
+#+END_SRC
+
+unrestricted shares granted outright at time of issue
+plus
+min (the total number of restricted shares,
+      (cliff shares, if the current date is after the cliff
+       plus
+       the PeriodVestNum times the number of periods that have occurred after the cliff
+      )
+    )
+
+=min(N60,if(X61>=B$14,P61,0)+R61*floor(datedif(B$14,X61,"M")/if(T61="Quarterly",3,1)))
+
+This logic for now lives in the spreadsheet for two reasons. The spreadsheet has the date calculation machinery already built in, and also the spreadsheet itself needs to know the outcome of the calculations from round to round.
+
 ***** preference shares which hold voting rights, counted on an as-if-converted basis, which means we need to evaluate a conversion scenario
 ***** ordinary shares that have been issued and fully paid
 ***** ordinary shares that will be issued prior to the round, due to previously agreed conversion of debt or convertible shares (both fully paid)
@@ -1281,6 +1498,37 @@ you need InDesign. Sorry.
 * Internals Documentation
 Be prepared: have you got your boots on? Because you're about to wade into a [[http://www.laputan.org/mud/][Big Ball of Mud]].
 
+** Walkthrough: what happens when:
+
+*** the end-user opens the spreadsheet in their web browser?
+
+The spreadsheet comes with a bound script: if you click on *Tools / Script Editor* a new tab will open showing the script. See ~code.js~ in the repo. On page load, this script automatically runs the ~onOpen~ function.
+
+~code.js~'s ~onOpen()~ imports the LegaleseMain library. There are many versions of the library. If the end-user cloned the sheet recently, the most recent version will be loaded. If not, it is possible that the script is loading an old version of the library. To fix this, click *Libraries* and upgrade the library to the latest version.
+
+If the end-user happens to be a Legalese developer, it is possible that the end-user has read/write access to the primary LegaleseMain library. If that's the case, /development mode/ will be enabled. If you see development mode, while your users don't, you could get differing behaviour, and a source of apparent bugs.
+
+The script also tries to load the LegaeseSignature library. See [[*the end-user clicks /Send to EchoSign/?][below]].
+
+After loading LegaleseMain, the script (~code.js~)'s ~onOpen~ calls the library (legaleseMain)'s ~onOpen~. This function adds menu items to the ~Add-Ons~ menu.
+
+*** the end-user edits cells?
+Nothing. But Google Apps defines a high-resolution event handler which can be triggered with every update to a cell. We don't declare this handler, but it is conceivable that in future we might want to create the illusion of a more interactive UI, for continuous passive input validation or other purposes.
+
+*** the end-user clicks *Generate PDFs*?
+
+Each menu item under *Add-Ons / Legalese* is bound to a function in the legaleseMain library. *Generate PDFs* is bound to ~fillTemplates~.
+
+~fillTemplates~ lives in ~templates.js~. First ~fillTemplates~ checks if it's running in the [[*The Controller][controller context]]. If not, it reads the current sheet (using ~readRows()~). It determines which templates are desired. It fills each template, and produces XML in the output folder in Google Drive.
+
+*** the end-user clicks /Send to EchoSign/?
+
+If ~LegaleseSignature~ is not loaded, this menu option will not even appear. If it does appear, (for now) that probably means that the end-user is affiliated with Legalese in some way.
+
+LegaleseSignature is not available to all users. The script contains EchoSign credentials for the Legalese Robot account at Echosign. Ideally in future we should set up a structure where the credentials are configured for PARTNER mode, so that the end-user uses their own EchoSign account, not ours, to send for signature.
+
+~legaleseSignature.js~'s ~uploadAgreement~ function figures out which PDFs should have been generated by /Generate PDFs/. It confirms the PDFs exist, then shoves the set of generated PDFs into EchoSign using the EchoSign APIe.
+
 ** About the Company Spreadsheet
 A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 - Entities
@@ -1292,8 +1540,73 @@ A Legalese Company Spreadsheet contains one or more sheets, appearing as tabs:
 If you cloned the Legalese Demo Master, you will have something that looks like this.
 ** Parsing Spreadsheets
 Getting data from a spreadsheet into an internal Javascript representation is the job of a bunch of parsing modules.
-*** captable.js
+
 *** readrows.js
+
+~readrows.js~ knows how to parse everything except the captable, which it delegates to ~captable.js~
+
+*** captable.js
+
+Let's talk through what the captable parser does, step by step, to build all the other data structures available for access.
+
+Here's the call stack, from outside in:
+
+**** ~templates.fillTemplates()~
+~var readRows_ = new readRows(sheet, entitiesByName,0);~
+**** ~readrows.readRows()~
+~this.capTable = new capTable_(sheet);~
+**** ~captable.capTable_()~ makes an initial pass over the capTable.
+~this.rounds = this.parseCaptable();~
+**** ~captable.parseCaptable()~ initializes the ~Rounds~ array
+returns an array of Rounds.
+
+Each Round is constructed by ~captableRounds.push(new Round(...))~
+
+Then, as investors are encountered who have either money or shares defined for the round, they are appended to the round's ~new_investors~ and ~ordered_investors~.
+
+**** ~captable.Round(params)~ constructor
+this constructor is pretty passive, it just copies the params key/value pairs into itself; the hard work of putting things into Round happens in parseCaptable.
+
+params has keys name, new_investors, ordered_investors, sheet, captable.
+
+**** ~captable.capTable_()~ populates ~round.old_investors~
+~parseCaptable~ initializes the ~this.rounds~ object.
+
+But we're not done! After Rounds has been parsed and initialized, we still need to decorate. We make another pass over the rounds, populating additional attributes.
+
+Because rounds build on one another, we track things in ~var totals~, under subsidiary objects ~totals.all_investors~ and ~totals.by_security_type~.
+
+We also populate ~round.old_investors~. Remember, an ~old_investor~ is someone who /isn't/ participating in the current round. So, how do we know what to say about them? We track each investor's activity over multiple rounds in ~totals.all_investors~. In a given round, when we see that they are not participating, we copy over a snapshot from the running total.
+
+The running total tracks money and shares across multiple rounds. But, you say, "money might be in different currencies. And they might be subscribing for different types of securities. Squashing different types of things into a single bucket will get you in trouble!"
+
+You are quite right. Now, if all the rounds for a given captable are denominated in the same currency, then we can have some confidence in the correctness of the /money/ running total. And if a simple company has only ever transacted ordinary shares, then we believe the /shares/ running total is correct.
+
+But if a startup has different classes of shares -- ordinary shares vs Class F vs Series Seed -- then the number of shares maintained in the running ~total~ feels increasingly fragile. Sure, as long as all classes of shares are convertible 1:1 to ordinary, then, in theory, we're OK. But in practice, it's best to group the shares by security type, so we keep them separated.
+
+That's what the ~totals.by_security_type~ object does. It's keyed by all the securities seen in the cap table. Then it's keyed by investor name. Then the value is the number of shares, or money, or whatever. Wait, what? That's right; we have a bit of type overloading in the value; if it's denominable in shares, then the type is number of shares; if it's not a share-type thing, like it's a note or a SAFE, then the type is money.
+
+/That/ will get us in trouble one day, too.
+
+Anwyay, after tracking these totals, we then copy a per-round snapshot to the ~round.by_security_type~ object.
+
+**** ~captable.capTable_()~ sets up ESOP
+Similar recordkeeping happens for ESOP.
+
+If a special investor named "ESOP" is a new_investor in the round, then we set up an ESOP_ object.
+
+~round.ESOP = round.ESOP || new ESOP_(round.security_type, 0);~
+
+*Note this quirk:* if a participating investor /appears below the ESOP line/, we track them in the ESOP object, and their shares are considered part of the ESOP allocation. If they appear /above the ESOP line/ we do not. This allows us to issue Class F vesting shares to founders without those shares being considered part of the ESOP allocation. In an early round, investors commonly consider there to be two kinds of vesting: founder vesting, and employee vesting. Legalese implements both these kinds of vesting using Class F, but only "employee" vesting is considered part of the 20% or 25% or whatever ESOP pool.
+
+**** ~esop.ESOP_~: constructor
+
+
+
+**** ~captable.capTable_()~ populates ~round.brand_new_investors~
+This is a simple set operation: a *brand_new_investor* is a *new_investor* who was not previously an *old_investor*.
+
+
 *** templates.js
 
 ** User Interface Sugar
