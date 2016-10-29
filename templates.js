@@ -602,7 +602,7 @@ function fillTemplates(sheet) {
 	if (entity) { newTemplate.data.party = newTemplate.data.party || {};
 				  newTemplate.data.party[sourceTemplate.explode] = entity; // do we really want this? it seems to clobber the previous array
 				  newTemplate.data      [sourceTemplate.explode] = entity;
-				  teLog(["assigning newTemplate.data[%s] = %s", sourceTemplate.explode, entity],5);
+				  teLog(["assigning newTemplate.data[%s] = %s", sourceTemplate.explode, entity],7);
 				}
 
 	newTemplate.rcpts = rcpts;
