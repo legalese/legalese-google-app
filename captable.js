@@ -41,7 +41,7 @@ function eligible_securities(securityName) {
   // here we list ineligible securities; if not found, then we assume the input security name is eligible.
   // this logic properly belongs in each security's term sheet, where we can pull it out as an attribute of the security.
   // TODO refactor so we refer to each sheet's readrows terms to extract characteristic.
-    return (["Class F Shares", "Convertible Note", "Class F-NV", "SAFE"]
+  return (["Class F Shares", "Convertible Note", "Class F-NV", "SAFE", "Simple Agreement for Future Equity"]
 		  .indexOf(securityName) < 0);
 }
 
