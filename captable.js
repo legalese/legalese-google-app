@@ -45,11 +45,15 @@ function eligible_securities(securityName) {
 		  .indexOf(securityName) < 0);
 }
 
+Holder.prototype.origEntity = function() {
+  return this.readrows.entitiesByName[this.name];
+}
+
 Holder.prototype.preemptiveShares = function() {
   ctLog(["Holder(): %s has %s shares. how many are eligible for preemptive calculation?", this.name, this.shares], 8);
 
   var myeligible = this.round.preemptivelyEligibleSecurities(this.name);
-  var myunrestricted = this.readrows.entitiesByName[this.name]._orig_remaining_unrestricted || 0;
+  var myunrestricted = this.origEntity()._orig_remaining_unrestricted || 0;
   var toreturn = myeligible + myunrestricted;
   ctLog(["Holder(): existingly eligible shares=%s; unrestricted shares=%s; total=%s",myeligible,myunrestricted,toreturn], 8);
 
@@ -235,7 +239,7 @@ function capTable_(termsheet, captablesheet, readrows) {
 		round.by_security_type[bst][inv]   = totals.by_security_type[bst][inv];
 		round.by_security_type[bst].TOTAL += totals.by_security_type[bst][inv];
 		ctLog(["round %s: %s contributes %s %s to total, which is now %s",
-			   round.name, inv, totals.by_security_type[bst][inv], bst, round.by_security_type[bst].TOTAL],6);
+			   round.name, inv, totals.by_security_type[bst][inv], bst, round.by_security_type[bst].TOTAL],8);
 	  }
 	}
 	ctLog("round.by_security_type = %s", JSON.stringify(round.by_security_type));
@@ -569,11 +573,11 @@ function capTable_(termsheet, captablesheet, readrows) {
 					  entityname:ni,
 					  attrs: {}
 					};
-	  ctLog(["determined that %s, who has %s, is a %s", ni, this.investorHoldingsInRound(ni, round), newRoleRelation],6);
+	  ctLog(["determined that %s, who has %s, is a %s", ni, this.investorHoldingsInRound(ni, round), newRoleRelation],8);
 	  toreturn.push(newRole);
 	}
 
-	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, toreturn.map(function(nr){return nr.relation + ":" + nr.entityname})],5);
+	ctLog(["capTable.newRoles(): imputing %s roles: %s", toreturn.length, toreturn.map(function(nr){return nr.relation + ":" + nr.entityname})],7);
 	return toreturn;
   };
   
