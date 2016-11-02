@@ -1144,6 +1144,16 @@ The ~percentage~ attribute is sometimes there, sometimes it isn't; it is best no
 
 returns the number of shares which are eligible for pro-rata calculations. This number is used in the ~preemptive_waiver~ template, as the numerator of a fraction.
 
+****** ~Holder.origEntity()~
+
+returns the Entity object constructed by readrows from the Entities tab and ROLES sections of the current sheet.
+
+This has different attributes than the Holder.
+
+Why? Because the Holder is intended to represent the entity at a point in time -- at the time of the current round, based on information provided in the captable, and related automated computations -- while the Entity's attributes are supposed to be true across multiple rounds.
+
+Of course, ROLES attributes tend to be scoped to the current round, so this abstraction does not hold very well.
+
 ***** The "TOTAL" Holder
 Captable maintains running totals by share type, using a special ~Holder~ named "TOTAL".
 
