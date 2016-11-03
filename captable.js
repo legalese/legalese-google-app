@@ -513,10 +513,10 @@ function capTable_(termsheet, captablesheet, readrows) {
 		.filter(function(old){ 
 		  ctLog(["newRoles(%s): computing sitout shareholders: %s is of type %s",
 				 round.name, old.entityname, round.old_investors[old.entityname].constructor.name, round.old_investors[old.entityname]]
-				,7);
+				,6);
 		  return (round.old_investors[old.entityname].preemptiveShares() >= 1 ) } ) // has some kind of preemptive eligibility
 		.map   (function(old){ return { relation:"sitout_shareholder", entityname:old.entityname, attrs:old.attrs } });
-	ctLog(["newRoles(%s): sitout shareholders = %s", round.name, sitout_shareholders.map(function(e){return e.entityname})],8);
+	ctLog(["newRoles(%s): sitout shareholders = %s", round.name, sitout_shareholders.map(function(e){return e.entityname})],6);
 	toreturn = toreturn.concat(sitout_shareholders);
 
 	round.sitout_shareholders = {};
@@ -875,9 +875,9 @@ Round.prototype.getNewIssues = function(){
 	  toreturn.TOTAL._orig_money  = toreturn.TOTAL._orig_money  + this.new_investors[ni]._orig_money;
 	}
 	currency = currency || this.new_investors[ni]._format_money || this.getCurrency();
-	ctLog("Round.getNewIssues: calling inWords()");
+	ctLog(["Round.getNewIssues: calling inWords()"],9);
 	this.new_investors[ni]._inWords = this.inWords([ [ number_of_things, this.security_type ] ]);
-	ctLog("Round.getNewIssues: back from inWords()");
+	ctLog(["Round.getNewIssues: back from inWords()"],9);
   }
   if (currency == undefined) { ctLog("Round.getNewIssues(%s): amount_raised = %s", this.name, this.amount_raised);
 							   ctLog("Round.getNewIssues(%s): post = %s", this.name, this.post);
@@ -1052,7 +1052,7 @@ capTable_.prototype.parseCaptable = function() {
 			   row[0] == "post"
       ) {
         for (var j = 1; j<= row.length; j++) {
-          if (! row[j]) { continue }
+          if (row[j] == undefined) { continue }
 //          ctLog("%s: looking at row[%s], which is %s",
 //                     asvar0,            j,        row[j]);
 //          ctLog("%s: if we're able to pull a rabbit out of the hat where we stashed it, round is %s and attribute is %s",
