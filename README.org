@@ -390,7 +390,7 @@ This might happen, for instance, if you are sending out a shareholder notice, re
 This is what the /Explode/ column is for. Under the explode column you can only put one role; no commas. Every entity under that role will get their own copy of the document. Nobody sees anybody else's communications, and you get more privacy.
 
 **** Skip Exploding
-Sometimes someone should be left out from the exploder list. If that's true, in a *ROLES* section somewhere, set their entity attribute to ~legalese status: skip_exploding <some_role>~. You can also say ~skip_exploding~. I could never keep them straight in my head, so both forms work.
+Sometimes someone should be left out from the exploder list. If that's true, in a *ROLES* section somewhere, set their entity attribute to ~legalese status: skip_exploder <some_template~. You can also say ~skip_exploding~. I could never keep them straight in my head, so both forms work.
 
 **** Nocache
 By default, Legalese will cache for five minutes any XML templates it fetches over HTTP. This is most beneficial for templates which are included several times per deal, e.g. ~inc_party~.
