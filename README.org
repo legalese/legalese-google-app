@@ -1250,7 +1250,7 @@ Who was an investor prior to the current deal? For the purposes of the cap table
   }
 #+END_SRC
 
-There's more than one way to do it!
+***** The deprecated approach!
 
 /See this in action:/ ~ordinary_share_subscription_agreement~ pulls its list of shareholders from a different source:
 
