@@ -560,14 +560,26 @@ function capTable_(termsheet, captablesheet, readrows) {
 		  (security_classifications.every(function(sc){return sc == "nonvoting share"})) ? "nonvoting_shareholder" :
 
 		  // If an investor (prior to the current round) owns only esop shares,
-		  // then we assume that none of the shares have vested
-		  // and deem them nonvoting.
-		  (security_classifications.every(function(sc){return sc == "esop share"}))      ? "nonvoting_shareholder" :
+		  // we look deeper into the Holder's OrigEntity object to compute the remaining unrestricted f.
+		  (security_classifications.every(function(sc){return sc == "esop share"}))      ? "esop_shareholder" :
 
 		  // If an investor (prior to the current round) owns securities that are not shares,
 		  // then they are neither a voting nor a nonvoting shareholder;
 		  // they are a ~nonshare_investor~.
                                                                                  		   "nonshare_investor";
+	  if (newRoleRelation == "esop_shareholder") {
+		// look deeper into the Holder's OrigEntity object to compute the remaining unrestricted f.
+		// can we reuse some existing method to do this?
+		if (round.old_investors[ni].preemptiveShares() > 0) {
+		  ctLog(["established that esop shareholder %s has preemptive eligibility", ni],8);
+		  newRoleRelation = "voting_shareholder";
+		}
+		else {
+		  ctLog(["established that esop shareholder %s does not have preemptive eligibility", ni],8);
+		  newRoleRelation = "nonvoting_shareholder";
+		}
+	  }
+	  
 	  
 	  var newRole = { relation: newRoleRelation,
 					  entityname:ni,
