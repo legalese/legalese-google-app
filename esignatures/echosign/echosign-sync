@@ -1,0 +1,41 @@
+#!/bin/zsh
+
+# invariant assertion: all the echosign signed PDFs for a given startup should be present in that startup's Confidential or Pte Ltd folder.
+
+# this script downloads them to there.
+
+# usage:
+# cd ~/"Google Drive/JFDI Shared/Startup Programs/3 Accelerate/JFDI 2015A/by team"
+# open https://secure.na1.echosign.com/public/docs/restapi/v3#!/agreements/_0
+# copy the oauth access token
+# ./echosign-sync 3AAABLblqZhCAGapDCmEnVIxvk9s323KodXeCSGEeD3PCt_rQNE6xqvbc1e6otZMRbcYVDKxWrHlNfxHGtchXhmXCMeESjbaa
+# in future, simplify this oauth loop through some kind of CLI magic. i've seen other programs that know how to do this.
+
+setopt EXTENDED_GLOB
+setopt NULL_GLOB
+
+export ECHOSIGN_READ=$*
+
+innerfolders=("*Pte. Ltd*" "*Pte Ltd*" "Confidential*" "confidential*" "Legal*")
+
+# given a list of folder globs,
+# cd to the first available folder that matches the glob
+function multicd {
+	mydirs=($*);
+	anyluck=0
+	while [ $#mydirs -gt 0 ]; do
+		dirmatches=(${~mydirs[1]})
+		if [ $#dirmatches -gt 0 ]; then
+			cd $dirmatches[1];
+			anyluck=1
+			break;
+		else
+			shift mydirs;
+		fi;
+	done
+	if [ $anyluck = "0" ]; then echo `basename $PWD`: "no luck finding any of $*"; exit; fi
+}
+
+for team in *~*\(1\)(/); do (cd $team; multicd $innerfolders; myname=$(echo $team | perl -nle 's/ .*//; print lc for /(^\w+)/'); echo "*** $PWD"; STATUS=${STATUS-SIGNED} ~/Google\ Drive/JFDI\ Shared/JFDI\ itself/src/bin/echosign-get-agreements $myname > $myname-echosign.json && ls -l $myname-echosign.json);  done;
+for team in *~*\(1\)(/); do (cd $team; multicd $innerfolders; myname=$(echo $team | perl -nle 's/ .*//; print lc for /(^\w+)/'); echo $myname; ~/Google\ Drive/JFDI\ Shared/JFDI\ itself/src/bin/echosign-get-pdfs < $myname-echosign.json;); done
+

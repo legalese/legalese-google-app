@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# mengwong@jfdi.asia
+# this script helps you delete certain agreements
+
+# grab a couple of tokens from https://secure.echosign.com/public/docs/restapi/v3
+
+# ./echosign-get-agreements disclaimer | ./echosign-cancel-agreements
+# cancels all agreements matching the search "disclaimer"
+
+# 20150414-19:02:35 mengwong@venice:~/Google Drive/JFDI Shared/JFDI itself - Fannie/src/bin% ./echosign-get-agreements 'mengwong%2B1@jfdi.asia' > /tmp/mengwongplusone.json
+#   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#                                  Dload  Upload   Total   Spent    Left  Speed
+# 100 10442    0 10442    0     0   2577      0 --:--:--  0:00:04 --:--:--  2577
+# 20150414-19:03:04 mengwong@venice:~/Google Drive/JFDI Shared/JFDI itself - Fannie/src/bin% head /tmp/mengwongplusone.json
+# [
+#   {
+#     "displayDate": "2015-03-19T06:28:49-07:00",
+#     "displayUserInfo": {
+#       "fullNameOrEmail": "mengwong+1@jfdi.asia"
+#     },
+#     "esign": true,
+#     "agreementId": "2AAABLblqZhDBuLlJOym-v1WqP6DMGywiAuUSpEX1kTTVkWCMvkOlfsfxXduy7l4WGiOBI5h30Yk*",
+#     "latestVersionId": "2AAABLblqZhDzieSzcObTyBpvmkS5AvKdmplb1izaa4MNqtWC_qDgRj7PkH1IZRixB1Y1TGEVMls*",
+#     "name": "Qryo Strike-Off Docset 2",
+# 20150414-19:03:08 mengwong@venice:~/Google Drive/JFDI Shared/JFDI itself - Fannie/src/bin% tail /tmp/mengwongplusone.json
+#     "displayUserInfo": {
+#       "fullNameOrEmail": "mengwong+1@jfdi.asia"
+#     },
+#     "esign": true,
+#     "agreementId": "2AAABLblqZhBe9xoEf3Lq7AHNdn05zp7ljxWxvzMPx_OqNGJ40XIBX-wZJptuRSVGw2RASJxD-ec*",
+#     "latestVersionId": "2AAABLblqZhBThGucX3812tRdhWQQAf5kI-o3Iw68uoii0ngcZCAjXl1K629HgISRd41Y3dpA4Mo*",
+#     "name": "Qryo Strike-Off Docset",
+#     "status": "OUT_FOR_SIGNATURE"
+#   }
+# ]
+# 20150414-19:03:47 mengwong@venice:~/Google Drive/JFDI Shared/JFDI itself - Fannie/src/bin% ./echosign-cancel-agreements < /tmp/mengwongplusone.json
+# 2AAABLblqZhDBuLlJOym-v1WqP6DMGywiAuUSpEX1kTTVkWCMvkOlfsfxXduy7l4WGiOBI5h30Yk* {"result":"ALREADY_CANCELLED"}
+# 2AAABLblqZhC-imLuttTVb-eWPuwBPmu2P2KO-YsCPYHkbCU2sshUc3wfSQXqb3YHhdTiq0LLsJA* {"result":"ALREADY_CANCELLED"}
+# 2AAABLblqZhAE-titK0U6i0XJKZgiHaWLS-6omN7ATfIZDGEUzhmp4zZCZkyV09wWM0eUWT8Wp_o* {"result":"ALREADY_CANCELLED"}
+# 2AAABLblqZhB_0_MutrGAxNDtAzeO6gintvQBOgmeIG3v9d85IyB8fB7uNN0rCeHrCGegCO1RSMQ* {"result":"ALREADY_CANCELLED"}
+# 2AAABLblqZhB2MOWXfcG7zkq0jDbqPqttQstMmm23VVHqGncFvU8R_vqgJ1Ubr--jvOup-XO9n2Y* {"result":"CANCELLED"}
+# 2AAABLblqZhAyDK-nLIxepiCHCHyJISXz5x6mc4KUhIAked1j8UB5JPN3KeQ96uQYMeuaV7Kp1CM* {"result":"CANCELLED"}
+# 2AAABLblqZhBe9xoEf3Lq7AHNdn05zp7ljxWxvzMPx_OqNGJ40XIBX-wZJptuRSVGw2RASJxD-ec* {"result":"CANCELLED"}
+# 20150414-19:04:12 mengwong@venice:~/Google Drive/JFDI Shared/JFDI itself - Fannie/src/bin%
+
+
+# 20150415-12:28:08 mengwong@venice:~/Google Drive/JFDI Shared/Startup Programs - Kai/3 Accelerate/JFDI 2015A/by team% for team in *(/); do (cd $team; cd *Ltd*; cd Confidential; cd confidential; myname=$(echo $team | perl -nle 'print lc for /(^\w+)/'); echo $myname; STATUS=SIGNED ~/Google\ Drive/JFDI\ Shared/JFDI\ itself/src/bin/echosign-get-agreements $myname > $myname-echosign.json); done;                     
+# 
+# followed by
+#
+# 20150415-23:16:29 mengwong@venice:~/Google Drive/JFDI Shared/Startup Programs - Kai/3 Accelerate/JFDI 2015A/by team% for team in *(/); do (cd $team; cd *Ltd*; cd Confidential; cd confidential; myname=$(echo $team | perl -nle 'print lc for /(^\w+)/'); echo $myname; ~/Google\ Drive/JFDI\ Shared/JFDI\ itself/src/bin/echosign-get-pdfs < $myname-echosign.json;); done
+#
+# then
+# 20150416-20:46:52 mengwong@venice:~/Google Drive/JFDI Shared/Startup Programs - Kai/3 Accelerate/JFDI 2015A/by team% for i in *(/); do echo $i; ls $i/*/*{Shareholder,Investment}*.pdf |& perl -ple '$_="\t$_"'; done
+
+ACCESS_TOKEN=$ECHOSIGN_READ
+
+if [[ $# -eq 0 ]] ; then
+    echo 'run with an argument to search ... if you really want all agreements, pass the empty string'
+    exit 0
+fi
+
+if [[ $STATUS ]]; then
+	curl -v -H "Content-Type: application/json" -H "Access-Token: $ACCESS_TOKEN" "https://api.echosign.com/api/rest/v3/agreements${*:+?query=}$*" 2>get-agreements.stderr.txt | json userAgreementList | json -c 'this.status=="'$STATUS'"'
+else
+	curl -v -H "Content-Type: application/json" -H "Access-Token: $ACCESS_TOKEN" "https://api.echosign.com/api/rest/v3/agreements${*:+?query=}$*" 2>get-agreements.stderr.txt | json userAgreementList
+fi
+
+
+

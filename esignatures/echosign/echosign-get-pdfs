@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+# mengwong@jfdi.asia
+# this script downloads the PDF associated with one or more agreementsp
+
+# 20150416-15:50:06 mengwong@venice:~% cd tmp/echosign
+# 20150416-15:50:10 mengwong@venice:~/tmp/echosign% curl -H 'Content-Type: application/json' -H "Access-Token: $ECHOSIGN_READ" 'https://api.echosign.com/api/rest/v2/agreements' > all.json
+# 20150416-16:23:00 mengwong@venice:~/Google Drive/JFDI Shared/Startup Programs - Kai/3 Accelerate/JFDI 2015A/by team% for team in *(/); do (cd $team; cd *Ltd*; cd Confidential; cd confidential; myname=$(echo $team | perl -nle 'print lc for /(^\w+)/'); json userAgreementList < ~/tmp/echosign/all.json | json -c "this.name.match(/$myname/i) && this.status == 'SIGNED'" | ~/Google\ Drive/JFDI\ Shared/JFDI\ itself/src/bin/echosign-get-pdfs); done
+# this doesn't always work as well as it should -- the canonical method in echosign-get-agreements will return more results because sometimes the name of the company doesn't appear on the name of the agreement.
+
+use strict;
+use warnings;
+use JSON;
+
+my $auditReport = $ENV{AUDITREPORT} || "false";
+
+my $ACCESS_TOKEN=$ENV{ECHOSIGN_READ};
+
+my $json = JSON->new();
+my $json_in = $json->decode(join("",<>));
+
+for my $agreement (sort { $a->{displayDate} cmp $b->{displayDate} } @$json_in) {
+  my $id   = $agreement->{agreementId};
+  my $name = $agreement->{name};
+  my $date = $agreement->{displayDate};
+
+  my $username = $agreement->{displayUserInfo}->{fullNameOrEmail};
+  if ($username) { $username = " - $username" } else { $username = "" }
+
+  my $outfile = "$date $name$username.pdf";
+  $outfile =~ tr(/:)()d;
+  if (-s $outfile) { # warn "$id already exists\n";
+					 next }
+  
+  print "$id > $outfile\n";
+  system(qq(curl -H "Access-Token: $ACCESS_TOKEN" "https://api.echosign.com/api/rest/v3/agreements/$id/combinedDocument?auditReport=$auditReport" > "$outfile"));
+}
+

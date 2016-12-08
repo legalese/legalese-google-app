@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# mengwong@jfdi.asia
+# this script helps you delete certain agreements
+
+ACCESS_TOKEN=$ECHOSIGN_WRITE
+
+for i in $(json -a agreementId); do
+	echo -n "$i "
+	echo '{ "value": "CANCEL" }' | curl -H "Content-Type: application/json" -H "Access-Token: $ACCESS_TOKEN" -T - "https://api.echosign.com/api/rest/v3/agreements/$i/status"
+	echo ""
+done
+
