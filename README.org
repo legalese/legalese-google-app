@@ -1529,7 +1529,17 @@ Nothing. But Google Apps defines a high-resolution event handler which can be tr
 
 Each menu item under *Add-Ons / Legalese* is bound to a function in the legaleseMain library. *Generate PDFs* is bound to ~fillTemplates~.
 
-~fillTemplates~ lives in ~templates.js~. First ~fillTemplates~ checks if it's running in the [[*The Controller][controller context]]. If not, it reads the current sheet (using ~readRows()~). It determines which templates are desired. It fills each template using Google Apps's [[https://developers.google.com/apps-script/guides/html/templates][HTML Service]], and saves the resulting valid XML in the output folder in Google Drive. It shares the output folder with robot@legalese.io.
+~fillTemplates~ lives in ~templates.js~. First ~fillTemplates~ checks if it's running in the [[*The Controller][controller context]]. If not, it reads the current sheet (using ~readRows()~).
+
+It reads from the CONFIG section which templates are desired.
+
+To go from template name to template URL, it searches the Available Templates sheet of the Demo Master.
+
+Once it has the template URL, it uses Google Apps's HTML service to fetch the template contents.
+
+It sets up a bunch of variables representing the data parsed from the Google Spreadsheet. It passes those variables to each template using Google Apps's [[https://developers.google.com/apps-script/guides/html/templates][HTML Service]].
+
+It saves the resulting valid XML in the output folder in Google Drive. It shares the output folder with robot@legalese.io.
 
 robot@legalese.io has an account on a Mac OS X server that sits somewhere off-cloud. That account has Google Drive installed: the My Drive folder is synced to the local hard drive.
 
