@@ -202,13 +202,13 @@ var docsetEmails = function (sheet, readRows_, parties, suitables) {
 		// and we reset partytype from "director[0]" to "director".
 		if (partytype.match(/\[(\d)\]$/)) { mailindex = partytype.match(/\[(\d)\]$/)[1];
 											partytype = partytype.replace(/\[\d\]/, "");
-											teLog("docsetEmails: simplified partytype to %s", partytype);
+//											teLog("docsetEmails: matched mailindex %s, simplified partytype to %s", mailindex, partytype);
 										  }
 
 		if (mailtype == "to") { // teLog("docsetEmails: initializing to_parties[%s] as array", partytype);
-								to_parties[partytype] = [];
+								to_parties[partytype] = to_parties[partytype] || [];
 							  }
-		else                  cc_parties[partytype] = [];
+		else                  cc_parties[partytype] = cc_parties[partytype] || [];
 
 		if (readRows_.principal.roles[partytype] == undefined) {
 //		  teLog("docsetEmails:   principal does not possess a defined %s role! skipping.", partytype);
