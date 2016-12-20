@@ -1583,7 +1583,7 @@ Let's work backward. How do those signature boxes come to appear?
 
 They are produced by ~inc_signature~.
 
-~inc_signature~ is called by ~inc_enumerate_signatures~.
+~inc_signature~ is called by ~inc_enumerate_signatures~. It takes configuration from a variable called ~rcpts_to~, which is set up by ~templates.js~.
 
 ~inc_enumerate_signatures~ is called by your top-level template.
 
