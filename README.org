@@ -1529,7 +1529,15 @@ Nothing. But Google Apps defines a high-resolution event handler which can be tr
 
 Each menu item under *Add-Ons / Legalese* is bound to a function in the legaleseMain library. *Generate PDFs* is bound to ~fillTemplates~.
 
-~fillTemplates~ lives in ~templates.js~. First ~fillTemplates~ checks if it's running in the [[*The Controller][controller context]]. If not, it reads the current sheet (using ~readRows()~). It determines which templates are desired. It fills each template, and produces XML in the output folder in Google Drive.
+~fillTemplates~ lives in ~templates.js~. First ~fillTemplates~ checks if it's running in the [[*The Controller][controller context]]. If not, it reads the current sheet (using ~readRows()~). It determines which templates are desired. It fills each template using Google Apps's [[https://developers.google.com/apps-script/guides/html/templates][HTML Service]], and saves the resulting valid XML in the output folder in Google Drive. It shares the output folder with robot@legalese.io.
+
+robot@legalese.io has an account on a Mac OS X server that sits somewhere off-cloud. That account has Google Drive installed: the My Drive folder is synced to the local hard drive.
+
+Every minute, the robot account runs a Google Apps script to see if anybody has shared anything with it. If it sees any incoming folders, it "add to My Drive". So when somebody shares a folder with the robot, that folder ends up on the local hard disk.
+
+On the Mac, InDesign is running a script that monitors the Google Drive sync folder, looking for .xml files that don't have corresponding .pdf files.
+
+It processes those XML files into PDF. See https://github.com/legalese/legalese-indesign for more.
 
 *** the end-user clicks /Send to EchoSign/?
 
