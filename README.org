@@ -1576,7 +1576,7 @@ There are a few things you can do to customize the behaviour of ~inc_enumerate_s
 
 *** Introductory Paragraph
 
-Suppose you want to have a little paragraph at the top of the section for ~company~. In your template spreadsheet, define
+Suppose you want to have a little paragraph at the top of the section for ~director~. In your template spreadsheet, define
 
 ~signature_lead_director: The following directors are signing on behalf of the Company.~
 
@@ -1590,7 +1590,7 @@ Pass a ~term~ dictionary in the ~_include2~ object:
 
 ~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { new_investor: "Series Seed Investor" } } }) ?>~
 
-Maybe the section header is "Director", and you'd rather it say "Company".
+Maybe the section header is "Director", and you'd rather it say "On Behalf of the Company".
 
 ~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { director: "On Behalf of the Company" } } }) ?>~
 
