@@ -1568,11 +1568,11 @@ Your top-level template should include ~inc_enumerate_signatures~ with the follo
 By default, this is what happens:
 
 - for every To/Explode party role identified in the template's ~Available Templates~ row, (e.g. "director")
-- create a ~b_left_sidehead_nonum~ section header for the party role name, appropriately pluralized (e.g. "Directors")
-- expand all the entities corresponding to the role (e.g. Alice, Bob, and Carol)
+- create a ~b_left_sidehead_nonum~ section header for the party role name, appropriately pluralized (e.g. "Directors");
+- for each entitiy corresponding to the role (e.g. Alice, Bob, and Carol),
 - call ~inc_signature~ to create a signature box
 
-There are a few things you can do to customize the behaviour of inc_enumerate_signatures
+There are a few things you can do to customize the behaviour of ~inc_enumerate_signatures~:
 
 *** Introductory Paragraph
 
