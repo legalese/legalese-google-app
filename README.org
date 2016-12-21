@@ -1563,7 +1563,7 @@ LegaleseSignature is not available to all users. The script contains EchoSign cr
 
 Your top-level template should include ~inc_enumerate_signatures~ with the following invocation:
 
-`<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: {} }) ?>`
+~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: {} }) ?>~
 
 By default, this is what happens:
 
@@ -1588,17 +1588,17 @@ Maybe it says "New Investor", and you'd rather it say "Series Seed Investor".
 
 Pass a ~term~ dictionary in the ~_include2~ object:
 
-`<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { new_investor: "Series Seed Investor" } } }) ?>`
+~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { new_investor: "Series Seed Investor" } } }) ?>~
 
 Maybe the section header is "Director", and you'd rather it say "Company".
 
-`<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { director: "On Behalf of the Company" } } }) ?>`
+~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { director: "On Behalf of the Company" } } }) ?>~
 
 *** No Section Header
 
 To not display the ~b_left_sidehead_nonum~ section header at all, pass ~no_section_header:true~ in the options object.
 
-`<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, no_section_header:true, _include2: {} }) ?>`
+~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, no_section_header:true, _include2: {} }) ?>~
 
 ** How does a spreadsheet resolve its signatories?
 
