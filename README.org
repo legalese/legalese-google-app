@@ -1569,7 +1569,7 @@ By default, this is what happens:
 
 - for every To/Explode party role identified in the template's ~Available Templates~ row, (e.g. "director")
 - create a ~b_left_sidehead_nonum~ section header for the party role name, appropriately pluralized (e.g. "Directors");
-- for each entitiy corresponding to the role (e.g. Alice, Bob, and Carol),
+- for each entity corresponding to the role (e.g. Alice, Bob, and Carol),
 - call ~inc_signature~ to create a signature box
 
 There are a few things you can do to customize the behaviour of ~inc_enumerate_signatures~:
@@ -1593,6 +1593,12 @@ Pass a ~term~ dictionary in the ~_include2~ object:
 Maybe the section header is "Director", and you'd rather it say "On Behalf of the Company".
 
 ~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, _include2: { term: { director: "On Behalf of the Company" } } }) ?>~
+
+*** Dealing with Pluralisations
+
+The nouns in your section header are pluralised by default if there are more than one of each type of signatory: for example, if two directors are signing the document. If you would rather include a purely custom section header, pass ~override_section_header:true~ in the options object, and the renamed term for your signatory in the term object.
+
+~<?!= include("inc_enumerate_signatures", data, {rcpts_to:rcpts_to, override_section_header:true, _include2: { term: { director: "Company" } } }) ?>~
 
 *** No Section Header
 
