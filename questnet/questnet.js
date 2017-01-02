@@ -100,7 +100,7 @@ casper.wait(2000, function() {
 casper.withFrame("top", function() {
     this.clickLabel("COLLECT ORDERS");
     this.waitForSelector("td[class=dptxtblue2bold]", function() {
- 	this.echo("here");;
+ 	this.echo("here");
     });
 });
 
