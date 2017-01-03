@@ -64,6 +64,7 @@ casper.withFrame("main", function() {
 
 // nets payment is unfeasible because of 2FA, but included here for completeness.
 
+/*
 casper.then(function() {
     this.sendKeys('input[name=name]', 'name');
     this.sendKeys('input[name=cardNo]', 'card number');
@@ -76,11 +77,7 @@ casper.then(function() {
     // this sends for payment, so commented out
     // this.click('input#submit');
 });
-
-casper.then(function() {
-    this.capture('results.png');
-    this.echo('ive just spent five dollars');
-});
+*/
 
 // sometimes search has been made in the last 5 days; questnet will redirect to currently existing order to avoid repayment
 
@@ -95,33 +92,23 @@ casper.wait(2000, function() {
 });
 */
 
-// assuming prepay, we redirect to collect orders page
-
-casper.withFrame("top", function() {
+casper.withFrame('top', function() {
     this.clickLabel("COLLECT ORDERS");
-    this.waitForSelector("td[class=dptxtblue2bold]", function() {
- 	this.echo("here");
+    this.echo('hello');
+});
+
+casper.withFrame("main", function() {
+    casper.withFrame('listFrame', function() {
+	this.click("a[class=OrderItem]");
+	this.echo('here');
     });
 });
 
-casper.withFrame("listFrame", function() {
-    this.mouse.click("td[class=CF]"); // this should usually work as clicking on the most recent search
-    // this.clickLabel("44751373"); // an example of order number contained in that selector
-});
-
-casper.withFrame("contentFrame", function() {
-    this.waitForSelector("td[class=titleFont1]", function() {
- 	this.echo("loaded");
-    });
-});
-
-// scrape desired content
-
-casper.withFrame("contentFrame", function() {
-    var info = this.evaluate(function() {
- 	var nodes = document.querySelectorAll("td[class=DtaFld]");
-    });
-    require('fs').write("results.json", JSON.stringify(info), "w"); // this is messy, will deal with it on the node side
+casper.withFrame('main', function() {
+    casper.withFrame('contentFrame', function() {
+	fs.write('result.html', this.getHTML(), 'w');
+    }); // imma write the parser now
+    this.echo('done');
 });
 
 
