@@ -1,6 +1,6 @@
 var casper = require('casper').create();
 var mouse = require("mouse").create(casper);
-
+var fs = require('fs');
 
 // navigate straight to relevant asp page
 
