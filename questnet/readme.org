@@ -2,7 +2,6 @@
 ** INSTALL
    This runs off of [[http://casperjs.org/][CasperJS]]. Install it.
 ** RUN
-   Run it in Terminal: casperjs questnet.js.
+   Run it in Terminal: ~casperjs questnet.js <username> <password> <uen>~
 ** Todo
-   1. Include option args for CLI for username, password, search term.
-   2. Integrate with Node API.
+   v2 integration with a db

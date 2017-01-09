@@ -13,8 +13,8 @@ casper.start('https://www.questnet.sg/Maincontent.asp', function() {
 casper.then(function() {
     casper.waitForSelector("form input[name='txtUserID']", function() {
 	this.fillSelectors('form', {
-            'input[name = txtUserID ]' : casper.cli.args[0],
-            'input[name = txtPassword ]' : casper.cli.args[1]
+            'input[name = txtUserID ]' : 'legalese',
+            'input[name = txtPassword ]' : 'Pang0lin'
 	}, true);
 	this.echo("ive filled in the fields");
     });
@@ -27,8 +27,6 @@ casper.then(function() {
     this.echo("clicked");
 
 });
-
-// remove maintenance popup
 
 casper.then(function() {
     this.mouse.click(100, 500);
@@ -47,69 +45,68 @@ casper.withFrame("main", function() {
 // input search term
 
 casper.withFrame("main", function() {
-    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]); // this should be changed to UEN soon because we don't to retrieve all string matches and pay for each retrieval
+    this.sendKeys("input[class = uiCompanyRegno]", '199703805H'); 
     this.mouse.click(250, 425);
     this.echo("i have clicked");
     // can't access the frame, have to wait the dumb way
     this.wait(1000, function() {
 	this.mouse.click(496, 251);
 	this.page.sendEvent("keypress", casper.page.event.key.Enter);
-	this.echo("done");
+	this.echo("clicked");
     });
     this.wait(1000, function() {
 	this.mouse.click(303, 495);
-	this.mouse.click(750, 560); // this is for mastercard; after submitting request to finance channel should be able to click on the prepay option
- });
-});
-
-// nets payment is unfeasible because of 2FA, but included here for completeness.
-
-/*
-casper.then(function() {
-    this.sendKeys('input[name=name]', 'name');
-    this.sendKeys('input[name=cardNo]', 'card number');
-    this.sendKeys('input[name=cvv]', 'cvv');
-    this.evaluate(function() {
-        document.querySelector('select[name=expiryMonth]').selectedIndex = 1; // numerical value of the month of expiry
+	this.mouse.click(755, 524);
     });
-    this.sendKeys('input[name=expiryYear]', 'year of expiry');
-    this.click('input[name=agree]');
-    // this sends for payment, so commented out
-    // this.click('input#submit');
-});
-*/
-
-// sometimes search has been made in the last 5 days; questnet will redirect to currently existing order to avoid repayment
-
-/*
-casper.withFrame("main", function() {
-    this.echo(this.getCurrentUrl());
-    this.mouse.click(152, 318);
 });
 
-casper.wait(2000, function() {
-    this.capture("search.png");
-});
-*/
+// navigate to orders page
 
 casper.withFrame('top', function() {
     this.clickLabel("COLLECT ORDERS");
     this.echo('hello');
 });
 
+// sometimes there's a warning that i'm already logged in
+
+casper.then(function() {
+    this.page.sendEvent('keypress', casper.page.event.key.Enter);
+});
+
+// click on current order
+
 casper.withFrame("main", function() {
     casper.withFrame('listFrame', function() {
-	this.click("a[class=OrderItem]");
-	this.echo('here');
+ 	this.click("a[class=OrderItem]");
+ 	this.echo('here');
     });
 });
 
+// parse html to json, write to file. integrated with v2 later i think this will be an insert to pgsql or something similar
+
 casper.withFrame('main', function() {
     casper.withFrame('contentFrame', function() {
-	fs.write('result.html', this.getHTML(), 'w');
-    }); // imma write the parser now
-    this.echo('done');
+	var keyArr = [];
+	var valArr = [];
+	var elements = this.getElementsInfo('td.lblFld');
+	for (var i = 0; i < elements.length; i++) {
+	    keyArr.push(elements[i].text);
+	}
+	var val = this.getElementsInfo('td.DtaFld');
+	for (var i = 0; i < val.length; i++) {
+	    valArr.push(val[i].text);
+	}
+	function results(keys, values) {
+	    var result = {};
+	    for (var i = 0; i < 20; i++) { //until status date
+		keys[i] = keys[i].replace(/:/g, '').trim();
+		result[keys[i]] = values[i].replace(/[\n\t]/g, '');
+	    }
+	    return result;
+	};
+	var info = results(keyArr, valArr);
+	fs.write('results.json', JSON.stringify(info), 'w');
+    });
 });
-
 
 casper.run();
