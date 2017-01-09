@@ -13,8 +13,8 @@ casper.start('https://www.questnet.sg/Maincontent.asp', function() {
 casper.then(function() {
     casper.waitForSelector("form input[name='txtUserID']", function() {
 	this.fillSelectors('form', {
-            'input[name = txtUserID ]' : 'legalese',
-            'input[name = txtPassword ]' : 'Pang0lin'
+            'input[name = txtUserID ]' : casper.cli.args[0],
+            'input[name = txtPassword ]' : casper.cli.args[1]
 	}, true);
 	this.echo("ive filled in the fields");
     });
@@ -45,7 +45,7 @@ casper.withFrame("main", function() {
 // input search term
 
 casper.withFrame("main", function() {
-    this.sendKeys("input[class = uiCompanyRegno]", '199703805H'); 
+    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]); 
     this.mouse.click(250, 425);
     this.echo("i have clicked");
     // can't access the frame, have to wait the dumb way
