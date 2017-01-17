@@ -1,6 +1,9 @@
 * HOW TO USE THIS
 ** INSTALL
    This runs off of [[http://casperjs.org/][CasperJS]]. Install it.
+** PAY $$
+   You are required to have/create an account at www.questnet.sg, and to obtain some prepaid credit attached to your account.
+   Take note that personal accounts require a Singaporean or PR Identification Number. If you may represent a Singaporean incorporated company, you may apply for a company account and obviate the need for the Identification Number.
 ** RUN
    Run it in Terminal: ~casperjs questnet.js <username> <password> <uen>~
 ** Todo
