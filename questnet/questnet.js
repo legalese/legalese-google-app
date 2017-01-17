@@ -105,7 +105,7 @@ casper.withFrame('main', function() {
 	    return result;
 	};
 	var info = results(keyArr, valArr);
-	fs.write('results.json', JSON.stringify(info), 'w');
+	fs.write('results.json', JSON.stringify(info, null, 2), 'w');
     });
 });
 
