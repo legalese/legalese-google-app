@@ -1,5 +1,5 @@
 {
-  "Date of Request": "17/01/2017",
+  "Date of Request": "24/01/2017",
   "Name of Requestor": "LEGALESE PTE. LTD.",
   "Requested Entity Name": "WALDEN INTERNATIONAL SINGAPORE PTE LTD",
   "Requested Entity Number": "199703805H",
@@ -16,5 +16,17 @@
   "Date Of Change Of Address": "01/11/2002",
   "Principal Activity / Activities": "1)OTHER BUSINESS SUPPORT SERVICE ACTIVITIES (EG JUNKETS, ADMINISTRATION OF LOYALTY PROGRAMMES)(82999)CONSIST OF VENTURE CAPITAL FUND MANAGEMENT ACTIVITIES",
   "Status": "LIVE COMPANY",
-  "Status Date": "05/06/1997"
+  "Status Date": "05/06/1997",
+  "capStructure": {
+    "issuedOrdinary": {
+      "shares": "100,000.00",
+      "currency": "SINGAPORE, DOLLARS",
+      "value": "$100,000.00"
+    },
+    "paidUpOrdinary": {
+      "shares": "-",
+      "currency": "SINGAPORE, DOLLARS",
+      "value": "$100,000.00"
+    }
+  }
 }

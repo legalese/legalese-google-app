@@ -45,7 +45,7 @@ casper.withFrame("main", function() {
 // input search term
 
 casper.withFrame("main", function() {
-    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]); 
+    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]); // this should be changed to UEN soon because we don't to retrieve all string matches and pay for each retrieval
     this.mouse.click(250, 425);
     this.echo("i have clicked");
     // can't access the frame, have to wait the dumb way
@@ -60,53 +60,90 @@ casper.withFrame("main", function() {
     });
 });
 
-// navigate to orders page
+// repeat orders don't display the collect order button for some reason, so we navigate twice
 
 casper.withFrame('top', function() {
-    this.clickLabel("COLLECT ORDERS");
-    this.echo('hello');
+    this.clickLabel('SEARCH MENU');
 });
 
-// sometimes there's a warning that i'm already logged in
-
-casper.then(function() {
-    this.page.sendEvent('keypress', casper.page.event.key.Enter);
+casper.withFrame('top', function() {
+    this.clickLabel('COLLECT ORDERS');
 });
-
-// click on current order
 
 casper.withFrame("main", function() {
     casper.withFrame('listFrame', function() {
+	this.echo('can i see this');
  	this.click("a[class=OrderItem]");
  	this.echo('here');
     });
 });
 
-// parse html to json, write to file. integrated with v2 later i think this will be an insert to pgsql or something similar
-
 casper.withFrame('main', function() {
     casper.withFrame('contentFrame', function() {
+
+	// make dom elements available to casperjs
+	
 	var keyArr = [];
-	var valArr = [];
+	var valArr = [];	
+	
 	var elements = this.getElementsInfo('td.lblFld');
 	for (var i = 0; i < elements.length; i++) {
+	    elements[i].text = elements[i].text.replace(/[\n\t:]/g, '').trim();
 	    keyArr.push(elements[i].text);
 	}
 	var val = this.getElementsInfo('td.DtaFld');
 	for (var i = 0; i < val.length; i++) {
+	    val[i].text = val[i].text.replace(/[\n\t]/g, '');
 	    valArr.push(val[i].text);
 	}
-	function results(keys, values) {
-	    var result = {};
-	    for (var i = 0; i < 20; i++) { //until status date
-		keys[i] = keys[i].replace(/:/g, '').trim();
-		result[keys[i]] = values[i].replace(/[\n\t]/g, '');
-	    }
-	    return result;
-	};
-	var info = results(keyArr, valArr);
+
+	var info = initialInfo(keyArr, valArr);
+	
 	fs.write('results.json', JSON.stringify(info, null, 2), 'w');
+	this.echo('done');
+    });
+});
+
+casper.withFrame('main', function() {
+    casper.withFrame('contentFrame', function() {
+	fs.write('results.html', this.getHTML(), 'w');
     });
 });
 
 casper.run();
+
+
+// parser constructor functions
+
+function initialInfo(keys, values) {
+    var result = {};
+    for (var i = 0; i < keys.length; i++) {
+	if (keys[i] == 'Capital Structure') {
+	    break; 
+	};
+	result[keys[i]] = values[i];
+    };
+
+    result.capStructure = capStructure(keys, values);
+    return result;
+};
+
+function capStructure(keys, values) {
+    for (var i = 0; i < keys.length; i++) {
+	if (keys[i] == 'Capital Structure') {
+	    var shares = {
+		issuedOrdinary: {
+		    shares: values[i+1],
+		    currency: values[i+2],
+		    value: '$' + values[i+3]
+		},
+		paidUpOrdinary: {
+		    shares: values[i+5],
+		    currency: values[i+6],
+		    value: '$' + values[i+7]
+		}
+	    }
+	}
+    }
+    return shares;
+}
