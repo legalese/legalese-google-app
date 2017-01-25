@@ -128,6 +128,7 @@ function initialInfo(keys, values) {
 
     result.capStructure = capStructure(keys, values);
     result.directors = getDirectors(keys, values);
+    result.shareholders = getShareholders(values);
     return result;
 };
 
@@ -151,9 +152,14 @@ function capStructure(keys, values) {
     return shares;
 }
 
+// directors have four properties
+
 function getDirectors(keys, values) {
     var directors = [];
     for (var i = 0; i < keys.length; i++) {
+	
+	// check for start of director block from keys array
+
 	if (keys[i] == 'NameID' && keys[i+1] == 'AddressDate Of Change Of Address') {
 	    for (var j = i + 5; j < values.length; j += 4) {
 		if (values[j+3] == 'ORDINARY') {
@@ -170,5 +176,31 @@ function getDirectors(keys, values) {
 	}
     }
     return directors;
+}
+
+// shareholders have six properties
+
+function getShareholders(values) {
+    var shareholders = [];
+    for (var i = 0; i < values.length; i++) {
+
+	// check start and end of shareholder block
+
+	if (values[i+3] == 'ORDINARY' && !(values[i+9] == undefined)) {
+
+	    for (var j = i; j < values.length - 3; j += 6) {	
+		var newShareholder = {
+		    nameID: values[j],
+		    nationality: values[j+1],
+		    address: values[j+2],
+		    sharetype: values[j+3],
+		    sharenumber: values[j+4],
+		    currency: values[j+5]
+		}
+		shareholders.push(newShareholder);
+	    }
+	}
+    }
+    return shareholders;
 }
 

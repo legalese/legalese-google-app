@@ -54,5 +54,23 @@
       "nationality": "SINGAPORE CITIZEN",
       "appointment": "14/01/2010DIRECTOR"
     }
+  ],
+  "shareholders": [
+    {
+      "nameID": "TAN LIP-BU450652453",
+      "nationality": "AMERICAN",
+      "address": "15 GLEN ALPINE ROADPIEDMONT CA 94611 28/01/2016",
+      "sharetype": "ORDINARY",
+      "sharenumber": "76,250.00",
+      "currency": "SINGAPORE, DOLLARS"
+    },
+    {
+      "nameID": "WIIG POOL, INCT04UF0538E",
+      "nationality": "UNITED STATES",
+      "address": "C/O ONE CALIFORNIA STREET, 28TH FLOOR,SAN FRANCISCO, CA 94111, U.S.A. -",
+      "sharetype": "ORDINARY",
+      "sharenumber": "23,750.00",
+      "currency": "SINGAPORE, DOLLARS"
+    }
   ]
 }
