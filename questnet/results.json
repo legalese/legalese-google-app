@@ -1,5 +1,5 @@
 {
-  "Date of Request": "24/01/2017",
+  "Date of Request": "25/01/2017",
   "Name of Requestor": "LEGALESE PTE. LTD.",
   "Requested Entity Name": "WALDEN INTERNATIONAL SINGAPORE PTE LTD",
   "Requested Entity Number": "199703805H",
@@ -28,5 +28,31 @@
       "currency": "SINGAPORE, DOLLARS",
       "value": "$100,000.00"
     }
-  }
+  },
+  "directors": [
+    {
+      "nameID": "TAN LIP-BU450652453",
+      "address": "15 GLEN ALPINE ROADPIEDMONT CA 94611 28/01/2016",
+      "nationality": "AMERICAN",
+      "appointment": "05/06/1997DIRECTOR"
+    },
+    {
+      "nameID": "M. SIVAANANTHANS0181790F",
+      "address": "101B LORONG 2 TOA PAYOH#06-09 SINGAPORE 31110101/04/2016",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "12/06/1997SECRETARY"
+    },
+    {
+      "nameID": "SIVAGNANARATNAM SIVANESANS1503703B",
+      "address": "8B ROBIN DRIVE SINGAPORE 25826514/11/2016",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "15/09/2000SECRETARY"
+    },
+    {
+      "nameID": "YONG SOO PINGS1779888Z",
+      "address": "19 LANTANA AVENUE LUCKY PARKSINGAPORE 27791725/02/2012",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "14/01/2010DIRECTOR"
+    }
+  ]
 }

@@ -5,7 +5,7 @@ var fs = require('fs');
 // navigate straight to relevant asp page
 
 casper.start('https://www.questnet.sg/Maincontent.asp', function() {
-    this.echo("loaded");
+    this.echo("Main page loaded");
 });
 
 // select form and input login details
@@ -16,7 +16,7 @@ casper.then(function() {
             'input[name = txtUserID ]' : casper.cli.args[0],
             'input[name = txtPassword ]' : casper.cli.args[1]
 	}, true);
-	this.echo("ive filled in the fields");
+	this.echo("Login details filled");
     });
 });
 
@@ -24,20 +24,20 @@ casper.then(function() {
 
 casper.then(function() {
     this.mouse.click("form input[value=LOGIN]");
-    this.echo("clicked");
+    this.echo("Logging in...");
 
 });
 
 casper.then(function() {
     this.mouse.click(100, 500);
-    this.echo("removed overlay");
+    this.echo("Removed maintenance overlay");
 });
 
 // switch to child frame. frame focus only lasts in scope
 
 casper.withFrame("main", function() {
     if (this.exists("td.searchLink1")) {
-	this.echo("im in the right frame");
+	this.echo("Checking for the right frame");
     }
     this.clickLabel("search");
 });
@@ -45,24 +45,26 @@ casper.withFrame("main", function() {
 // input search term
 
 casper.withFrame("main", function() {
-    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]); // this should be changed to UEN soon because we don't to retrieve all string matches and pay for each retrieval
+    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]);
     this.mouse.click(250, 425);
-    this.echo("i have clicked");
+    this.echo("Search submitted");
     // can't access the frame, have to wait the dumb way
     this.wait(1000, function() {
 	this.mouse.click(496, 251);
 	this.page.sendEvent("keypress", casper.page.event.key.Enter);
-	this.echo("clicked");
+	this.echo("Result selected");
     });
     this.wait(1000, function() {
 	this.mouse.click(303, 495);
 	this.mouse.click(755, 524);
     });
+    
 });
 
 // repeat orders don't display the collect order button for some reason, so we navigate twice
 
 casper.withFrame('top', function() {
+    this.page.sendEvent('keypress', casper.page.event.key.Enter);
     this.clickLabel('SEARCH MENU');
 });
 
@@ -72,9 +74,8 @@ casper.withFrame('top', function() {
 
 casper.withFrame("main", function() {
     casper.withFrame('listFrame', function() {
-	this.echo('can i see this');
  	this.click("a[class=OrderItem]");
- 	this.echo('here');
+ 	this.echo('Clicked on order item');
     });
 });
 
@@ -97,10 +98,11 @@ casper.withFrame('main', function() {
 	    valArr.push(val[i].text);
 	}
 
+	this.echo('Getting details');
 	var info = initialInfo(keyArr, valArr);
 	
 	fs.write('results.json', JSON.stringify(info, null, 2), 'w');
-	this.echo('done');
+	this.echo('Done!');
     });
 });
 
@@ -125,6 +127,7 @@ function initialInfo(keys, values) {
     };
 
     result.capStructure = capStructure(keys, values);
+    result.directors = getDirectors(keys, values);
     return result;
 };
 
@@ -147,3 +150,25 @@ function capStructure(keys, values) {
     }
     return shares;
 }
+
+function getDirectors(keys, values) {
+    var directors = [];
+    for (var i = 0; i < keys.length; i++) {
+	if (keys[i] == 'NameID' && keys[i+1] == 'AddressDate Of Change Of Address') {
+	    for (var j = i + 5; j < values.length; j += 4) {
+		if (values[j+3] == 'ORDINARY') {
+		    break;
+		}
+		var newDirector = {
+		    nameID: values[j],
+		    address: values[j+1],
+		    nationality: values[j+2],
+		    appointment: values[j+3]
+		};
+		directors.push(newDirector);
+	    }
+	}
+    }
+    return directors;
+}
+
