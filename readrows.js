@@ -708,23 +708,49 @@ function createDemoUser_(sheet, readRows_, templatedata, config) {
 	rrLog("createDemoUser_: INFO: %s is defined: %s", config.default_party_role.value, parties[asvar_(config.default_party_role.value)].name);
 
   } else {
-	var email = Session.getActiveUser().getEmail();
-	rrLog("createDemoUser_: INFO: user is absent. creating %s, who is %s", config.default_party_role.value, email);
+      var email = Session.getActiveUser().getEmail();
+      rrLog("createDemoUser_: INFO: user is absent. creating %s, who is %s", config.default_party_role.value, email);
+      
+      rrLog("createDemoUser_: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
 
-	rrLog("createDemoUser_: inserting a row after " + (parseInt(readRows_._last_entity_row)+1));
-	sheet.insertRowAfter(readRows_._last_entity_row+1);
-	var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
-
-	newrow.getCell(1,1).setValue(config.default_party_role.value);
-	newrow.getCell(1,2).setValue(email.replace(/@.*/,""));
-	newrow.getCell(1,3).setValue(email);
-	newrow.getCell(1,4).setValue("Passport Number");
-	newrow.getCell(1,5).setValue("2222222");
-	newrow.getCell(1,6).setValue("1729 Taxicab Way\nRamanujanville NW 01234\nNowhere");
-	newrow.getCell(1,7).setValue("Nowhereland");
-	newrow.getCell(1,8).setValue("person");
-	newrow.getCell(1,9).setValue(config.default_party_role.value);
-	SpreadsheetApp.flush();
+      if (sheet.getName() == "NDA") {
+	  
+	  var ss = SpreadsheetApp.getActiveSpreadsheet();
+	  sheet = SpreadsheetApp.setActiveSheet(ss.getSheets()[2]);
+	  
+	  // readrows_ done with activesheet NDA, so hardcode rows instead of calling readrows for Hello World sheet again
+	  
+	  sheet.insertRowAfter(13);
+	  var newrow = sheet.getRange(14,1,1,sheet.getMaxColumns());
+	  
+	  newrow.getCell(1,1).setValue(config.default_party_role.value);
+	  newrow.getCell(1,2).setValue(email.replace(/@.*/,""));
+	  newrow.getCell(1,3).setValue(email);
+	  newrow.getCell(1,4).setValue("Passport Number");
+	  newrow.getCell(1,5).setValue("2222222");
+	  newrow.getCell(1,6).setValue("1729 Taxicab Way\nRamanujanville NW 01234\nNowhere");
+	  newrow.getCell(1,7).setValue("Nowhereland");
+	  newrow.getCell(1,8).setValue("person");
+	  newrow.getCell(1,9).setValue(config.default_party_role.value);
+	  SpreadsheetApp.flush();
+	  SpreadsheetApp.setActiveSheet(SpreadsheetApp.getActiveSpreadsheet().getSheets()[1]);
+	  
+      } else {
+	  
+	  sheet.insertRowAfter(readRows_._last_entity_row+1);
+	  var newrow = sheet.getRange(readRows_._last_entity_row+2,1,1,sheet.getMaxColumns());
+	  
+	  newrow.getCell(1,1).setValue(config.default_party_role.value);
+	  newrow.getCell(1,2).setValue(email.replace(/@.*/,""));
+	  newrow.getCell(1,3).setValue(email);
+	  newrow.getCell(1,4).setValue("Passport Number");
+	  newrow.getCell(1,5).setValue("2222222");
+	  newrow.getCell(1,6).setValue("1729 Taxicab Way\nRamanujanville NW 01234\nNowhere");
+	  newrow.getCell(1,7).setValue("Nowhereland");
+	  newrow.getCell(1,8).setValue("person");
+	  newrow.getCell(1,9).setValue(config.default_party_role.value);
+	  SpreadsheetApp.flush();
+      }
   }
 
   return true;
