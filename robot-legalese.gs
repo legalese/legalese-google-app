@@ -55,6 +55,9 @@ function main() {
         Logger.log("weird -- %s seems to be complete, so moving directly to done/", item_as_folder.getName());
         doneFolder.addFolder(item_as_folder);      
       }
+      else if (folderIsEmpty(item_as_folder)) {
+        Logger.log('no xmls in %s, so not moving', item_as_folder.getName());
+      }
       else {
         Logger.log("moving %s to incoming/", item_as_folder.getName());
         incomingFolder.addFolder(item_as_folder);      
@@ -78,6 +81,18 @@ function main() {
 
 }
 
+// check whether the current folder is empty before pushing to incoming/done
+
+function folderIsEmpty(folder) {
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var file = files.next();
+    var re;
+    re = file.getName().match(/(.+)\.xml$/); if (re) { return false; }
+  }
+  return true;
+}
+    
 function folderIsComplete(folder) {
   var files = folder.getFiles();
   var xmls = {};
