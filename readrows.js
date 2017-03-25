@@ -70,6 +70,14 @@ function readRows(sheet, entitiesByName, includeDepth) {
   var rows = sheet.getDataRange();
   var numRows  = rows.getNumRows();
   var values   = rows.getValues();
+  for (var i = 0; i < values.length; i++) {
+      for (var j = 0 ; j < i.length; j++) {
+	  if (/^\s+$/.test(values[i][j])) {
+	     rrLog(["uh oh, empty space at row %s cell %s, deleting", i, j], 6);
+	     values[i].splice(j, 1) // #238
+	  }
+      }
+  }
   var formulas = rows.getFormulas();
   var formats  = rows.getNumberFormats();
   var display  = rows.getDisplayValues();
