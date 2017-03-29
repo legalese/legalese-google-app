@@ -23,7 +23,7 @@ function onOpen() {
 
   var legaleseSignatureExists = false;
   try { if (legaleseSignature) { legaleseSignatureExists = legaleseSignature._loaded } }
-  catch (e) { cdLog("caught error %s while testing legaleseSignature", e) }
+  catch (e) { Logger.log("caught error %s while testing legaleseSignature", e) }
 
   if (legaleseMainExists) {
 	legaleseMain.onOpen(SpreadsheetApp.getUi().createAddonMenu(),
@@ -42,7 +42,7 @@ function onFormSubmit(e) {
 
   var legaleseSignatureExists = false;
   try { if (legaleseSignature) { legaleseSignatureExists = legaleseSignature._loaded } }
-  catch (e) { cdLog("caught error %s while testing legaleseSignature", e) }
+  catch (e) { Logger.log("caught error %s while testing legaleseSignature", e) }
 
   if (legaleseSignatureExists) legaleseMain.onFormSubmit(e, legaleseSignature);
   else                         legaleseMain.onFormSubmit(e, null);
