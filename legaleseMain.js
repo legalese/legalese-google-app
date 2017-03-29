@@ -64,6 +64,8 @@ function onOpen(addOnMenu, legaleseSignature) {
   addOnMenu
 	.addItem("Create Form", "legaleseMain.setupForm")
 	.addItem("Generate PDFs", "legaleseMain.fillTemplates")
+  	.addItem("Compute Dependencies", "legaleseMain.computeDependencies")
+  	.addItem("Do Dependency Thing", "legaleseMain.depWriteForceLayout")
   	.addItem("Add a Round to the Cap Table", "legaleseMain.addRound")
   //    .addItem("Do Nothing", "legaleseMain.DoNothing")
   //    .addItem("Update TOTAL Column", "legaleseMain.updateTotal")
