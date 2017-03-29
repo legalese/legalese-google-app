@@ -1141,6 +1141,7 @@ function addRound(capsheet) {
   capSheet.addMajorColumn(round);
 
   // Useful locators
+  var investorBeginRow = capSheet.getCategoryRowCaptable("discount") + 1;
   var newInvestorsRow = capSheet.getCategoryRowCaptable("amount raised");
   var roundColumn = capSheet.getRoundColumnByName(round);
   var totalColumn = capSheet.getRoundColumnByName("TOTAL");
@@ -1169,6 +1170,11 @@ function addRound(capsheet) {
       break;
     }
   }
+
+  // Set SUM Forumla for "amount raised" row so it automatically picks up new rows
+  var lastCol = capSheet.captablesheet.getLastColumn();
+  var sumRow = capSheet.captablesheet.getRange(newInvestorsRow, 2, 1, lastCol - 1);
+  sumRow.setFormula("=SUM(INDIRECT(ADDRESS(" + investorBeginRow + ",COLUMN())):INDIRECT(ADDRESS(ROW()-1,COLUMN())))");
 
   ctLog("Inserting 2 rows into Entities at row: " + i);
   // Insert 2 investors into the Entities Sheet
