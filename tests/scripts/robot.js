@@ -1,5 +1,7 @@
 var casper = require('casper').create();
-casper.options.viewportSize = {width: 1600, height: 950};
+
+casper.options.viewportSize = {width: 1920, height: 1080};
+
 var mouse = require("mouse").create(casper);
 var fs = require('fs');
 
@@ -32,13 +34,21 @@ casper.then(function() {
 casper.then(function() {
     this.click('#confirmActionButton');
     this.echo('done');
-    this.open('https://drive.google.com').then(function() {
-	this.echo('drive');
+    this.open('https://drive.google.com', function() {
+	this.echo('now at drive');
+    });
+});
+
+casper.then(function() {
+    this.wait(5000, function() {
+	this.clickLabel('My Legalese Tutorial 2 Google Sheets');
+	this.page.sendEvent('keypress', casper.page.event.key.Enter);
     });
 });
 
 casper.then(function() {
     this.capture('sheet.png');
+    this.echo('at sheet');
 });
 
 casper.run();
