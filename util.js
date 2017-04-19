@@ -213,3 +213,9 @@ var jsonify = function(obj){
     }, 4);
     return json;
 };
+
+function getFixedNotation(address, notation) {
+    var newString = notation.split("$").join("$$").replace("1", "$2").replace("A", "$1");
+    var regex = /([A-Z]+)(\d+)/;
+    return address.replace(regex, newString);
+}
