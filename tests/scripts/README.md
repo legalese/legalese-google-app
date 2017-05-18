@@ -1,6 +1,12 @@
 # What does addLibrary.js do?
 
-Navigates to the canonical test spreadsheet's attached script, removes the current legaleseMain library and adds your test library for testing a change/patch etc.
+1. Navigates to the canonical test spreadsheet's attached script
+
+2. Removes the current legaleseMain library and adds your test library for testing a change/patch etc.
+
+3. Navigates to the canonical test spreadsheet and generates PDFs.
+
+4. Navigates to Google Drive to check for XML output.
 
 ## How do I use this?
 
