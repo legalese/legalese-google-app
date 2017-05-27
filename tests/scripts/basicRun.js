@@ -158,7 +158,7 @@ casper.then(function() {
 // find xml
 
 casper.then(function() {
-    this.waitForSelector('div[aria-label="02 - Seed Term Sheet.xml"]', function() { // assumes errors will cause no XML to appear, rather than a random selection
+    this.waitForSelector('img[src="//ssl.gstatic.com/docs/doclist/images/mediatype/icon_1_text_x32.png"]', function() { // drive uses this icon for XML
 	this.echo('Hooray, nothing broke');
     }, function timeout() {
 	this.echo('No XML has been produced - something\'s not working');

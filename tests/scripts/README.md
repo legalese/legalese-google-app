@@ -1,4 +1,4 @@
-# What does addLibrary.js do?
+# What does basicRun.js do?
 
 1. Navigates to the canonical test spreadsheet's attached script
 
