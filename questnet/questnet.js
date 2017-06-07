@@ -57,6 +57,11 @@ casper.withFrame("main", function() {
     this.wait(1000, function() {
 	this.mouse.click(303, 495);
 	this.mouse.click(755, 524);
+	casper.waitForAlert(function then() {
+	    this.die('Search has returned no results! Exiting script.')
+	}, function timeout() {
+	    this.die('Search has returned 1 or more relevant results. Selected.');
+	});
     });
     
 });
