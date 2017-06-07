@@ -60,7 +60,7 @@ casper.withFrame("main", function() {
 	casper.waitForAlert(function then() {
 	    this.die('Search has returned no results! Exiting script.')
 	}, function timeout() {
-	    this.die('Search has returned 1 or more relevant results. Selected.');
+	    this.echo('Search has returned 1 or more relevant results. Selected.');
 	});
     });
     
