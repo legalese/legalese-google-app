@@ -124,6 +124,9 @@ casper.run();
 
 function initialInfo(keys, values) {
     var result = {};
+
+    // we get the initial general information first
+
     for (var i = 0; i < keys.length; i++) {
 	if (keys[i] == 'Capital Structure') {
 	    break; 
@@ -132,7 +135,7 @@ function initialInfo(keys, values) {
     };
 
     result.capStructure = capStructure(keys, values);
-    result.directors = getDirectors(keys, values);
+    result.directors = getDirectors(values);
     result.shareholders = getShareholders(values);
     return result;
 };
@@ -157,24 +160,34 @@ function capStructure(keys, values) {
     return shares;
 }
 
-// directors have four properties
+// directors have four table fields
 
-function getDirectors(keys, values) {
+function getDirectors(values) {
     var directors = [];
-    for (var i = 0; i < keys.length; i++) {
-	
-	// check for start of director block from keys array
+    var idReg = /[A-Za-z]\d{7}[A-za-z]|\d{9}[A-za-z]/; // matches ICs and UENs
+    var countryReg = /singapore|united states|malaysia/i; // as needed
+    var postalReg = /\d{6}/; // postal codes
+    
+    for (var i = 0; i < values.length; i++) {
 
-	if (keys[i] == 'NameID' && keys[i+1] == 'AddressDate Of Change Of Address') {
-	    for (var j = i + 5; j < values.length; j += 4) {
-		if (values[j+3] == 'ORDINARY') {
+	// does the previous cell have a date/is empty and does the next cell contain an IC or UEN? If so, this is the start of the director's block
+	
+	if (!(/[A-Za-z]/.test(values[i])) && idReg.test(values[i+1])) {
+	    
+	    for (var j = i + 1; j < values.length; j += 4) {
+		if (values[j+3] == 'ORDINARY' || values[j+3] == 'PREFERENCE') {
 		    break;
-		}
+		};
+		var id = idReg.exec(values[j]);
+		var country = countryReg.exec(values[j+1]);
+		var postal = postalReg.exec(values[j+1]);
 		var newDirector = {
-		    nameID: values[j],
-		    address: values[j+1],
+		    nameID: values[j].slice(0, id.index),
+		    id: values[j].slice(id.index),
+		    address: values[j+1].slice(0, country.index).replace('#', ' #'),
+		    postalCode: values[j+1].slice(country.index, postal.index + 6), // cut off dates
 		    nationality: values[j+2],
-		    appointment: values[j+3]
+		    appointment: values[j+3].slice(10) // cut off dates
 		};
 		directors.push(newDirector);
 	    }
@@ -183,29 +196,43 @@ function getDirectors(keys, values) {
     return directors;
 }
 
-// shareholders have six properties
+// shareholders have six table cells
 
 function getShareholders(values) {
     var shareholders = [];
+    var idReg = /[A-Za-z]\d{7}[A-za-z]|\d{9}[A-za-z]/;
+    var countryReg = /singapore|united states|malaysia/i;
+    var postalReg = /\d{6}/;
+    
     for (var i = 0; i < values.length; i++) {
 
 	// check start and end of shareholder block
 
-	if (values[i+3] == 'ORDINARY' && !(values[i+9] == undefined)) {
+	if (values[i+3] == 'ORDINARY' || values[i+3] == 'PREFERENCE') {
+	    
+	    for (var j = i; j < values.length; j += 6) {
+		if (values[j+3] == undefined) {
+		    break;
+		};
 
-	    for (var j = i; j < values.length - 3; j += 6) {	
+		var id = idReg.exec(values[j]);
+		var country = countryReg.exec(values[j+2]);
+		var postal = postalReg.exec(values[j+2]);
+		
 		var newShareholder = {
-		    nameID: values[j],
+		    nameID: values[j].slice(0, id.index),
+		    id: values[j].slice(id.index),
 		    nationality: values[j+1],
-		    address: values[j+2],
+		    address: values[j+2].slice(0, country.index).replace('#', ' #'),
+		    postalCode: values[j+2].slice(country.index, postal.index + 6),
 		    sharetype: values[j+3],
 		    sharenumber: values[j+4],
 		    currency: values[j+5]
 		}
 		shareholders.push(newShareholder);
 	    }
+	    break;
 	}
     }
     return shareholders;
 }
-

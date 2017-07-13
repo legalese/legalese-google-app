@@ -1,0 +1,97 @@
+{
+  "Date of Request": "13/07/2017",
+  "Name of Requestor": "LEGALESE PTE. LTD.",
+  "Requested Entity Name": "PRIVE GROUP PTE. LTD.",
+  "Requested Entity Number": "200906275C",
+  "File Reference Number": "",
+  "Entity Name": "PRIVE GROUP PTE. LTD.",
+  "Entity Number": "200906275C",
+  "Date Of Registration (dd/mm/yyyy)": "08/04/2009",
+  "Country Of Incorporation": "SINGAPORE",
+  "Date Of Change Of Name": "17/09/2010",
+  "1) Former Name (Effective Date)": "ALCHEMY PARTNERS PTE. LTD. ( 08/04/2009 )",
+  "Type Of Company": "EXEMPT PRIVATE COMPANY LIMITED BY SHARES",
+  "Registered Office Address": "70 ANSON ROAD#25-01 HUB SYNERGY POINTSINGAPORE 079905",
+  "Date Of Change Of Address": "29/05/2017",
+  "Principal Activity / Activities": "1)OTHER FOOD AND BEVERAGE SERVING PREMISES N.E.C.(56129)2)OTHER HOLDING COMPANIES(64202)",
+  "Status": "LIVE COMPANY",
+  "Status Date": "08/04/2009",
+  "capStructure": {
+    "issuedOrdinary": {
+      "shares": "157,622.00",
+      "currency": "SINGAPORE, DOLLARS",
+      "value": "$157,622.00"
+    },
+    "paidUpOrdinary": {
+      "shares": "-",
+      "currency": "SINGAPORE, DOLLARS",
+      "value": "$157,622.00"
+    }
+  },
+  "directors": [
+    {
+      "nameID": "VU HAN JEAN-LUC KHA",
+      "id": "G6309016L",
+      "address": "115 SUNSET WAY #02-04 CLEMENTI PARK",
+      "postalCode": "SINGAPORE 597149",
+      "nationality": "FRENCH",
+      "appointment": "DIRECTOR"
+    },
+    {
+      "nameID": "OEIJ YUAN SIANG",
+      "id": "S6907808G",
+      "address": "9 DUNEARN CLOSE CAPITOL PARK",
+      "postalCode": "SINGAPORE 299582",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "DIRECTOR"
+    },
+    {
+      "nameID": "TENG BOON KIA ISABELLA",
+      "id": "S8034206C",
+      "address": "38 BEO CRESCENT #10-32 THE BEO CRESCENT",
+      "postalCode": "SINGAPORE 160038",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "SECRETARY"
+    },
+    {
+      "nameID": "GOH ZHENGLING TRACY",
+      "id": "S8105083Z",
+      "address": "9 DUNEARN CLOSE CAPITOL PARK",
+      "postalCode": "SINGAPORE 299582",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "SECRETARY"
+    }
+  ],
+  "shareholders": [
+    {
+      "nameID": "VU HAN JEAN-LUC KHA",
+      "id": "G6309016L",
+      "nationality": "FRENCH",
+      "address": "115 SUNSET WAY #02-04 CLEMENTI PARK",
+      "postalCode": "SINGAPORE 597149",
+      "sharetype": "ORDINARY",
+      "sharenumber": "23,644.00",
+      "currency": "SINGAPORE, DOLLARS"
+    },
+    {
+      "nameID": "OEIJ YUAN SIANG",
+      "id": "S6907808G",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "9 DUNEARN CLOSE CAPITOL PARK",
+      "postalCode": "SINGAPORE 299582",
+      "sharetype": "ORDINARY",
+      "sharenumber": "100,000.00",
+      "currency": "SINGAPORE, DOLLARS"
+    },
+    {
+      "nameID": "FOO MEI-HIEM, MICHELE",
+      "id": "S7005375F",
+      "nationality": "SINGAPORE CITIZEN",
+      "address": "14 SHANGRI-LA CLOSE SHANGRI LA PARK",
+      "postalCode": "SINGAPORE 568258",
+      "sharetype": "ORDINARY",
+      "sharenumber": "33,978.00",
+      "currency": "SINGAPORE, DOLLARS"
+    }
+  ]
+}

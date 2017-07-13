@@ -1,0 +1,79 @@
+{
+  "Date of Request": "13/07/2017",
+  "Name of Requestor": "LEGALESE PTE. LTD.",
+  "Requested Entity Name": "OCBC FINANCE LIMITED",
+  "Requested Entity Number": "196700396R",
+  "File Reference Number": "",
+  "Entity Name": "OCF LIMITED",
+  "Entity Number": "196700396R",
+  "Date Of Registration (dd/mm/yyyy)": "09/11/1967",
+  "Country Of Incorporation": "SINGAPORE",
+  "Date Of Change Of Name": "03/11/2003",
+  "1) Former Name (Effective Date)": "INTERNATIONAL TRUST & FINANCE LIMITED ( 09/11/1967 )",
+  "2) Former Name (Effective Date)": "FOCAL FINANCE LIMITED ( 04/01/1989 )",
+  "3) Former Name (Effective Date)": "OCBC FINANCE LIMITED ( 18/12/1998 )",
+  "Type Of Company": "PUBLIC COMPANY LIMITED BY SHARES",
+  "Registered Office Address": "18 CROSS STREET#11-01/03 CHINA SQUARE CENTRALSINGAPORE 048423",
+  "Date Of Change Of Address": "23/04/2005",
+  "Principal Activity / Activities": "1)OTHER HOLDING COMPANIES(64202)HOLDING OF INVESTMENT PROPERTIES FOR RENTAL PURPOSES",
+  "Status": "LIVE COMPANY",
+  "Status Date": "09/11/1967",
+  "capStructure": {
+    "issuedOrdinary": {
+      "shares": "7,850,000.00",
+      "currency": "SINGAPORE, DOLLARS",
+      "value": "$749,662.30"
+    },
+    "paidUpOrdinary": {
+      "shares": "-",
+      "currency": "SINGAPORE, DOLLARS",
+      "value": "$749,662.30"
+    }
+  },
+  "directors": [
+    {
+      "nameID": "TAN HOCK CHOON STEVEN",
+      "id": "S0072581A",
+      "address": "24 LORONG MARZUKI ",
+      "postalCode": "SINGAPORE 417068",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "DIRECTOR"
+    },
+    {
+      "nameID": "SOH JIN SERN VINCENT",
+      "id": "S1191213C",
+      "address": "10D BRADDELL HILL #23-14 BRADDELL VIEW",
+      "postalCode": "SINGAPORE 579723",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "DIRECTOR"
+    },
+    {
+      "nameID": "TAY SIONG HWEE (ZHENG XIONGHUI)",
+      "id": "S7442937H",
+      "address": "259 ANG MO KIO AVENUE 2 #22-02 THE CLOVER @ KEBUN BARU",
+      "postalCode": "SINGAPORE 560259",
+      "nationality": "SINGAPORE CITIZEN",
+      "appointment": "DIRECTOR13/01/2016SECRETARY"
+    },
+    {
+      "nameID": "CHAN MEI PENG",
+      "id": "S7476080E",
+      "address": "794 WOODLANDS DRIVE 72 #09-17 ",
+      "postalCode": "SINGAPORE 730794",
+      "nationality": "SINGAPORE P.R.",
+      "appointment": "SECRETARY"
+    }
+  ],
+  "shareholders": [
+    {
+      "nameID": "OVERSEA-CHINESE BANKING CORPORATION LIMITED",
+      "id": "193200032W",
+      "nationality": "SINGAPORE",
+      "address": "63 CHULIA STREET #10-00 ",
+      "postalCode": "SINGAPORE 049514",
+      "sharetype": "ORDINARY",
+      "sharenumber": "7,850,000.00",
+      "currency": "SINGAPORE, DOLLARS"
+    }
+  ]
+}
