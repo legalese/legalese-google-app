@@ -21,7 +21,14 @@ casper.then(function() {
 	
 	var keyArr = [];
 	var valArr = [];	
-	
+    var htmlArr = this.getElementsInfo('td.DtaFld').map(function(e) { return e.html } );
+    var nricArr = this.evaluate(function() {
+        var elements = __utils__.findAll('td.DtaFld a.searchlink');
+        return elements.map(function(e) {
+          return e.text;
+        });
+    });
+  
 	var elements = this.getElementsInfo('td.lblFld');
 	for (var i = 0; i < elements.length; i++) {
 	    keyArr.push(elements[i].text);
@@ -32,7 +39,9 @@ casper.then(function() {
 	}
 
 	this.echo(keyArr);
-	this.echo(valArr);
+    this.echo(valArr);
+    this.echo(htmlArr);
+    this.echo(nricArr);
 	this.echo('Getting details');
 	var info = initialInfo(keyArr, valArr);
 	
