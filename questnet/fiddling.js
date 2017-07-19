@@ -1,11 +1,18 @@
+
 var casper = require('casper').create();
 var mouse = require("mouse").create(casper);
 var fs = require('fs');
 
+// usage: casperjs fiddling.js file://localhost`pwd`/examples/facebook.html
+
 // navigate straight to relevant asp page
 
-casper.start('', function() { // INSERT YOUR LOCAL FILE HERE
-    this.echo("Main page loaded");
+var startUrl = (casper.cli.args.length > 0)
+    ? casper.cli.args[0]
+    : 'https://www.questnet.sg/Maincontent.asp';
+
+casper.start(startUrl, function() { // INSERT YOUR LOCAL FILE HERE
+    this.echo(startUrl + " loaded");
 });
 
 casper.then(function() {
