@@ -30,7 +30,7 @@ casper.then(function() {
     });
   
 	var elements = this.getElementsInfo('td.lblFld');
-	for (var i = 0; i < elements.length; i++) {
+    for (var i = 0; i < elements.length; i++) {
 	    keyArr.push(elements[i].text);
 	}
 	var val = this.getElementsInfo('td.DtaFld');
@@ -43,16 +43,11 @@ casper.then(function() {
     this.echo(htmlArr);
     this.echo(nricArr);
 	this.echo('Getting details');
-	var info = initialInfo(keyArr, valArr);
+	var info = initialInfo(keyArr, valArr, nricArr);
 	
-	fs.write('results.json', JSON.stringify(info, null, 2), 'w');
+    fs.write('results.json', JSON.stringify(info, null, 2), 'w');
+    fs.write('html.json', JSON.stringify(htmlArr, null, 2), 'w');
 	this.echo('Done!');
-});
-
-casper.withFrame('main', function() {
-    casper.withFrame('contentFrame', function() {
-	fs.write('results.html', this.getHTML(), 'w');
-    });
 });
 
 casper.run();
@@ -60,20 +55,20 @@ casper.run();
 
 // parser constructor functions
 
-function initialInfo(keys, values) {
+function initialInfo(keys, values, ic) {
     var result = {};
 
     // we get the initial general information first
 
     for (var i = 0; i < keys.length; i++) {
-	if (keys[i] == 'Capital Structure') {
+	if (keys[i] == 'Capital Structure:') {
 	    break; 
 	};
-	result[keys[i]] = values[i];
+	result[keys[i]] = values[i].replace(/[\n\t]/g, '');
     };
 
     result.capStructure = capStructure(keys, values);
-    result.directors = getDirectors(values);
+    result.directors = getDirectors(values, ic);
     result.shareholders = getShareholders(values);
     return result;
 };
@@ -100,34 +95,42 @@ function capStructure(keys, values) {
 
 // directors have four table fields
 
-function getDirectors(values) {
+function addresses(addressField) {
+    var re = /\n\t\t\t\t\t/g;
+    var match, indexes = [];
+    while ((match = re.exec(addressField)) != null) {
+	indexes.push(match.index);
+	console.log(match.index);
+    };
+    return indexes;
+}
+
+function getDirectors(values, ic) {
     var directors = [];
+
     var idReg = /[A-Za-z]\d{7}[A-za-z]|\d{9}[A-za-z]/; // matches ICs and UENs
-    var countryReg = /singapore|united states|malaysia/i; // as needed
-    var postalReg = /\d{6}/; // postal codes
-    
+
+    var tabReg = /\n\t\t\t\t\t/g;
     for (var i = 0; i < values.length; i++) {
 
 	// does the previous cell have a date/is empty and does the next cell contain an IC or UEN? If so, this is the start of the director's block
 	
 	if (!(/[A-Za-z]/.test(values[i])) && idReg.test(values[i+1])) {
 	    
+	    var htmlId = 1;
 	    for (var j = i + 1; j < values.length; j += 4) {
 		if (values[j+3] == 'ORDINARY' || values[j+3] == 'PREFERENCE') {
 		    break;
 		};
-		var id = idReg.exec(values[j]);
-		var country = countryReg.exec(values[j+1]);
-		var postal = postalReg.exec(values[j+1]);
 		var newDirector = {
-		    nameID: values[j].slice(0, id.index),
-		    id: values[j].slice(id.index),
-		    address: values[j+1].slice(0, country.index).replace('#', ' #'),
-		    postalCode: values[j+1].slice(country.index, postal.index + 6), // cut off dates
+		    nameID: values[j].slice(0, tabReg.exec(values[j]).index),
+		    id: ic[htmlId],
+		    address: values[j+1].slice(0, addresses(values[j+1])[2]).replace(tabReg, ' '),
 		    nationality: values[j+2],
-		    appointment: values[j+3].slice(10) // cut off dates
+		    appointment: values[j+3].slice(10).replace(tabReg, ' ') // cut off dates
 		};
 		directors.push(newDirector);
+		htmlId++;
 	    }
 	}
     }
