@@ -107,7 +107,7 @@ casper.withFrame('main', function() {
 	this.echo('Getting details');
 	var info = initialInfo(keyArr, htmlArr, nricArr);
 	
-	fs.write(casper.cli.args[1], JSON.stringify(info, null, 2), 'w');
+	fs.write('results.json', JSON.stringify(info, null, 2), 'w');
 	
 	this.echo('Done!');
     });
