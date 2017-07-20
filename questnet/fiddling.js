@@ -119,7 +119,7 @@ function getDirectors(values, ic, id) {
 		    id: ic[id],
 		    address: values[j+1].slice(0, addresses(values[j+1])[2]),
 		    nationality: values[j+2],
-		    appointment: values[j+3].slice(10).replace(re, ' ') // cut off dates
+		    appointment: values[j+3].slice(10).replace(/<br>/g, ' ') // cut off dates
 		};
 		directors.push(newDirector);
 		id++;
