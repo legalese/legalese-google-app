@@ -88,5 +88,10 @@
       "sharenumber": "33,978.00",
       "currency": "SINGAPORE, DOLLARS"
     }
-  ]
+  ],
+  "records": {
+    "lastAgm": "29/08/2016",
+    "lastAr": "28/09/2016",
+    "acLastAgm": "31/12/2015"
+  }
 }

@@ -73,6 +73,7 @@ function initialInfo(keys, values, ic) {
     result.capStructure = capStructure(keys, values);
     result.directors = getDirectors(values, ic, htmlId);
     result.shareholders = getShareholders(values, ic, htmlId);
+    result.records = getRecords(values);
     return result;
 };
 
@@ -172,4 +173,13 @@ function addresses(addressField) {
 	indexes.push(match.index);
     };
     return indexes;
+}
+
+function getRecords(values) {
+    var records = {
+	lastAgm: values[values.length - 3],
+	lastAr: values[values.length - 2],
+	acLastAgm: values[values.length - 1]
+    };
+    return records;
 }
