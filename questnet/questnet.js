@@ -46,24 +46,51 @@ casper.withFrame("main", function() {
 
 casper.withFrame("main", function() {
     this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]);
-    this.mouse.click(250, 425);
-    this.echo("Search submitted");
-    // can't access the frame, have to wait the dumb way
-    this.wait(1000, function() {
-	this.mouse.click(496, 251);
-	this.page.sendEvent("keypress", casper.page.event.key.Enter);
-	this.echo("Result selected");
+
+    // alert shows if UEN is invalid
+    
+    casper.waitForAlert(function then() {
+	this.die('UEN was entered in an invalid format! Try again.')
+    }, function timeout() {
+	this.echo('UEN valid, conducting search');
     });
-    this.wait(1000, function() {
-	this.mouse.click(303, 495);
-	this.mouse.click(755, 524);
-	casper.waitForAlert(function then() {
-	    this.die('Search has returned no results! Exiting script.')
-	}, function timeout() {
-	    this.echo('Search has returned 1 or more relevant results. Selected.');
+    this.clickLabel('Browse');
+    this.echo('Search submitted');
+});
+
+// whole bunch of callbacks because all these elements are loaded by js
+
+casper.withFrame('main', function() {
+    this.waitForSelector('div.content', function() {
+	this.waitForSelector('iframe[name=GB_frame]', function() {
+	    this.withFrame('GB_frame', function() {
+		this.waitForSelector('iframe#GB_frame', function() {
+		    casper.withFrame('GB_frame', function() {
+			this.waitForSelector('select#lstIDName', function() { // actual form
+			    this.evaluate(function() {
+				document.querySelector('select#lstIDName').selectedIndex = 0; // assume only 1 result of search by uen
+			    });
+			    this.click('td.button_bluesmall img:first-child');
+			    this.echo('Result selected');
+			});
+		    });
+		});
+	    });
 	});
     });
+});
+
+casper.withFrame('main', function() {
+    this.click('a#IdSubmit'); // point button
+
+    // if search returns no results
     
+    casper.waitForAlert(function then() {
+	this.die('Search has returned no results! Exiting script.')
+    }, function timeout() {
+	this.echo('Search has returned 1 or more relevant results. Selected.');
+    });
+    this.echo('Clicked pay');
 });
 
 // repeat orders don't display the collect order button for some reason, so we navigate twice
