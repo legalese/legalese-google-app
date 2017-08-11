@@ -104,10 +104,21 @@ casper.withFrame('top', function() {
     this.clickLabel('COLLECT ORDERS');
 });
 
+// search for the correct order item from the UEN entered previously
+
 casper.withFrame("main", function() {
     casper.withFrame('listFrame', function() {
- 	this.click("a[class=OrderItem]");
- 	this.echo('Clicked on order item');
+	var re = new RegExp(casper.cli.args[2], 'gi');
+	var htmlArr = this.getElementsInfo('td.CF').map(function(e) { return e.html } );
+	for (var i = 0; i < htmlArr.length; i++) {
+	    if (re.test(htmlArr[i])) {
+		var labelLength = htmlArr[i-1].length; // cell with order item link is one cell before cell containing the name/uen of search result
+		var label = htmlArr[i-1].slice(labelLength - 12, labelLength - 4); // get order no.
+		this.echo('Found the correct order item');
+		this.clickLabel(label);
+		this.echo('Clicked on the order item');
+	    }
+	}
     });
 });
 
