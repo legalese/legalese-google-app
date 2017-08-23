@@ -208,7 +208,7 @@ function capStructure(keys, values) {
 function getDirectors(values, ic, id) {
     var directors = [];
 
-    var uenReg = new RegExp(casper.cli.args[0], 'gi');
+    var uenReg = new RegExp(casper.cli.args[2], 'gi');
     for (var i = 0; i < values.length; i++) {
 
 	// conditions for start of director block:
