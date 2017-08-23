@@ -208,16 +208,17 @@ function capStructure(keys, values) {
 function getDirectors(values, ic, id) {
     var directors = [];
 
-    var idReg = /[A-Za-z]\d{7}[A-za-z]|\d{9}[A-za-z]|[A-za-z]{2}\d{7}|\d{9}/; // matches ICs and UENs
-
+    var uenReg = new RegExp(casper.cli.args[0], 'gi');
     for (var i = 0; i < values.length; i++) {
 
-	// does the previous cell have a date/is empty and does the next cell contain an IC or UEN? If so, this is the start of the director's block
+	// conditions for start of director block:
+	// has a.searchlink
+	// next value is not empty
+	// no mention of shares or empty shareholder block
 	
-	if (!(/[A-Za-z]/.test(values[i])) && idReg.test(values[i+1])) {
-	    
-	    for (var j = i + 1; j < values.length; j += 4) {
-		if (values[j+3] == 'ORDINARY' || values[j+3] == 'PREFERENCE') {
+	if (/searchlink/.test(values[i]) && values[i+1].length > 0 && !(values[j+3] == 'ORDINARY' || values[j+3] == 'PREFERENCE' || values[j] == 'PLEASE REFER TO DOCUMENTARY RECORDS FOR INFORMATION')) {
+	    for (var j = i; j < values.length; j += 4) {
+		if (values[j+3] == 'ORDINARY' || values[j+3] == 'PREFERENCE' || values[j] == 'PLEASE REFER TO DOCUMENTARY RECORDS FOR INFORMATION') {
 		    break;
 		};
 		var newDirector = {
@@ -264,7 +265,12 @@ function getShareholders(values, ic, id) {
 		id++;
 	    }
 	    break;
-	}
+	} else if (values[i] == 'PLEASE REFER TO DOCUMENTARY RECORDS FOR INFORMATION') {
+	    var newShareholder = {
+		data: 'PLEASE REFER TO DOCUMENTARY RECORDS FOR INFORMATION'
+	    }
+	    shareholders.push(newShareholder);
+	};
     }
     return shareholders;
 }
