@@ -2,6 +2,7 @@ var casper = require('casper').create();
 var mouse = require("mouse").create(casper);
 var fs = require('fs');
 
+var start = Date.now();
 // navigate straight to relevant asp page
 
 casper.start('https://www.questnet.sg/Maincontent.asp', function() {
@@ -53,19 +54,19 @@ casper.withFrame("main", function() {
 	this.die('UEN was entered in an invalid format! Try again.')
     }, function timeout() {
 	this.echo('UEN valid, conducting search');
-    });
-    this.clickLabel('Browse');
-    this.echo('Search submitted');
+	this.clickLabel('Browse');
+	this.echo('Search submitted');
+    }, 1000);
 });
 
 // whole bunch of callbacks because all these elements are loaded by js
 
 casper.withFrame('main', function() {
     this.waitForSelector('div.content', function() {
-	this.waitForSelector('iframe[name=GB_frame]', function() {
+	this.waitForSelector('iframe.GB_frame', function() {
 	    this.withFrame('GB_frame', function() {
 		this.waitForSelector('iframe#GB_frame', function() {
-		    casper.withFrame('GB_frame', function() {
+		    this.withFrame(0, function() {
 			this.waitForSelector('select#lstIDName', function() { // actual form
 			    this.evaluate(function() {
 				document.querySelector('select#lstIDName').selectedIndex = 0; // assume only 1 result of search by uen
@@ -89,8 +90,9 @@ casper.withFrame('main', function() {
 	this.die('Search has returned no results! Exiting script.')
     }, function timeout() {
 	this.echo('Search has returned 1 or more relevant results. Selected.');
-    });
-    this.echo('Clicked pay');
+	this.capture('search.png');
+	this.echo('Clicked pay');
+    }, 1000);
 });
 
 // repeat orders don't display the collect order button for some reason, so we navigate twice
@@ -148,6 +150,7 @@ casper.withFrame('main', function() {
 	fs.write('results.json', JSON.stringify(info, null, 2), 'w');
 	
 	this.echo('Done!');
+	this.echo(Date.now() - start);
     });
 });
 
