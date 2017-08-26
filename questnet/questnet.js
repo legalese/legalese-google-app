@@ -90,7 +90,6 @@ casper.withFrame('main', function() {
 	this.die('Search has returned no results! Exiting script.')
     }, function timeout() {
 	this.echo('Search has returned 1 or more relevant results. Selected.');
-	this.capture('search.png');
 	this.echo('Clicked pay');
     }, 1000);
 });
