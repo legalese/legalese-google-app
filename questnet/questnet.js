@@ -30,7 +30,7 @@ casper.then(function() {
 });
 
 casper.then(function() {
-    this.mouse.click(100, 500);
+    this.mouse.click(100, 200);
     this.echo("Removed maintenance overlay");
 });
 
@@ -71,7 +71,7 @@ casper.withFrame('main', function() {
 			    this.evaluate(function() {
 				document.querySelector('select#lstIDName').selectedIndex = 0; // assume only 1 result of search by uen
 			    });
-			    this.click('td.button_bluesmall img:first-child');
+			    this.click('td.button_bluesmall > img:first-child');
 			    this.echo('Result selected');
 			});
 		    });
