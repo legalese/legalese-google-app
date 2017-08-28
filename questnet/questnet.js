@@ -47,16 +47,8 @@ casper.withFrame("main", function() {
 
 casper.withFrame("main", function() {
     this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]);
-
-    // alert shows if UEN is invalid
-    
-    casper.waitForAlert(function then() {
-	this.die('UEN was entered in an invalid format! Try again.')
-    }, function timeout() {
-	this.echo('UEN valid, conducting search');
-	this.clickLabel('Browse');
-	this.echo('Search submitted');
-    }, 1000);
+    this.clickLabel('Browse');
+    this.echo('Search submitted');
 });
 
 // whole bunch of callbacks because all these elements are loaded by js
@@ -83,15 +75,7 @@ casper.withFrame('main', function() {
 
 casper.withFrame('main', function() {
     this.click('a#IdSubmit'); // point button
-
-    // if search returns no results
-    
-    casper.waitForAlert(function then() {
-	this.die('Search has returned no results! Exiting script.')
-    }, function timeout() {
-	this.echo('Search has returned 1 or more relevant results. Selected.');
-	this.echo('Clicked pay');
-    }, 1000);
+    this.echo('Clicked pay');
 });
 
 // repeat orders don't display the collect order button for some reason, so we navigate twice
