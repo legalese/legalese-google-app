@@ -3,15 +3,10 @@ var mouse = require("mouse").create(casper);
 var fs = require('fs');
 
 var start = Date.now();
+
 // navigate straight to relevant asp page
 
 casper.start('https://www.questnet.sg/Maincontent.asp', function() {
-    this.echo("Main page loaded");
-});
-
-// select form and input login details
-
-casper.then(function() {
     casper.waitForSelector("form input[name='txtUserID']", function() {
 	this.fillSelectors('form', {
             'input[name = txtUserID ]' : casper.cli.args[0],
@@ -37,9 +32,6 @@ casper.then(function() {
 // switch to child frame. frame focus only lasts in scope
 
 casper.withFrame("main", function() {
-    if (this.exists("td.searchLink1")) {
-	this.echo("Checking for the right frame");
-    }
     this.clickLabel("search");
 });
 
@@ -56,9 +48,9 @@ casper.withFrame("main", function() {
 casper.withFrame('main', function() {
     this.waitForSelector('div.content', function() {
 	this.waitForSelector('iframe.GB_frame', function() {
-	    this.withFrame('GB_frame', function() {
+	    casper.withFrame('GB_frame', function() {
 		this.waitForSelector('iframe#GB_frame', function() {
-		    this.withFrame(0, function() {
+		    casper.withFrame(0, function() {
 			this.waitForSelector('select#lstIDName', function() { // actual form
 			    this.evaluate(function() {
 				document.querySelector('select#lstIDName').selectedIndex = 0; // assume only 1 result of search by uen
