@@ -4,8 +4,10 @@ var fs = require('fs');
 
 // navigate straight to relevant asp page
 
+var start = Date.now();
+
 casper.start('https://www.questnet.sg/Maincontent.asp', function() {
-    //this.echo("Main page loaded");
+    // this.echo("Main page loaded");
 });
 
 // select form and input login details
@@ -13,10 +15,10 @@ casper.start('https://www.questnet.sg/Maincontent.asp', function() {
 casper.then(function() {
     casper.waitForSelector("form input[name='txtUserID']", function() {
     	this.fillSelectors('form', {
-                'input[name = txtUserID ]' : casper.cli.args[0],
-                'input[name = txtPassword ]' : casper.cli.args[1]
+            'input[name = txtUserID ]' : casper.cli.args[0],
+            'input[name = txtPassword ]' : casper.cli.args[1]
     	}, true);
-	//this.echo("Login details filled");
+	// this.echo("Login details filled");
     });
 });
 
@@ -24,130 +26,124 @@ casper.then(function() {
 
 casper.then(function() {
     this.mouse.click("form input[value=LOGIN]");
-    //this.echo("Logging in...");
+    
+    // this.echo("Logging in...");
 
 });
 
 casper.then(function() {
-    this.mouse.click(100, 500);
-    //this.echo("Removed maintenance overlay");
+    this.mouse.click(100, 200);
+    
+    // this.echo("Removed maintenance overlay");
 });
 
 // switch to child frame. frame focus only lasts in scope
 
 casper.then(function() {
-	this.waitForSelector('frame[name=main]', function() {
-		casper.withFrame("main", function() {
-			if (this.exists("td.searchLink1")) {
-			//this.echo("Checking for the right frame");
-			}
-			this.clickLabel("search");
-		});
+    this.waitForSelector('frame[name=main]', function() {
+	casper.withFrame("main", function() {
+	    this.clickLabel("search");
 	});
+    });
 });
 
 // input search term
 casper.then(function() {
-	this.waitForSelector('frame[name=main]', function() {
-		casper.withFrame("main", function() {
-			this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]);
+    this.waitForSelector('frame[name=main]', function() {
+	casper.withFrame("main", function() {
+	    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]);
 
-			// alert shows if UEN is invalid
+	    // alert shows if UEN is invalid
 
-			casper.waitForAlert(function then() {
-			     this.die('UEN was entered in an invalid format! Try again.')
-			}, function timeout() {
-			//this.echo('UEN valid, conducting search');
-			});
-			this.clickLabel('Browse');
-			//this.echo('Search submitted');
-		});
+	    this.clickLabel('Browse');
+	    
+	    // this.echo('Search submitted');
 	});
+    });
 });
 
 // whole bunch of callbacks because all these elements are loaded by js
 
 casper.then(function() {
-	this.waitForSelector('frame[name=main]', function() {
-		casper.withFrame('main', function() {
-			this.waitForSelector('div.content', function() {
-			this.waitForSelector('iframe[name=GB_frame]', function() {
-				casper.evaluate(function() {
-					document.querySelector('iframe[name=GB_frame]').contentWindow.document.querySelector('iframe#GB_frame').contentWindow.document.querySelector('select#lstIDName').selectedIndex = 0;
-					document.querySelector('iframe[name=GB_frame]').contentWindow.document.querySelector('iframe#GB_frame').contentWindow.document.querySelector('td.button_bluesmall img:first-child').click();
-				});
-				//this.echo('Result selected');
-			});
-			});
+    this.waitForSelector('frame[name=main]', function() {
+	casper.withFrame('main', function() {
+	    this.waitForSelector('div.content', function() {
+		this.waitForSelector('iframe[name=GB_frame]', function() {
+		    casper.evaluate(function() {
+			document.querySelector('iframe[name=GB_frame]').contentWindow.document.querySelector('iframe#GB_frame').contentWindow.document.querySelector('select#lstIDName').selectedIndex = 0;
+			document.querySelector('iframe[name=GB_frame]').contentWindow.document.querySelector('iframe#GB_frame').contentWindow.document.querySelector('td.button_bluesmall img:first-child').click();
+		    });
+		    
+		    // this.echo('Result selected');
 		});
+	    });
 	});
+    });
 });
 
 casper.then(function() {
-	this.waitForSelector('frame[name=main]', function() {
-		casper.withFrame('main', function() {
-			this.click('a#IdSubmit'); // point button
-			//this.echo('Clicked pay');
+    this.waitForSelector('frame[name=main]', function() {
+	casper.withFrame('main', function() {
+	    // this.click('a#IdSubmit'); // point button
 
-			//if search returns no results
-
-			casper.waitForAlert(
-				function() {
-					this.die('Search has returned no results! Exiting script.');
-				},
-				function() {
-					//this.echo('Search has returned 1 or more relevant results. Selected.');
-			});
-		});
+	    // this.echo('Clicked pay');
+	    
+	    this.echo(Date.now() - start);
 	});
+    });
 });
 
 // repeat orders don't display the collect order button for some reason, so we navigate twice
 casper.then(function() {
-	this.waitForSelector('frame[name=top]', function() {
-		casper.withFrame('top', function() {
-			this.page.sendEvent('keypress', casper.page.event.key.Enter);
-			this.clickLabel('SEARCH MENU');
-			//this.echo('Clicked SEARCH MENU');
-		});
+    this.waitForSelector('frame[name=top]', function() {
+	casper.withFrame('top', function() {
+	    this.page.sendEvent('keypress', casper.page.event.key.Enter);
+	    this.clickLabel('SEARCH MENU');
+	    
+	    // this.echo('Clicked SEARCH MENU');
 	});
+    });
 });
 
 casper.then(function() {
-	this.waitForSelector('frame[name=top]', function() {
-		casper.withFrame('top', function() {
-			this.clickLabel('COLLECT ORDERS');
-			//this.echo('Clicked COLLECT ORDERS');
-		});
+    this.waitForSelector('frame[name=top]', function() {
+	casper.withFrame('top', function() {
+	    this.clickLabel('COLLECT ORDERS');
+
+	    // this.echo('Clicked COLLECT ORDERS');
 	});
+    });
 });
 
 // search for the correct order item from the UEN entered previously
 
 casper.then(function() {
-	this.waitForSelector('frame[name=main]', function() {
-		casper.withFrame('main', function() {
-			casper.withFrame('listFrame', function() {
-			var re = new RegExp(casper.cli.args[2], 'gi');
-			var htmlArr = this.getElementsInfo('td.CF').map(function(e) { return e.html } );
-			for (var i = 0; i < htmlArr.length; i++) {
-				if (re.test(htmlArr[i])) {
-				var labelLength = htmlArr[i-1].length; // cell with order item link is one cell before cell containing the name/uen of search result
-				var label = htmlArr[i-1].slice(labelLength - 12, labelLength - 4); // get order no.
-				//this.echo('Found the correct order item');
-				this.clickLabel(label);
-				//this.echo('Clicked on the order item');
-				}
-			}
-			});
-		});
+    this.waitForSelector('frame[name=main]', function() {
+	casper.withFrame('main', function() {
+	    casper.withFrame('listFrame', function() {
+		var re = new RegExp(casper.cli.args[2], 'gi');
+		var htmlArr = this.getElementsInfo('td.CF').map(function(e) { return e.html } );
+		for (var i = 0; i < htmlArr.length; i++) {
+		    if (re.test(htmlArr[i])) {
+			var labelLength = htmlArr[i-1].length; // cell with order item link is one cell before cell containing the name/uen of search result
+			var label = htmlArr[i-1].slice(labelLength - 12, labelLength - 4); // get order no.
+
+			// this.echo('Found the correct order item');
+
+			this.clickLabel(label);
+
+			// this.echo('Clicked on the order item');
+		    }
+		}
+	    });
 	});
+    });
 });
 
 casper.then(function() {
-	this.waitForSelector('frame[name=main]', function() {
+    this.waitForSelector('frame[name=main]', function() {
 	casper.withFrame('main', function() {
-		casper.withFrame('contentFrame', function() {
+	    casper.withFrame('contentFrame', function() {
 
 		// make dom elements available to casperjs
 
@@ -155,26 +151,27 @@ casper.then(function() {
 		var valArr = [];
 		var htmlArr = this.getElementsInfo('td.DtaFld').map(function(e) { return e.html } );
 		var nricArr = this.evaluate(function() {
-			var elements = __utils__.findAll('td.DtaFld a.searchlink');
-			return elements.map(function(e) {
+		    var elements = __utils__.findAll('td.DtaFld a.searchlink');
+		    return elements.map(function(e) {
 			return e.text;
-			});
+		    });
 		});
 
 		var elements = this.getElementsInfo('td.lblFld');
 		for (var i = 0; i < elements.length; i++) {
-			keyArr.push(elements[i].text);
+		    keyArr.push(elements[i].text);
 		}
 
-		//this.echo('Getting details');
+		// this.echo('Getting details');
+
 		var info = initialInfo(keyArr, htmlArr, nricArr);
 
-		//fs.write('results.json', JSON.stringify(info, null, 2), 'w');
+		// fs.write('results.json', JSON.stringify(info, null, 2), 'w');
 
 		this.echo(JSON.stringify(info, null, 2));
-		});
+	    });
 	});
-	});
+    });
 });
 
 casper.run();
