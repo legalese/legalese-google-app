@@ -52,9 +52,6 @@ casper.then(function() {
     this.waitForSelector('frame[name=main]', function() {
 	casper.withFrame("main", function() {
 	    this.sendKeys("input[class = uiCompanyRegno]", casper.cli.args[2]);
-
-	    // alert shows if UEN is invalid
-
 	    this.clickLabel('Browse');
 	    
 	    // this.echo('Search submitted');
@@ -84,11 +81,9 @@ casper.then(function() {
 casper.then(function() {
     this.waitForSelector('frame[name=main]', function() {
 	casper.withFrame('main', function() {
-	    // this.click('a#IdSubmit'); // point button
+	    this.click('a#IdSubmit'); // point button
 
 	    // this.echo('Clicked pay');
-	    
-	    this.echo(Date.now() - start);
 	});
     });
 });
