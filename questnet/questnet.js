@@ -220,7 +220,7 @@ function capStructure(keys, values) {
     return shares;
 }
 
-// directors have four table fields
+// officers have four table fields
 
 
 function getOfficers(values, ic, id) {
@@ -230,7 +230,7 @@ function getOfficers(values, ic, id) {
 
     for (var i = 0; i < values.length; i++) {
 
-	// does the previous cell have a date/is empty and does the next cell contain an IC or UEN? If so, this is the start of the director's block
+	// does the previous cell have a date/is empty and does the next cell contain an IC or UEN? If so, this is the start of the officer's block
 
 	if (!(/[A-Za-z]/.test(values[i])) && idReg.test(values[i+1])) {
 
@@ -238,14 +238,14 @@ function getOfficers(values, ic, id) {
 		if (values[j+3] == 'ORDINARY' || values[j+3] == 'PREFERENCE') {
 		    break;
 		};
-		var newDirector = {
+		var newOfficer = {
 		    nameID: values[j].slice(0, /<br>/g.exec(values[j]).index),
 		    id: ic[id],
 		    address: values[j+1].slice(0, addresses(values[j+1])[2]),
 		    nationality: values[j+2],
 		    appointment: values[j+3].slice(10).replace(/<br>/g, ' ') // cut off dates
 		};
-		directors.push(newDirector);
+		officers.push(newOfficer);
 		id++;
 	    }
 	}
