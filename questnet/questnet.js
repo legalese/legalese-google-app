@@ -194,7 +194,7 @@ function initialInfo(keys, values, ic) {
     };
 
     result.capStructure = capStructure(keys, values);
-    result.directors = getDirectors(values, ic, htmlId);
+    result.officersOrAuthorisedRepresentatives = getOfficers(values, ic, htmlId);
     result.shareholders = getShareholders(values, ic, htmlId);
     result.complianceRecord = getRecords(values);
     return result;
@@ -223,8 +223,8 @@ function capStructure(keys, values) {
 // directors have four table fields
 
 
-function getDirectors(values, ic, id) {
-    var directors = [];
+function getOfficers(values, ic, id) {
+    var officers = [];
 
     var idReg = /[A-Za-z]\d{7}[A-za-z]|\d{9}[A-za-z]|[A-za-z]{2}\d{7}|\d{9}/; // matches ICs and UENs
 
@@ -250,7 +250,7 @@ function getDirectors(values, ic, id) {
 	    }
 	}
     }
-    return directors;
+    return officers;
 }
 
 // shareholders have six table cells
