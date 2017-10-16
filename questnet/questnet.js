@@ -41,8 +41,17 @@ casper.then(function() {
 
 casper.then(function() {
     this.waitForSelector('frame[name=main]', function() {
-	casper.withFrame("main", function() {
-	    this.clickLabel("search");
+	this.waitForSelector('#balpoint', function() {
+	    var balance = this.fetchText('#balpoint');
+	    var balanceNumber = Number(balance);
+	    if (balance < 500) {
+		this.echo("Questnet balance is below " + balance + ", please topup")
+	    } else if (balance < 10) {
+		this.echo("Questnet balance is critically low, top up immediately")
+	    }
+	    casper.withFrame("main", function() {
+		this.clickLabel("search");
+	    });
 	});
     });
 });
