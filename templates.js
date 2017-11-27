@@ -27,9 +27,9 @@ function desiredTemplates_(config) {
 
 function suitableTemplates(readRows_, parties) {
   var availables = readRows_.availableTemplates;
-  teLog(["suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name})],8);
+//  teLog(["suitableTemplates: available templates are %s", availables.map(function(aT){return aT.name})],8);
   var desireds = desiredTemplates_(readRows_.config);
-  teLog(["suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT})],8);
+//  teLog(["suitableTemplates: desired templates are %s", desireds.map(function(aT){return aT})],8);
   
   var suitables = intersect_(desireds, availables); // the order of these two arguments matters -- we want to preserve the sequence in the spreadsheet of the templates.
   // TODO: this is slightly buggy. kissing, kissing1, kissing2, didn't work
@@ -287,7 +287,7 @@ var docsetEmails = function (sheet, readRows_, parties, suitables) {
 
 	var sourceTemplateNames = sourceTemplates.map(function(st){return st.name});
 
-//	teLog("docsetEmails.Rcpts(%s), %s", sourceTemplateNames, explodeEntity);
+	teLog("docsetEmails.Rcpts(%s), %s", sourceTemplateNames, explodeEntity);
 	// pull up all the entities relevant to this particular set of sourceTemplates
 	// this should be easy, we've already done the hard work above.
 	var all_to = [], all_cc = [];
@@ -309,7 +309,9 @@ var docsetEmails = function (sheet, readRows_, parties, suitables) {
 	  }
 	}
 
-	all_to = uniq_(all_to);
+    // sometimes a person has to sign twice on the same document. maybe they are wearing different hats.
+    // there are smarts in the signature engine which properly consolidate duplicate rcpts To: addresses, to a single esnum.
+    all_to = uniq_(all_to);
 	all_cc = uniq_(all_cc);
 
 	teLog("docsetEmails.Rcpts(%s): all_to=%s", sourceTemplateNames, all_to);
@@ -329,6 +331,7 @@ var docsetEmails = function (sheet, readRows_, parties, suitables) {
 		 &&
 		 email_to_cc(entity.email)[0] && email_to_cc(entity.email)[0]) {
 		entity._to_email = plusNum(es_num, this.readRows.config.email_override.values[0]);
+        teLog("INFO: email override in effect for %s", entity._to_email);
 	  }
 	  else {
 		var email_to_cc_ = email_to_cc(entity.email);
@@ -609,7 +612,8 @@ function fillTemplates(sheet) {
 	newTemplate.rcpts_to = rcpts[2];
 	newTemplate.rcpts_cc = rcpts[3];
 
-	teLog("buildTemplate: newTemplate.rcpts_to = %s", Object.keys(newTemplate.rcpts_to));
+	teLog("buildTemplate(%s): newTemplate.rcpts_to = %s", sourceTemplate.name, Object.keys(newTemplate.rcpts_to));
+	teLog("buildTemplate(%s): newTemplate.rcpts[0] = %s", sourceTemplate.name, rcpts[0].join(", "));
 
 	fillTemplate_(newTemplate, sourceTemplate, filenameFor(sourceTemplate, entity), folder, config);
 

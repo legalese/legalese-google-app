@@ -96,7 +96,7 @@ function getEchoSignService() {
 // ---------------------------------------------------------------------------------------------------------------- showSidebar
 function showSidebar(sheet) {
   var echosignService = getEchoSignService();
-  if (echosignService == null) { return } // don't show the sidebar if we're not associated with an echosign api.
+  if (echosignService == null) { legaleseMain.lsLog("showSidebar: no echosignService, so not doing anything."); return } // don't show the sidebar if we're not associated with an echosign api.
 
   echosignService.reset();
   // blow away the previous oauth, because there's a problem with using the refresh token after the access token expires after the first hour.

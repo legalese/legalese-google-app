@@ -99,8 +99,12 @@ function onOpen(addOnMenu, legaleseSignature) {
   }
 
   if (legaleseSignature && legaleseSignature._loaded) {
+	lmLog("legaleseMain calling legaleseSignature.showSidebar");
 	legaleseSignature.showSidebar(sheet);
+  } else {
+    lmLog("legaleseMain NOT calling legaleseSignature.showSidebar");
   }
+
 };
 
 
