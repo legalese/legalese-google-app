@@ -160,7 +160,7 @@ function readDrive() {
     toplevels[folder.getId()] = folder.getName();
   }
 
-  var height = showTree(sheet, [1, 1], rootFolder, "folder", ["done"]);
+  var height = showTree(sheet, [1, 1], rootFolder, "folder", ["done", "fonts"]);
 
   height++;
   // things shared with me
