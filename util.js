@@ -14,11 +14,12 @@ function legaleseRootFolder_() {
 	  // TODO: exclude any Legalese Root folders that are in the trash.
 	  legalese_root = legaleses.next();
 	  utLog("legalese_root = " + legalese_root);
+	  utLog("legalese_root.getID = " + legalese_root.getId());
 	} else {
 	  utLog("WARNING: Google Drive claims that the Legalese Root folder does not exist. really?");
 	  legalese_root = DriveApp.createFolder("Legalese Root");
 	}
-	PropertiesService.getDocumentProperties().setProperty("legalese.rootfolder", JSON.stringify(legalese_root.getId));
+	PropertiesService.getDocumentProperties().setProperty("legalese.rootfolder", JSON.stringify(legalese_root.getId()));
   }
   return legalese_root;
 }
