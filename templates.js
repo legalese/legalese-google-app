@@ -521,7 +521,8 @@ function fillTemplates(sheet) {
 	  teLog(["buildTemplate(%s): WARNING: given %s sourceTemplates; potential collision error", sourceTemplates.length],3);
 	  teLog(["buildTemplate(%s): WARNING: URLs are ", sourceTemplates.map(function(st){ return st.url }).join(", ")],3);
 	}
-	var sourceTemplate = sourceTemplates[0];
+        // if multiple source templates are found, pick the last one
+	var sourceTemplate = sourceTemplates[sourceTemplates.length-1];
 	var newTemplate = obtainTemplate_(sourceTemplate.url, sourceTemplate.nocache, readmeDoc);
 	newTemplate.data = templatedata; // NOTE: this is the  first global inside the XML context
 	newTemplate.data.sheet = sheet;  // NOTE: this is the second global inside the XML context
@@ -714,9 +715,10 @@ function include(name, data, _include, _include2) {
 	teLog(["include(): found %s: %s", filtered[i].name, filtered[i].url]);
   }
   if (filtered.length > 1) {
-	teLog(["include(): found multiple (%s) %s templates; picking the last one.", filtered.length, name],5);
-	filtered = [filtered.pop()];
-	teLog(["include(): template url = %s", filtered[0].url],5);
+      // if multiple templates of the same name are found, pick the last one
+      teLog(["include(): found multiple (%s) %s templates; picking the last one.", filtered.length, name],5);
+      filtered = [filtered.pop()];
+      teLog(["include(): template url = %s", filtered[0].url],5);
   }
   if (filtered.length == 1) {
 	var template = filtered[0];
